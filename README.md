@@ -1,16 +1,2 @@
-# salam_sdia28
-
-A new Flutter project.
-
-## Getting Started
-
-This project is a starting point for a Flutter application.
-
-A few resources to get you started if this is your first Flutter project:
-
-- [Lab: Write your first Flutter app](https://docs.flutter.dev/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://docs.flutter.dev/cookbook)
-
-For help getting started with Flutter development, view the
-[online documentation](https://docs.flutter.dev/), which offers tutorials,
-samples, guidance on mobile development, and a full API reference.
+# Penjemputan SD Islam Al Azhar 28 Solo Baru
+Aplikasi dibangun dengan flutter yang akan membantu orang tua dalam memanggil muridnya di sekolah. Aplikasi dalam proses pengembangan dan akan terus diperbarui oleh Tim IT SD Islam Al Azhar 28 Solo Baru.
