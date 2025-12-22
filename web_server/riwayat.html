@@ -1,0 +1,721 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Riwayat Penjemputan - SDIA 28</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        primaryLight: '#60A5FA',
+                        primaryLighter: '#DBEAFE',
+                        bgMain: '#FAFAFA',
+                        cardBg: '#FFFFFF',
+                        borderColor: '#E5E7EB',
+                        textPrimary: '#111827',
+                        textSecondary: '#6B7280',
+                        textMuted: '#9CA3AF',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Left Navigation Sidebar */
+        .nav-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 220px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+            z-index: 50;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-items-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .nav-active-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+            z-index: 0;
+            opacity: 0;
+            /* Hidden initially to prevent glitch */
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+            text-decoration: none;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-item.active {
+            background: transparent;
+        }
+
+        .nav-item.active svg {
+            color: white !important;
+        }
+
+        .nav-item.active .nav-label {
+            color: white;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        .nav-tooltip {
+            display: none;
+        }
+
+        .nav-profile {
+            margin-top: auto;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-top: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            border-radius: 14px;
+        }
+
+        .nav-profile:hover {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .nav-profile:hover .nav-profile-avatar {
+            transform: scale(1.05);
+        }
+
+        .nav-profile-name {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        body {
+            padding-left: 220px;
+        }
+
+        /* Search input focus */
+        .search-input:focus {
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+        }
+
+        /* Table row hover */
+        .table-row:hover {
+            background-color: #f9fafb;
+        }
+
+        /* Slide in animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(10px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Connection indicator blink */
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .blink {
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .nav-sidebar {
+                width: 70px;
+                padding: 20px 8px;
+            }
+
+            .nav-item {
+                padding: 12px;
+                justify-content: center;
+            }
+
+            .nav-label {
+                display: none;
+            }
+
+            .nav-active-indicator {
+                height: 48px;
+            }
+
+            .nav-profile-name {
+                display: none;
+            }
+
+            .nav-profile {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            body {
+                padding-left: 70px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-bgMain min-h-screen">
+    <!-- Left Navigation Sidebar -->
+    <nav class="nav-sidebar">
+        <div class="nav-items-container">
+            <div class="nav-active-indicator" id="navActiveIndicator"></div>
+
+            <a href="index.html" class="nav-item" data-page="penjemputan" data-index="0">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="nav-label">Penjemputan</span>
+            </a>
+
+            <a href="riwayat.html" class="nav-item active" data-page="riwayat" data-index="1">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="nav-label">Riwayat</span>
+            </a>
+
+            <a href="pengaturan.html" class="nav-item" data-page="pengaturan" data-index="2">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="nav-label">Pengaturan</span>
+            </a>
+
+            <a href="jadwal.html" class="nav-item" data-page="jadwal" data-index="3">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="nav-label">Jadwal</span>
+            </a>
+
+            <a href="database.html" class="nav-item" data-page="database" data-index="4">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                <span class="nav-label">Database</span>
+            </a>
+        </div>
+
+        <div class="nav-profile" onclick="toggleProfilePopup()">
+            <div class="nav-profile-avatar">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+            <span class="nav-profile-name">Admin Lobby</span>
+        </div>
+    </nav>
+
+    <!-- Header -->
+    <header class="bg-cardBg border-b border-borderColor shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-primaryLighter border-2 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-textPrimary">Riwayat Penjemputan</h1>
+                        <p class="text-sm text-textMuted">SDIA 28 - Lobby Sekolah</p>
+                    </div>
+                </div>
+
+                <!-- Connection Status -->
+                <div class="flex items-center gap-6">
+                    <div id="connectionStatus"
+                        class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
+                        <span class="w-2 h-2 bg-success rounded-full blink"></span>
+                        <span class="text-sm text-green-700 font-medium" id="speedText">45.2 Mbps</span>
+                    </div>
+                    <div
+                        class="w-10 h-10 bg-bgMain border border-borderColor rounded-xl flex items-center justify-center cursor-pointer hover:bg-primaryLighter transition-colors">
+                        <svg class="w-5 h-5 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+
+        <!-- Search and Filter Section -->
+        <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm mb-6">
+            <div class="flex flex-col md:flex-row gap-4">
+                <!-- Search Input -->
+                <div class="flex-1 relative">
+                    <div class="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <svg class="w-5 h-5 text-textMuted" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                    </div>
+                    <input type="text" id="searchInput" placeholder="Cari nama siswa..."
+                        class="search-input w-full pl-12 pr-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-textPrimary placeholder-textMuted"
+                        oninput="filterHistory()">
+                </div>
+
+                <!-- Date Filter -->
+                <div class="flex gap-3">
+                    <input type="date" id="dateFilter"
+                        class="px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-textPrimary"
+                        onchange="filterHistory()">
+                    <button onclick="clearFilters()"
+                        class="px-4 py-3 bg-gray-100 hover:bg-gray-200 border border-borderColor rounded-xl text-textSecondary font-medium transition-all flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                        Reset
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-primaryLighter rounded-xl">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Total Hari Ini</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="todayCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-green-50 rounded-xl">
+                        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Minggu Ini</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="weekCount">0</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-orange-50 rounded-xl">
+                        <svg class="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Bulan Ini</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="monthCount">0</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Table -->
+        <div class="bg-cardBg border border-borderColor rounded-2xl shadow-sm overflow-hidden">
+            <div class="p-6 border-b border-borderColor">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-lg font-semibold text-textPrimary">Daftar Riwayat</h2>
+                    <span class="text-sm text-textMuted" id="resultCount">0 hasil</span>
+                </div>
+            </div>
+
+            <div class="overflow-x-auto">
+                <table class="w-full">
+                    <thead class="bg-bgMain">
+                        <tr>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                No
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                Nama Siswa
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                Kelas
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                Dijemput Oleh
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                Waktu
+                            </th>
+                            <th
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
+                                Status
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody id="historyTableBody" class="divide-y divide-borderColor">
+                        <!-- Data will be populated by JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Empty State -->
+            <div id="emptyState" class="hidden p-12 text-center">
+                <svg class="w-16 h-16 text-textMuted mx-auto mb-4" fill="none" stroke="currentColor"
+                    viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                <h3 class="text-lg font-medium text-textPrimary mb-2">Tidak ada data</h3>
+                <p class="text-textMuted">Tidak ada riwayat penjemputan yang ditemukan</p>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        // Sample history data
+        const historyData = [
+            { id: 1, name: "Ahmad Farhan Pratama", class: "Kelas 3A", pickupBy: "Ayah", time: "2024-12-21 14:30", status: "completed" },
+            { id: 2, name: "Siti Aisyah Putri", class: "Kelas 2B", pickupBy: "Ibu", time: "2024-12-21 14:25", status: "completed" },
+            { id: 3, name: "Muhammad Rizki", class: "Kelas 4C", pickupBy: "Kakak", time: "2024-12-21 14:20", status: "completed" },
+            { id: 4, name: "Fatimah Zahra", class: "Kelas 1A", pickupBy: "Ayah", time: "2024-12-21 14:15", status: "completed" },
+            { id: 5, name: "Umar Abdullah", class: "Kelas 5B", pickupBy: "Ibu", time: "2024-12-21 14:10", status: "completed" },
+            { id: 6, name: "Khadijah Amira", class: "Kelas 3C", pickupBy: "Kakak", time: "2024-12-21 14:05", status: "completed" },
+            { id: 7, name: "Yusuf Hakim", class: "Kelas 2A", pickupBy: "Ayah", time: "2024-12-20 14:30", status: "completed" },
+            { id: 8, name: "Zainab Salsabila", class: "Kelas 4B", pickupBy: "Ibu", time: "2024-12-20 14:25", status: "completed" },
+            { id: 9, name: "Ibrahim Maulana", class: "Kelas 1C", pickupBy: "Ayah", time: "2024-12-20 14:20", status: "completed" },
+            { id: 10, name: "Maryam Azzahra", class: "Kelas 5A", pickupBy: "Ibu", time: "2024-12-19 14:30", status: "completed" },
+            { id: 11, name: "Hasan Basri", class: "Kelas 3B", pickupBy: "Kakak", time: "2024-12-19 14:25", status: "completed" },
+            { id: 12, name: "Hafsa Nurul", class: "Kelas 2C", pickupBy: "Ayah", time: "2024-12-19 14:20", status: "completed" },
+        ];
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            initNavIndicator();
+            updateStats();
+            renderHistory(historyData);
+        });
+
+        // Initialize nav indicator position (index 1 = Riwayat)
+        const ITEM_HEIGHT = 60;
+        const CURRENT_PAGE_INDEX = 1; // Index 1 = Riwayat (this page)
+
+        function initNavIndicator() {
+            const indicator = document.getElementById('navActiveIndicator');
+            if (!indicator) return;
+
+            // Get previous page index from localStorage
+            const previousIndex = parseInt(localStorage.getItem('navPreviousIndex') || '0');
+
+            // Disable transition initially, set to previous position
+            indicator.style.transition = 'none';
+            indicator.style.transform = `translateY(${previousIndex * ITEM_HEIGHT}px)`;
+
+            // Force reflow to apply the position immediately
+            indicator.offsetHeight;
+
+            // Re-enable transition and animate to current position
+            indicator.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+            // Small delay to ensure the transition is applied
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Show the indicator and animate to current position
+                    indicator.style.opacity = '1';
+                    indicator.style.transform = `translateY(${CURRENT_PAGE_INDEX * ITEM_HEIGHT}px)`;
+                });
+            });
+
+            // Save current position for next navigation
+            localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+
+            // Setup click handlers to save position before navigation
+            setupNavClickHandlers();
+        }
+
+        // Setup click handlers for navigation items to save position before leaving
+        function setupNavClickHandlers() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    const index = this.getAttribute('data-index');
+                    if (index !== null) {
+                        localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+                    }
+                });
+            });
+        }
+
+        // Update statistics
+        function updateStats() {
+            const today = new Date().toISOString().split('T')[0];
+            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+            const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
+
+            const todayCount = historyData.filter(item => item.time.startsWith(today)).length;
+            const weekCount = historyData.filter(item => item.time.split(' ')[0] >= weekAgo).length;
+            const monthCount = historyData.filter(item => item.time.split(' ')[0] >= monthAgo).length;
+
+            document.getElementById('todayCount').textContent = todayCount;
+            document.getElementById('weekCount').textContent = weekCount;
+            document.getElementById('monthCount').textContent = monthCount;
+        }
+
+        // Render history table
+        function renderHistory(data) {
+            const tbody = document.getElementById('historyTableBody');
+            const emptyState = document.getElementById('emptyState');
+            const resultCount = document.getElementById('resultCount');
+
+            if (data.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                resultCount.textContent = '0 hasil';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            resultCount.textContent = `${data.length} hasil`;
+
+            tbody.innerHTML = data.map((item, index) => `
+                <tr class="table-row transition-colors slide-in" style="animation-delay: ${index * 0.03}s">
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textMuted">
+                        ${index + 1}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center">
+                                <span class="text-primary font-semibold text-sm">${item.name.charAt(0)}</span>
+                            </div>
+                            <span class="font-medium text-textPrimary">${item.name}</span>
+                        </div>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary">
+                        ${item.class}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="bg-green-50 text-green-700 text-sm font-medium px-3 py-1 rounded-full">
+                            ${item.pickupBy}
+                        </span>
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary">
+                        ${formatDateTime(item.time)}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap">
+                        <span class="inline-flex items-center gap-1 bg-success/10 text-success text-sm font-medium px-3 py-1 rounded-full">
+                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
+                            </svg>
+                            Selesai
+                        </span>
+                    </td>
+                </tr>
+            `).join('');
+        }
+
+        // Format datetime
+        function formatDateTime(dateTimeStr) {
+            const date = new Date(dateTimeStr);
+            const options = {
+                day: 'numeric',
+                month: 'short',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            };
+            return date.toLocaleDateString('id-ID', options);
+        }
+
+        // Filter history
+        function filterHistory() {
+            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
+            const dateFilter = document.getElementById('dateFilter').value;
+
+            let filtered = historyData;
+
+            // Filter by name
+            if (searchTerm) {
+                filtered = filtered.filter(item =>
+                    item.name.toLowerCase().includes(searchTerm)
+                );
+            }
+
+            // Filter by date
+            if (dateFilter) {
+                filtered = filtered.filter(item =>
+                    item.time.startsWith(dateFilter)
+                );
+            }
+
+            renderHistory(filtered);
+        }
+
+        // Clear filters
+        function clearFilters() {
+            document.getElementById('searchInput').value = '';
+            document.getElementById('dateFilter').value = '';
+            renderHistory(historyData);
+        }
+
+        // Profile popup functions (simplified for this page)
+        function toggleProfilePopup() {
+            alert('Profile popup - To be implemented');
+        }
+
+        // Connection speed simulation
+        function startConnectionSimulation() {
+            setInterval(() => {
+                const speed = (Math.random() * 30 + 30).toFixed(1); // 30-60 Mbps
+                document.getElementById('speedText').textContent = `${speed} Mbps`;
+
+                const statusDiv = document.getElementById('connectionStatus');
+                if (parseFloat(speed) > 40) {
+                    statusDiv.className = 'flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-success rounded-full blink';
+                } else if (parseFloat(speed) > 20) {
+                    statusDiv.className = 'flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-warning rounded-full blink';
+                } else {
+                    statusDiv.className = 'flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-red-500 rounded-full blink';
+                }
+            }, 2000);
+        }
+
+        // Start connection simulation on load
+        document.addEventListener('DOMContentLoaded', startConnectionSimulation);
+    </script>
+</body>
+
+</html>

@@ -1,0 +1,1531 @@
+<!DOCTYPE html>
+<html lang="id">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard Penjemputan - SDIA 28</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        primaryLight: '#60A5FA',
+                        primaryLighter: '#DBEAFE',
+                        bgMain: '#FAFAFA',
+                        cardBg: '#FFFFFF',
+                        borderColor: '#E5E7EB',
+                        textPrimary: '#111827',
+                        textSecondary: '#6B7280',
+                        textMuted: '#9CA3AF',
+                        success: '#10B981',
+                        warning: '#F59E0B',
+                    },
+                    fontFamily: {
+                        inter: ['Inter', 'sans-serif'],
+                    },
+                },
+            },
+        }
+    </script>
+    <style>
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
+        }
+
+        /* Pulse animation for queue card */
+        @keyframes pulse-soft {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+            }
+
+            50% {
+                transform: scale(1.01);
+                box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse-soft 2s ease-in-out infinite;
+        }
+
+        /* Slide in animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Modal backdrop */
+        .modal-backdrop {
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+        }
+
+        /* Connection indicator blink */
+        @keyframes blink {
+
+            0%,
+            100% {
+                opacity: 1;
+            }
+
+            50% {
+                opacity: 0.5;
+            }
+        }
+
+        .blink {
+            animation: blink 1s ease-in-out infinite;
+        }
+
+        /* Button hover effect */
+        .btn-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+        }
+
+        .btn-hover:active {
+            transform: translateY(0);
+        }
+
+        /* Countdown animation */
+        @keyframes countdown-pulse {
+
+            0%,
+            100% {
+                transform: scale(1);
+            }
+
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .countdown-pulse {
+            animation: countdown-pulse 1s ease-in-out infinite;
+        }
+
+        /* Countdown button hover */
+        .countdown-btn .countdown-text {
+            display: flex;
+        }
+
+        .countdown-btn .stop-icon {
+            display: none;
+        }
+
+        .countdown-btn:hover .countdown-text {
+            display: none;
+        }
+
+        .countdown-btn:hover .stop-icon {
+            display: flex;
+        }
+
+        .countdown-btn:hover {
+            background-color: #EF4444 !important;
+            border-color: #EF4444 !important;
+        }
+
+        /* Circular progress */
+        .circular-progress {
+            position: relative;
+            width: 80px;
+            height: 80px;
+        }
+
+        .circular-progress svg {
+            transform: rotate(-90deg);
+        }
+
+        .circular-progress .progress-ring {
+            transition: stroke-dashoffset 0.3s ease;
+        }
+
+        /* Left Navigation Sidebar */
+        .nav-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 220px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+            z-index: 50;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        /* Navigation Items Container */
+        .nav-items-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        /* Sliding Active Indicator */
+        .nav-active-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.2s ease;
+            z-index: 0;
+            opacity: 0;
+            /* Hidden initially to prevent glitch */
+        }
+
+        .nav-item {
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+            background: transparent;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-item.active {
+            background: transparent;
+        }
+
+        .nav-item.active svg {
+            color: white !important;
+        }
+
+        .nav-item.active .nav-label {
+            color: white;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+            white-space: nowrap;
+        }
+
+        /* Tooltip hidden since we have labels visible */
+        .nav-tooltip {
+            display: none;
+        }
+
+        /* Profile Section at Bottom */
+        .nav-profile {
+            margin-top: auto;
+            display: flex;
+            flex-direction: row;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-top: 1px solid #e5e7eb;
+            transition: all 0.3s ease;
+            border-radius: 14px;
+            margin-top: auto;
+        }
+
+        .nav-profile:hover {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-profile-avatar {
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid #ffffff;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+            transition: all 0.3s ease;
+            overflow: hidden;
+            flex-shrink: 0;
+        }
+
+        .nav-profile-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .nav-profile:hover .nav-profile-avatar {
+            transform: scale(1.05);
+            box-shadow: 0 6px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .nav-profile-name {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 600;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        /* Profile Popup Modal */
+        .profile-popup-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            z-index: 100;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .profile-popup-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .profile-popup {
+            position: fixed;
+            bottom: 100px;
+            left: 100px;
+            width: 280px;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+            z-index: 101;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px) scale(0.95);
+            transition: all 0.3s ease;
+            overflow: hidden;
+        }
+
+        .profile-popup.active {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0) scale(1);
+        }
+
+        .profile-popup-header {
+            background: linear-gradient(135deg, #3b82f6 0%, #8b5cf6 100%);
+            padding: 24px;
+            text-align: center;
+        }
+
+        .profile-popup-avatar {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: white;
+            margin: 0 auto 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            box-shadow: 0 8px 24px rgba(0, 0, 0, 0.15);
+            overflow: hidden;
+        }
+
+        .profile-popup-avatar img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+        }
+
+        .profile-popup-name {
+            color: white;
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .profile-popup-role {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 13px;
+        }
+
+        .profile-popup-content {
+            padding: 16px;
+        }
+
+        .profile-popup-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .profile-popup-item:hover {
+            background: #f3f4f6;
+        }
+
+        .profile-popup-item svg {
+            width: 20px;
+            height: 20px;
+            color: #6b7280;
+        }
+
+        .profile-popup-item span {
+            font-size: 14px;
+            font-weight: 500;
+            color: #374151;
+        }
+
+        .profile-popup-item.logout {
+            border-top: 1px solid #e5e7eb;
+            margin-top: 8px;
+            padding-top: 16px;
+        }
+
+        .profile-popup-item.logout:hover {
+            background: #fef2f2;
+        }
+
+        .profile-popup-item.logout svg {
+            color: #ef4444;
+        }
+
+        .profile-popup-item.logout span {
+            color: #ef4444;
+        }
+
+        /* Adjust main content for sidebar */
+        body {
+            padding-left: 220px;
+        }
+
+        header {
+            margin-left: 0;
+        }
+
+        /* Responsive adjustments */
+        @media (max-width: 768px) {
+            .nav-sidebar {
+                width: 70px;
+                padding: 20px 8px;
+            }
+
+            .nav-item {
+                padding: 12px;
+                justify-content: center;
+            }
+
+            .nav-label {
+                display: none;
+            }
+
+            .nav-active-indicator {
+                height: 48px;
+            }
+
+            .nav-profile-name {
+                display: none;
+            }
+
+            .nav-profile {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            body {
+                padding-left: 70px;
+            }
+
+            .profile-popup {
+                left: 80px;
+                bottom: 80px;
+                width: 260px;
+            }
+        }
+    </style>
+</head>
+
+<body class="bg-bgMain min-h-screen">
+    <!-- Header -->
+    <header class="bg-cardBg border-b border-borderColor shadow-sm sticky top-0 z-40">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-4">
+                    <div
+                        class="w-12 h-12 rounded-full bg-primaryLighter border-2 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h1 class="text-xl font-semibold text-textPrimary">Dashboard Penjemputan</h1>
+                        <p class="text-sm text-textMuted">SDIA 28 - Lobby Sekolah</p>
+                    </div>
+                </div>
+
+                <!-- Connection Status -->
+                <div class="flex items-center gap-6">
+                    <div id="connectionStatus"
+                        class="flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2">
+                        <span class="w-2 h-2 bg-success rounded-full blink"></span>
+                        <span class="text-sm text-green-700 font-medium" id="speedText">45.2 Mbps</span>
+                    </div>
+                    <div
+                        class="w-10 h-10 bg-bgMain border border-borderColor rounded-xl flex items-center justify-center cursor-pointer hover:bg-primaryLighter transition-colors">
+                        <svg class="w-5 h-5 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
+                        </svg>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <!-- Stats Cards -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <!-- Menunggu Panggilan -->
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-orange-50 rounded-xl">
+                        <svg class="w-6 h-6 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Menunggu Panggilan</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="waitingCount">12</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sudah Dipanggil -->
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-green-50 rounded-xl">
+                        <svg class="w-6 h-6 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Sudah Dipanggil</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="calledCount">8</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Total Hari Ini -->
+            <div class="bg-cardBg border border-borderColor rounded-xl p-5 shadow-sm">
+                <div class="flex items-center gap-4">
+                    <div class="p-3 bg-primaryLighter rounded-xl">
+                        <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm text-textMuted">Total Hari Ini</p>
+                        <p class="text-2xl font-semibold text-textPrimary" id="totalCount">20</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Queue Section -->
+            <div class="lg:col-span-2">
+                <!-- Current Queue Card -->
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm mb-6 pulse-animation"
+                    id="currentQueueCard">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-textPrimary flex items-center gap-2">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                            </svg>
+                            Antrean Saat Ini
+                        </h2>
+                        <span class="bg-primaryLighter text-primary text-sm font-medium px-3 py-1 rounded-full">Nomor
+                            #1</span>
+                    </div>
+
+                    <div class="flex items-center gap-5" id="currentQueue">
+                        <div
+                            class="w-20 h-20 rounded-full bg-primaryLighter border-3 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20">
+                            <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                        </div>
+                        <div class="flex-1">
+                            <h3 class="text-xl font-semibold text-textPrimary" id="currentStudentName">Ahmad Farhan
+                                Pratama</h3>
+                            <p class="text-textSecondary" id="currentStudentClass">Kelas 3A</p>
+                            <div class="flex items-center gap-2 mt-2">
+                                <span class="text-sm text-textMuted">Dijemput oleh:</span>
+                                <span class="bg-green-50 text-green-700 text-sm font-medium px-3 py-1 rounded-full"
+                                    id="currentPickupBy">Ayah</span>
+                            </div>
+                        </div>
+
+                        <!-- Countdown / Action Button Area -->
+                        <div id="countdownArea" class="flex flex-col items-center">
+                            <!-- State 1: Countdown (default when auto-call is running) -->
+                            <div id="countdownDisplay" class="hidden">
+                                <button onclick="pauseCountdown()"
+                                    class="countdown-btn relative w-20 h-20 rounded-full bg-primary border-4 border-primaryLight flex items-center justify-center cursor-pointer transition-all shadow-lg shadow-primary/30">
+                                    <!-- Countdown Text -->
+                                    <span class="countdown-text text-3xl font-bold text-white"
+                                        id="countdownNumber">5</span>
+                                    <!-- Stop Icon (shown on hover) -->
+                                    <span class="stop-icon">
+                                        <svg class="w-8 h-8 text-white" fill="currentColor" viewBox="0 0 24 24">
+                                            <rect x="6" y="6" width="12" height="12" rx="2" />
+                                        </svg>
+                                    </span>
+                                </button>
+                                <p class="text-xs text-textMuted mt-2 text-center">Dipanggil dalam</p>
+                            </div>
+
+                            <!-- State 2: Paused - Show Continue/Delete buttons -->
+                            <div id="pausedButtons" class="hidden flex-col gap-2">
+                                <button onclick="resumeCountdown()"
+                                    class="bg-success hover:bg-green-600 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                    </svg>
+                                    Lanjutkan
+                                </button>
+                                <button onclick="skipStudent()"
+                                    class="bg-red-500 hover:bg-red-600 text-white px-5 py-2.5 rounded-xl font-semibold flex items-center gap-2 transition-all text-sm">
+                                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                    </svg>
+                                    Hapus
+                                </button>
+                            </div>
+
+                            <!-- State 3: Stopped - No auto-call -->
+                            <div id="stoppedState" class="flex flex-col items-center">
+                                <div
+                                    class="w-20 h-20 rounded-full bg-gray-100 border-4 border-gray-200 flex items-center justify-center">
+                                    <svg class="w-8 h-8 text-textMuted" fill="none" stroke="currentColor"
+                                        viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M10 9v6m4-6v6m7-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                </div>
+                                <p class="text-xs text-textMuted mt-2 text-center">Auto-call berhenti</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Queue List -->
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                    <div class="flex items-center justify-between mb-4">
+                        <h2 class="text-lg font-semibold text-textPrimary">Daftar Antrean</h2>
+                        <span class="text-sm text-textMuted" id="queueListCount">12 siswa menunggu</span>
+                    </div>
+
+                    <div class="space-y-3 max-h-80 overflow-y-auto pr-2" id="queueList">
+                        <!-- Queue items will be generated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Sidebar -->
+            <div class="space-y-6">
+                <!-- Add Student Form -->
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-textPrimary mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                        </svg>
+                        Tambah Antrean
+                    </h2>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-sm font-medium text-textSecondary mb-2">Nama Siswa</label>
+                            <div class="relative">
+                                <input type="text" id="inputStudentName" placeholder="Ketik nama siswa..."
+                                    class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-textPrimary placeholder-textMuted"
+                                    onclick="showStudentDropdown()">
+                                <div id="studentDropdown"
+                                    class="absolute top-full left-0 right-0 mt-2 bg-cardBg border border-borderColor rounded-xl shadow-lg hidden z-50 max-h-48 overflow-y-auto">
+                                    <!-- Student options will be added by JS -->
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-textSecondary mb-2">Kelas</label>
+                            <input type="text" id="inputClass" placeholder="Kelas siswa" readonly
+                                class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl text-textPrimary placeholder-textMuted cursor-not-allowed">
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-textSecondary mb-2">Dijemput Oleh</label>
+                            <input type="text" id="inputPickupBy" placeholder="Contoh: Ayah, Ibu, Kakak..."
+                                class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-primary focus:border-primary outline-none transition-all text-textPrimary placeholder-textMuted">
+                        </div>
+
+                        <button onclick="addToQueue()"
+                            class="w-full bg-primary hover:bg-blue-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all btn-hover">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                            </svg>
+                            Tambah ke Antrean
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Control Button Group -->
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                    <h2 class="text-lg font-semibold text-textPrimary mb-4 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                        Kontrol Pemanggilan
+                    </h2>
+
+                    <div class="space-y-3">
+                        <!-- Cek Sound Button -->
+                        <button onclick="testSound()" id="btnCheckSound"
+                            class="w-full bg-bgMain hover:bg-primaryLighter border-2 border-borderColor hover:border-primary text-textPrimary py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all">
+                            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                            </svg>
+                            Cek Sound
+                        </button>
+
+                        <!-- Hentikan Pemanggilan Button -->
+                        <button onclick="stopAutoCalling()" id="btnStopCalling"
+                            class="w-full bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-400 text-red-600 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all">
+                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
+                                <rect x="6" y="6" width="12" height="12" rx="2" />
+                            </svg>
+                            Hentikan Pemanggilan
+                        </button>
+
+                        <!-- Mulai Pemanggilan Button -->
+                        <button onclick="startAutoCalling()" id="btnStartCalling"
+                            class="w-full bg-success hover:bg-green-600 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all btn-hover shadow-lg shadow-success/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            Mulai Pemanggilan
+                        </button>
+                    </div>
+
+                    <!-- Status Indicator -->
+                    <div id="callingStatus" class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                        <p class="text-textMuted text-sm font-medium" id="callingStatusText">⏸️ Pemanggilan otomatis
+                            tidak aktif</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Left Navigation Sidebar -->
+    <nav class="nav-sidebar">
+        <!-- Navigation Items Container with Sliding Indicator -->
+        <div class="nav-items-container">
+            <!-- Sliding Active Indicator -->
+            <div class="nav-active-indicator" id="navActiveIndicator"></div>
+
+            <!-- Penjemputan (Active/Home) -->
+            <div class="nav-item active" onclick="navigateTo('penjemputan', 0)" data-page="penjemputan" data-index="0">
+                <span class="nav-tooltip">Penjemputan</span>
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6" />
+                </svg>
+                <span class="nav-label">Penjemputan</span>
+            </div>
+
+            <!-- Riwayat Penjemputan -->
+            <div class="nav-item" onclick="navigateTo('riwayat', 1)" data-page="riwayat" data-index="1">
+                <span class="nav-tooltip">Riwayat Penjemputan</span>
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span class="nav-label">Riwayat</span>
+            </div>
+
+            <!-- Pengaturan Pemanggilan -->
+            <div class="nav-item" onclick="navigateTo('pengaturan', 2)" data-page="pengaturan" data-index="2">
+                <span class="nav-tooltip">Pengaturan Pemanggilan</span>
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span class="nav-label">Pengaturan</span>
+            </div>
+
+            <!-- Jadwal Kepulangan -->
+            <div class="nav-item" onclick="navigateTo('jadwal', 3)" data-page="jadwal" data-index="3">
+                <span class="nav-tooltip">Jadwal Kepulangan</span>
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span class="nav-label">Jadwal</span>
+            </div>
+
+            <!-- Database Siswa -->
+            <div class="nav-item" onclick="navigateTo('database', 4)" data-page="database" data-index="4">
+                <span class="nav-tooltip">Database Siswa</span>
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                </svg>
+                <span class="nav-label">Database</span>
+            </div>
+        </div>
+
+        <!-- Profile Section at Bottom -->
+        <div class="nav-profile" onclick="toggleProfilePopup()">
+            <div class="nav-profile-avatar">
+                <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+            <span class="nav-profile-name">Admin Lobby</span>
+        </div>
+    </nav>
+
+    <!-- Profile Popup Overlay -->
+    <div class="profile-popup-overlay" id="profileOverlay" onclick="closeProfilePopup()"></div>
+
+    <!-- Profile Popup Modal -->
+    <div class="profile-popup" id="profilePopup">
+        <div class="profile-popup-header">
+            <div class="profile-popup-avatar">
+                <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+            </div>
+            <h3 class="profile-popup-name">Admin Lobby</h3>
+            <p class="profile-popup-role">Staff Penjemputan - SDIA 28</p>
+        </div>
+        <div class="profile-popup-content">
+            <div class="profile-popup-item" onclick="openProfile()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                </svg>
+                <span>Lihat Profil</span>
+            </div>
+            <div class="profile-popup-item" onclick="openAccountSettings()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                </svg>
+                <span>Pengaturan Akun</span>
+            </div>
+            <div class="profile-popup-item logout" onclick="logout()">
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+                <span>Keluar</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification -->
+    <div id="toast"
+        class="fixed bottom-6 right-6 bg-textPrimary text-white px-6 py-4 rounded-xl shadow-lg hidden z-50 slide-in">
+        <div class="flex items-center gap-3">
+            <svg class="w-5 h-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
+            </svg>
+            <span id="toastMessage">Berhasil ditambahkan!</span>
+        </div>
+    </div>
+
+    <script>
+        // Dummy Data
+        const students = [
+            { name: "Ahmad Farhan Pratama", class: "Kelas 3A" },
+            { name: "Siti Aisyah Putri", class: "Kelas 2B" },
+            { name: "Muhammad Rizki", class: "Kelas 4C" },
+            { name: "Fatimah Zahra", class: "Kelas 1A" },
+            { name: "Umar Abdullah", class: "Kelas 5B" },
+            { name: "Khadijah Amira", class: "Kelas 3C" },
+            { name: "Yusuf Hakim", class: "Kelas 2A" },
+            { name: "Zainab Salsabila", class: "Kelas 4B" },
+            { name: "Ibrahim Maulana", class: "Kelas 1C" },
+            { name: "Maryam Azzahra", class: "Kelas 5A" },
+            { name: "Hasan Basri", class: "Kelas 3B" },
+            { name: "Hafsa Nurul", class: "Kelas 2C" },
+        ];
+
+        let queue = [
+            { name: "Ahmad Farhan Pratama", class: "Kelas 3A", pickupBy: "Ayah", status: "waiting" },
+            { name: "Siti Aisyah Putri", class: "Kelas 2B", pickupBy: "Ibu", status: "waiting" },
+            { name: "Muhammad Rizki", class: "Kelas 4C", pickupBy: "Kakak", status: "waiting" },
+            { name: "Fatimah Zahra", class: "Kelas 1A", pickupBy: "Ayah", status: "waiting" },
+            { name: "Umar Abdullah", class: "Kelas 5B", pickupBy: "Ibu", status: "waiting" },
+        ];
+
+        let calledCount = 8;
+        let selectedVoice = 'male';
+        let selectedStudent = null;
+
+        // Auto-calling state
+        let isAutoCallingActive = false;
+        let isPaused = false;
+        let isSpeaking = false; // Track if TTS is currently speaking
+        let countdownValue = 5;
+        let countdownInterval = null;
+        const COUNTDOWN_START = 5; // seconds
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', () => {
+            updateQueueList();
+            updateStats();
+            startConnectionSimulation();
+            populateStudentDropdown();
+            updateCountdownUI();
+        });
+
+        // Populate student dropdown
+        function populateStudentDropdown() {
+            const dropdown = document.getElementById('studentDropdown');
+            dropdown.innerHTML = students.map(student => `
+                <div class="px-4 py-3 hover:bg-primaryLighter cursor-pointer border-b border-borderColor last:border-0 transition-colors"
+                    onclick="selectStudent('${student.name}', '${student.class}')">
+                    <p class="font-medium text-textPrimary">${student.name}</p>
+                    <p class="text-sm text-textMuted">${student.class}</p>
+                </div>
+            `).join('');
+        }
+
+        // Show student dropdown
+        function showStudentDropdown() {
+            const dropdown = document.getElementById('studentDropdown');
+            dropdown.classList.remove('hidden');
+        }
+
+        // Hide dropdown when clicking outside
+        document.addEventListener('click', (e) => {
+            const dropdown = document.getElementById('studentDropdown');
+            const input = document.getElementById('inputStudentName');
+            if (!dropdown.contains(e.target) && e.target !== input) {
+                dropdown.classList.add('hidden');
+            }
+        });
+
+        // Select student from dropdown
+        function selectStudent(name, className) {
+            document.getElementById('inputStudentName').value = name;
+            document.getElementById('inputClass').value = className;
+            document.getElementById('studentDropdown').classList.add('hidden');
+            selectedStudent = { name, class: className };
+        }
+
+        // Update queue list UI
+        function updateQueueList() {
+            const queueList = document.getElementById('queueList');
+            queueList.innerHTML = queue.map((item, index) => `
+                <div class="flex items-center gap-4 p-4 bg-bgMain rounded-xl border border-borderColor hover:border-primaryLight transition-all slide-in" style="animation-delay: ${index * 0.05}s">
+                    <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center font-semibold text-primary">
+                        ${index + 1}
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-medium text-textPrimary">${item.name}</p>
+                        <p class="text-sm text-textMuted">${item.class} • Dijemput: ${item.pickupBy}</p>
+                    </div>
+                    <button onclick="removeFromQueue(${index})" class="p-2 text-textMuted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                </div>
+            `).join('');
+
+            document.getElementById('queueListCount').textContent = `${queue.length} siswa menunggu`;
+
+            // Update current queue display
+            if (queue.length > 0) {
+                document.getElementById('currentStudentName').textContent = queue[0].name;
+                document.getElementById('currentStudentClass').textContent = queue[0].class;
+                document.getElementById('currentPickupBy').textContent = queue[0].pickupBy;
+            } else {
+                document.getElementById('currentStudentName').textContent = '-';
+                document.getElementById('currentStudentClass').textContent = '-';
+                document.getElementById('currentPickupBy').textContent = '-';
+            }
+        }
+
+        // Update stats
+        function updateStats() {
+            document.getElementById('waitingCount').textContent = queue.length;
+            document.getElementById('calledCount').textContent = calledCount;
+            document.getElementById('totalCount').textContent = queue.length + calledCount;
+        }
+
+        // Add to queue
+        function addToQueue() {
+            const name = document.getElementById('inputStudentName').value;
+            const className = document.getElementById('inputClass').value;
+            const pickupBy = document.getElementById('inputPickupBy').value;
+
+            if (!name || !className || !pickupBy) {
+                showToast('Mohon lengkapi semua data!', 'error');
+                return;
+            }
+
+            queue.push({ name, class: className, pickupBy, status: 'waiting' });
+            updateQueueList();
+            updateStats();
+
+            // Clear inputs
+            document.getElementById('inputStudentName').value = '';
+            document.getElementById('inputClass').value = '';
+            document.getElementById('inputPickupBy').value = '';
+            selectedStudent = null;
+
+            showToast(`${name} ditambahkan ke antrean!`);
+        }
+
+        // Remove from queue
+        function removeFromQueue(index) {
+            const removed = queue.splice(index, 1)[0];
+            updateQueueList();
+            updateStats();
+            showToast(`${removed.name} dihapus dari antrean!`);
+        }
+
+        // ===============================
+        // AUTO-CALLING FUNCTIONS
+        // ===============================
+
+        function updateCountdownUI() {
+            const countdownDisplay = document.getElementById('countdownDisplay');
+            const pausedButtons = document.getElementById('pausedButtons');
+            const stoppedState = document.getElementById('stoppedState');
+            const statusText = document.getElementById('callingStatusText');
+            const statusDiv = document.getElementById('callingStatus');
+
+            // Hide all states first
+            countdownDisplay.classList.add('hidden');
+            pausedButtons.classList.add('hidden');
+            stoppedState.classList.add('hidden');
+
+            if (!isAutoCallingActive) {
+                // Stopped state
+                stoppedState.classList.remove('hidden');
+                stoppedState.classList.add('flex');
+                statusDiv.className = 'mt-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center';
+                statusText.textContent = '⏸️ Pemanggilan otomatis tidak aktif';
+            } else if (isPaused) {
+                // Paused state - show continue/delete buttons
+                pausedButtons.classList.remove('hidden');
+                pausedButtons.classList.add('flex');
+                statusDiv.className = 'mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-center';
+                statusText.textContent = '⏸️ Pemanggilan dijeda';
+            } else {
+                // Active countdown state
+                countdownDisplay.classList.remove('hidden');
+                document.getElementById('countdownNumber').textContent = countdownValue;
+                statusDiv.className = 'mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center';
+                statusText.textContent = '🔊 Pemanggilan otomatis aktif';
+            }
+        }
+
+        function startAutoCalling() {
+            if (queue.length === 0) {
+                showToast('Tidak ada siswa dalam antrean!', 'error');
+                return;
+            }
+
+            isAutoCallingActive = true;
+            isPaused = false;
+            countdownValue = COUNTDOWN_START;
+            updateCountdownUI();
+            startCountdown();
+            showToast('Pemanggilan otomatis dimulai!');
+        }
+
+        function stopAutoCalling() {
+            isAutoCallingActive = false;
+            isPaused = false;
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+            updateCountdownUI();
+            showToast('Pemanggilan otomatis dihentikan!');
+        }
+
+        function startCountdown() {
+            if (countdownInterval) {
+                clearInterval(countdownInterval);
+            }
+
+            countdownInterval = setInterval(() => {
+                // Don't countdown if paused, not active, or TTS is speaking
+                if (!isAutoCallingActive || isPaused || isSpeaking) {
+                    return;
+                }
+
+                countdownValue--;
+                document.getElementById('countdownNumber').textContent = countdownValue;
+
+                if (countdownValue <= 0) {
+                    // Time to call!
+                    callStudent();
+                    // Note: countdown will resume after TTS finishes via onend callback
+                }
+            }, 1000);
+        }
+
+        function pauseCountdown() {
+            isPaused = true;
+            updateCountdownUI();
+            showToast('Pemanggilan dijeda');
+        }
+
+        function resumeCountdown() {
+            isPaused = false;
+            updateCountdownUI();
+            showToast('Melanjutkan pemanggilan...');
+        }
+
+        function skipStudent() {
+            if (queue.length === 0) return;
+
+            const skipped = queue.shift();
+            updateQueueList();
+            updateStats();
+            showToast(`${skipped.name} dilewati!`);
+
+            // Resume if there are more students
+            if (queue.length > 0) {
+                isPaused = false;
+                countdownValue = COUNTDOWN_START;
+                updateCountdownUI();
+            } else {
+                stopAutoCalling();
+            }
+        }
+
+        // Call student (used by auto-call)
+        function callStudent() {
+            if (queue.length === 0) {
+                showToast('Tidak ada siswa dalam antrean!', 'error');
+                return;
+            }
+
+            const student = queue.shift();
+            calledCount++;
+            updateQueueList();
+            updateStats();
+
+            // TTS call - pass true to indicate this is from auto-call
+            const text = `${student.name}, ${student.class}, silakan menuju lobby, ditunggu oleh ${student.pickupBy}`;
+            speakText(text, true); // true = isAutoCall
+
+            showToast(`Memanggil ${student.name}!`);
+        }
+
+        // Test sound
+        function testSound() {
+            const text = "Test suara, satu dua tiga, ini adalah simulasi pemanggilan otomatis";
+            speakText(text);
+            showToast('🔊 Memutar test suara...');
+        }
+
+        // VoiceRSS API Configuration
+        const VOICERSS_API_KEY = '9895e2680ecf4ffa922e55df81cf271e';
+
+        // Current audio element for TTS
+        let currentAudio = null;
+
+        // Bell sound for announcements
+        const bellSound = new Audio('assets/bell, in.MP3');
+
+        // Speak text using VoiceRSS API
+        // isAutoCall parameter indicates if this is from auto-call feature
+        function speakText(text, isAutoCall = false) {
+            try {
+                // Stop any currently playing audio
+                if (currentAudio) {
+                    currentAudio.pause();
+                    currentAudio.currentTime = 0;
+                    currentAudio = null;
+                }
+
+                // Set speaking state to pause countdown during TTS
+                if (isAutoCall) {
+                    isSpeaking = true;
+                    updateStatusWhileSpeaking();
+                }
+
+                // Build VoiceRSS API URL
+                const encodedText = encodeURIComponent(text);
+                const audioUrl = `https://api.voicerss.org/?key=${VOICERSS_API_KEY}&hl=id-id&src=${encodedText}&c=MP3&f=44khz_16bit_stereo`;
+
+                // Create audio element for TTS
+                const ttsAudio = new Audio(audioUrl);
+
+                // Play bell sound first, then TTS
+                const bell = bellSound.cloneNode();
+                bell.onended = () => {
+                    // After bell finishes, wait 500ms then play TTS
+                    setTimeout(() => {
+                        currentAudio = ttsAudio;
+                        ttsAudio.play().catch(error => {
+                            console.error('TTS Play error:', error);
+                            showToast('Gagal memutar audio TTS', 'error');
+                            if (isAutoCall) {
+                                isSpeaking = false;
+                                if (queue.length > 0 && isAutoCallingActive) {
+                                    countdownValue = COUNTDOWN_START;
+                                    updateCountdownUI();
+                                } else {
+                                    stopAutoCalling();
+                                }
+                            }
+                        });
+                    }, 500); // 500ms delay between bell and TTS
+                };
+
+                bell.onerror = () => {
+                    // If bell fails to play, just play TTS directly
+                    console.warn('Bell sound failed to load, playing TTS directly');
+                    currentAudio = ttsAudio;
+                    ttsAudio.play().catch(error => {
+                        console.error('TTS Play error:', error);
+                        showToast('Gagal memutar audio TTS', 'error');
+                        if (isAutoCall) {
+                            isSpeaking = false;
+                            if (queue.length > 0 && isAutoCallingActive) {
+                                countdownValue = COUNTDOWN_START;
+                                updateCountdownUI();
+                            } else {
+                                stopAutoCalling();
+                            }
+                        }
+                    });
+                };
+
+                // Play bell first
+                bell.play().catch(error => {
+                    console.warn('Bell play error, playing TTS directly:', error);
+                    // If bell fails to play, play TTS directly
+                    currentAudio = ttsAudio;
+                    ttsAudio.play().catch(e => {
+                        console.error('TTS Play error:', e);
+                        if (isAutoCall) {
+                            isSpeaking = false;
+                            if (queue.length > 0 && isAutoCallingActive) {
+                                countdownValue = COUNTDOWN_START;
+                                updateCountdownUI();
+                            } else {
+                                stopAutoCalling();
+                            }
+                        }
+                    });
+                });
+
+                // When TTS finishes, resume countdown for next student
+                ttsAudio.onended = () => {
+                    currentAudio = null;
+                    if (isAutoCall) {
+                        isSpeaking = false;
+
+                        // Start countdown for next student after TTS completes
+                        if (queue.length > 0 && isAutoCallingActive) {
+                            countdownValue = COUNTDOWN_START;
+                            document.getElementById('countdownNumber').textContent = countdownValue;
+                            updateCountdownUI();
+                        } else {
+                            stopAutoCalling();
+                        }
+                    }
+                };
+
+                // Handle TTS audio error
+                ttsAudio.onerror = (e) => {
+                    currentAudio = null;
+                    console.error('Audio playback error:', e);
+                    showToast('Gagal memutar audio TTS', 'error');
+                    if (isAutoCall) {
+                        isSpeaking = false;
+                        // Continue to next student even if TTS fails
+                        if (queue.length > 0 && isAutoCallingActive) {
+                            countdownValue = COUNTDOWN_START;
+                            document.getElementById('countdownNumber').textContent = countdownValue;
+                            updateCountdownUI();
+                        } else {
+                            stopAutoCalling();
+                        }
+                    }
+                };
+
+                // Set bell as current audio to track it
+                currentAudio = bell;
+
+            } catch (error) {
+                console.error('TTS Error:', error);
+                showToast(`TTS Error: ${error.message || error}`, 'error');
+
+                if (isAutoCall) {
+                    isSpeaking = false;
+                    // Continue even if TTS fails
+                    if (queue.length > 0 && isAutoCallingActive) {
+                        countdownValue = COUNTDOWN_START;
+                        updateCountdownUI();
+                    } else {
+                        stopAutoCalling();
+                    }
+                }
+            }
+        }
+
+        // Update status indicator while speaking
+        function updateStatusWhileSpeaking() {
+            const statusText = document.getElementById('callingStatusText');
+            const statusDiv = document.getElementById('callingStatus');
+            statusDiv.className = 'mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-center';
+            statusText.textContent = '🔊 Sedang memanggil siswa...';
+        }
+
+        // Connection speed simulation
+        function startConnectionSimulation() {
+            setInterval(() => {
+                const speed = (Math.random() * 30 + 30).toFixed(1); // 30-60 Mbps
+                document.getElementById('speedText').textContent = `${speed} Mbps`;
+
+                const statusDiv = document.getElementById('connectionStatus');
+                if (parseFloat(speed) > 40) {
+                    statusDiv.className = 'flex items-center gap-2 bg-green-50 border border-green-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-success rounded-full blink';
+                } else if (parseFloat(speed) > 20) {
+                    statusDiv.className = 'flex items-center gap-2 bg-yellow-50 border border-yellow-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-warning rounded-full blink';
+                } else {
+                    statusDiv.className = 'flex items-center gap-2 bg-red-50 border border-red-200 rounded-full px-4 py-2';
+                    statusDiv.querySelector('span:first-child').className = 'w-2 h-2 bg-red-500 rounded-full blink';
+                }
+            }, 2000);
+        }
+
+        // Toast notification
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const toastMsg = document.getElementById('toastMessage');
+
+            toastMsg.textContent = message;
+            toast.classList.remove('hidden');
+
+            if (type === 'error') {
+                toast.querySelector('svg').classList.remove('text-success');
+                toast.querySelector('svg').classList.add('text-red-500');
+            } else {
+                toast.querySelector('svg').classList.remove('text-red-500');
+                toast.querySelector('svg').classList.add('text-success');
+            }
+
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // ===============================
+        // SIDEBAR NAVIGATION FUNCTIONS
+        // ===============================
+
+        // Navigation item height for indicator
+        const ITEM_HEIGHT = 60;
+        const CURRENT_PAGE_INDEX = 0; // Index 0 = Penjemputan (this page)
+
+        function initNavIndicator() {
+            const indicator = document.getElementById('navActiveIndicator');
+            if (!indicator) return;
+
+            // Get previous page index from localStorage
+            const previousIndex = parseInt(localStorage.getItem('navPreviousIndex') || '0');
+
+            // Disable transition initially, set to previous position
+            indicator.style.transition = 'none';
+            indicator.style.transform = `translateY(${previousIndex * ITEM_HEIGHT}px)`;
+
+            // Force reflow to apply the position immediately
+            indicator.offsetHeight;
+
+            // Re-enable transition and animate to current position
+            indicator.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+            // Small delay to ensure the transition is applied
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Show the indicator and animate to current position
+                    indicator.style.opacity = '1';
+                    indicator.style.transform = `translateY(${CURRENT_PAGE_INDEX * ITEM_HEIGHT}px)`;
+                });
+            });
+
+            // Save current position for next navigation
+            localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+        }
+
+        // Call init on page load
+        document.addEventListener('DOMContentLoaded', initNavIndicator);
+
+        function navigateTo(page, index) {
+            // Handle navigation based on page
+            switch (page) {
+                case 'penjemputan':
+                    // Already on this page (index.html)
+                    showToast('📍 Halaman Penjemputan');
+                    break;
+                case 'riwayat':
+                case 'pengaturan':
+                case 'jadwal':
+                case 'database':
+                    // Save current page position before navigating
+                    localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+                    // Navigate to the target page - animation will be handled by target page
+                    window.location.href = page + '.html';
+                    break;
+            }
+        }
+
+        // ===============================
+        // PROFILE POPUP FUNCTIONS
+        // ===============================
+
+        function toggleProfilePopup() {
+            const overlay = document.getElementById('profileOverlay');
+            const popup = document.getElementById('profilePopup');
+
+            if (popup.classList.contains('active')) {
+                closeProfilePopup();
+            } else {
+                overlay.classList.add('active');
+                popup.classList.add('active');
+            }
+        }
+
+        function closeProfilePopup() {
+            const overlay = document.getElementById('profileOverlay');
+            const popup = document.getElementById('profilePopup');
+
+            overlay.classList.remove('active');
+            popup.classList.remove('active');
+        }
+
+        function openProfile() {
+            closeProfilePopup();
+            showToast('👤 Membuka halaman profil...');
+            // Navigate to profile page if it exists
+            // window.location.href = 'profile.html';
+        }
+
+        function openAccountSettings() {
+            closeProfilePopup();
+            showToast('⚙️ Membuka pengaturan akun...');
+            // Navigate to account settings page if it exists
+            // window.location.href = 'account-settings.html';
+        }
+
+        function logout() {
+            closeProfilePopup();
+
+            // Show confirmation dialog
+            if (confirm('Apakah Anda yakin ingin keluar?')) {
+                showToast('👋 Logging out...');
+                // Redirect to login page or clear session
+                setTimeout(() => {
+                    // window.location.href = 'login.html';
+                    showToast('Logged out successfully!');
+                }, 1000);
+            }
+        }
+
+        // Close popup when pressing Escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                closeProfilePopup();
+            }
+        });
+    </script>
+</body>
+
+</html>
