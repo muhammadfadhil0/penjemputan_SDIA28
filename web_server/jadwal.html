@@ -430,6 +430,75 @@
             animation: bounce-out 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
         }
 
+        /* Flip Card Animation */
+        .day-card {
+            transform-style: preserve-3d;
+            backface-visibility: hidden;
+        }
+
+        .day-card.flipping {
+            animation: card-flip 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        @keyframes card-flip {
+            0% {
+                transform: perspective(1000px) rotateY(0deg) scale(1);
+            }
+
+            25% {
+                transform: perspective(1000px) rotateY(0deg) scaleX(0) scale(1.05);
+            }
+
+            50% {
+                transform: perspective(1000px) rotateY(0deg) scaleX(0) scale(1.1);
+            }
+
+            75% {
+                transform: perspective(1000px) rotateY(0deg) scaleX(1) scale(1.05);
+            }
+
+            100% {
+                transform: perspective(1000px) rotateY(0deg) scale(1);
+            }
+        }
+
+        /* Pulse Animation for all cards */
+        @keyframes pulse-glow {
+            0% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0.4);
+            }
+
+            50% {
+                box-shadow: 0 0 20px 10px rgba(59, 130, 246, 0.2);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(59, 130, 246, 0);
+            }
+        }
+
+        @keyframes pulse-glow-holiday {
+            0% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0.5);
+            }
+
+            50% {
+                box-shadow: 0 0 25px 15px rgba(245, 158, 11, 0.3);
+            }
+
+            100% {
+                box-shadow: 0 0 0 0 rgba(245, 158, 11, 0);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse-glow 0.8s ease-out;
+        }
+
+        .pulse-animation-holiday {
+            animation: pulse-glow-holiday 0.8s ease-out;
+        }
+
         /* Modal Styles */
         .modal-overlay {
             position: fixed;
@@ -496,6 +565,99 @@
             width: 100%;
             text-align: center;
             outline: none;
+        }
+
+        /* Holiday Switch Styles */
+        .switch-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 16px;
+            background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+            border: 2px solid #fcd34d;
+            border-radius: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .switch-container.active {
+            background: linear-gradient(135deg, #fde68a 0%, #fbbf24 100%);
+            border-color: #f59e0b;
+        }
+
+        .switch-label {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .switch-label-icon {
+            font-size: 24px;
+        }
+
+        .switch-label-text {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .switch-label-title {
+            font-weight: 600;
+            color: #92400e;
+            font-size: 14px;
+        }
+
+        .switch-label-desc {
+            font-size: 12px;
+            color: #b45309;
+        }
+
+        .switch {
+            position: relative;
+            width: 56px;
+            height: 32px;
+            cursor: pointer;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .switch-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #d97706;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 34px;
+        }
+
+        .switch-slider:before {
+            position: absolute;
+            content: "";
+            height: 24px;
+            width: 24px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: all 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            border-radius: 50%;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+        }
+
+        .switch input:checked+.switch-slider {
+            background-color: #f59e0b;
+        }
+
+        .switch input:checked+.switch-slider:before {
+            transform: translateX(24px);
+        }
+
+        .switch input:focus+.switch-slider {
+            box-shadow: 0 0 0 3px rgba(245, 158, 11, 0.3);
         }
 
         /* Toast Notification */
@@ -900,7 +1062,7 @@
             </div>
 
             <!-- Exit Time -->
-            <div class="mb-6">
+            <div class="mb-5">
                 <label class="block text-sm font-semibold text-textSecondary mb-2">
                     <div class="flex items-center gap-2">
                         <svg class="w-4 h-4 text-warning" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -916,6 +1078,23 @@
                             d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                     </svg>
                     <input type="time" class="time-input" id="exitTimeInput" value="14:00">
+                </div>
+            </div>
+
+            <!-- Holiday Switch -->
+            <div class="mb-6">
+                <div class="switch-container" id="switchContainer">
+                    <div class="switch-label">
+                        <span class="switch-label-icon" id="holidayIcon">🌴</span>
+                        <div class="switch-label-text">
+                            <span class="switch-label-title">Hari Libur</span>
+                            <span class="switch-label-desc" id="holidayDesc">Tandai sebagai hari libur</span>
+                        </div>
+                    </div>
+                    <label class="switch">
+                        <input type="checkbox" id="holidaySwitch" onchange="toggleHoliday()">
+                        <span class="switch-slider"></span>
+                    </label>
                 </div>
             </div>
 
@@ -1174,7 +1353,11 @@
                 for (let classNum = 1; classNum <= 6; classNum++) {
                     schedules[classNum] = {};
                     days.forEach(day => {
-                        schedules[classNum][day.id] = { ...defaultSchedules[classNum] };
+                        schedules[classNum][day.id] = {
+                            ...defaultSchedules[classNum],
+                            // Sabtu dan Minggu default libur
+                            isHoliday: day.isWeekend ? true : false
+                        };
                     });
                 }
             }
@@ -1208,47 +1391,69 @@
             container.innerHTML = '';
 
             days.forEach((day, index) => {
-                const schedule = schedules[selectedClass]?.[day.id] || defaultSchedules[selectedClass];
+                const schedule = schedules[selectedClass]?.[day.id] || {
+                    ...defaultSchedules[selectedClass],
+                    isHoliday: day.isWeekend ? true : false
+                };
                 const isWeekend = day.isWeekend;
+                // Gunakan isHoliday saja untuk styling (termasuk weekend)
+                const isHoliday = schedule.isHoliday !== undefined ? schedule.isHoliday : isWeekend;
+                const showHolidayStyle = isHoliday;
+
+                // Determine icon based on holiday status
+                let displayIcon = day.icon;
+                if (isHoliday) {
+                    // Tampilkan icon liburan untuk semua hari yang libur
+                    displayIcon = index % 2 === 0 ? '\ud83c\udf1e' : '\ud83c\udf34';
+                }
 
                 const card = document.createElement('div');
-                card.className = `day-card ${isWeekend ? 'weekend' : ''} bounce-card`;
+                card.className = `day-card ${showHolidayStyle ? 'weekend' : ''} bounce-card`;
                 card.style.animationDelay = `${index * 0.08}s`;
                 card.onclick = () => openModal(day, schedule);
 
-                card.innerHTML = `
-                    <div class="day-icon ${day.iconBg}" style="background: ${isWeekend ? 'rgba(251, 191, 36, 0.3)' : ''}">
-                        ${day.icon}
+                // Holiday badge if it's a custom holiday (not weekend)
+                const holidayBadge = isHoliday && !isWeekend ? `
+                    <div class="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        LIBUR
                     </div>
-                    <h3 class="text-xl font-bold ${isWeekend ? 'text-amber-800' : 'text-textPrimary'} mb-2">${day.name}</h3>
+                ` : '';
+
+                // Wrap card content in flip container
+                card.innerHTML = `
+                    ${holidayBadge}
+                    <div class="day-icon ${day.iconBg}" style="background: ${showHolidayStyle ? 'rgba(251, 191, 36, 0.3)' : ''}">
+                        ${displayIcon}
+                    </div>
+                    <h3 class="text-xl font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'} mb-2">${day.name}</h3>
                     <div class="space-y-2">
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg ${isWeekend ? 'bg-amber-200' : 'bg-green-100'} flex items-center justify-center">
-                                <svg class="w-4 h-4 ${isWeekend ? 'text-amber-700' : 'text-success'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-8 h-8 rounded-lg ${showHolidayStyle ? 'bg-amber-200' : 'bg-green-100'} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${showHolidayStyle ? 'text-amber-700' : 'text-success'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-xs ${isWeekend ? 'text-amber-600' : 'text-textMuted'}">Masuk</p>
-                                <p class="font-bold ${isWeekend ? 'text-amber-800' : 'text-textPrimary'}">${schedule.entryTime}</p>
+                                <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'}">Masuk</p>
+                                <p class="font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'}">${schedule.entryTime}</p>
                             </div>
                         </div>
                         <div class="flex items-center gap-2">
-                            <div class="w-8 h-8 rounded-lg ${isWeekend ? 'bg-amber-200' : 'bg-orange-100'} flex items-center justify-center">
-                                <svg class="w-4 h-4 ${isWeekend ? 'text-amber-700' : 'text-warning'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <div class="w-8 h-8 rounded-lg ${showHolidayStyle ? 'bg-amber-200' : 'bg-orange-100'} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${showHolidayStyle ? 'text-amber-700' : 'text-warning'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                         d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                                 </svg>
                             </div>
                             <div>
-                                <p class="text-xs ${isWeekend ? 'text-amber-600' : 'text-textMuted'}">Pulang</p>
-                                <p class="font-bold ${isWeekend ? 'text-amber-800' : 'text-textPrimary'}">${schedule.exitTime}</p>
+                                <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'}">Pulang</p>
+                                <p class="font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'}">${schedule.exitTime}</p>
                             </div>
                         </div>
                     </div>
-                    <div class="mt-4 pt-4 border-t ${isWeekend ? 'border-amber-200' : 'border-gray-100'}">
-                        <p class="text-xs ${isWeekend ? 'text-amber-600' : 'text-textMuted'} flex items-center gap-1">
+                    <div class="mt-4 pt-4 border-t ${showHolidayStyle ? 'border-amber-200' : 'border-gray-100'}">
+                        <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'} flex items-center gap-1">
                             <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
@@ -1271,6 +1476,10 @@
             const modalClassName = document.getElementById('modalClassName');
             const entryTimeInput = document.getElementById('entryTimeInput');
             const exitTimeInput = document.getElementById('exitTimeInput');
+            const holidaySwitch = document.getElementById('holidaySwitch');
+            const switchContainer = document.getElementById('switchContainer');
+            const holidayIcon = document.getElementById('holidayIcon');
+            const holidayDesc = document.getElementById('holidayDesc');
 
             modalDayIcon.textContent = day.icon;
             modalDayIcon.style.background = day.isWeekend ? 'rgba(251, 191, 36, 0.3)' : '';
@@ -1279,8 +1488,36 @@
             entryTimeInput.value = schedule.entryTime;
             exitTimeInput.value = schedule.exitTime;
 
+            // Set holiday switch state - weekend days default to holiday true
+            const isHoliday = schedule.isHoliday !== undefined ? schedule.isHoliday : day.isWeekend;
+            holidaySwitch.checked = isHoliday;
+            updateHolidaySwitchUI(isHoliday);
+
             modal.classList.remove('closing');
             modal.classList.add('active');
+        }
+
+        // Toggle holiday switch
+        function toggleHoliday() {
+            const holidaySwitch = document.getElementById('holidaySwitch');
+            updateHolidaySwitchUI(holidaySwitch.checked);
+        }
+
+        // Update holiday switch UI
+        function updateHolidaySwitchUI(isActive) {
+            const switchContainer = document.getElementById('switchContainer');
+            const holidayIcon = document.getElementById('holidayIcon');
+            const holidayDesc = document.getElementById('holidayDesc');
+
+            if (isActive) {
+                switchContainer.classList.add('active');
+                holidayIcon.textContent = '🌞';
+                holidayDesc.textContent = 'Hari ini ditandai libur';
+            } else {
+                switchContainer.classList.remove('active');
+                holidayIcon.textContent = '🌴';
+                holidayDesc.textContent = 'Tandai sebagai hari libur';
+            }
         }
 
         // Close modal
@@ -1300,12 +1537,18 @@
             }
         }
 
-        // Save schedule
+        // Save schedule with animations
         function saveSchedule() {
             if (!selectedDay) return;
 
             const entryTime = document.getElementById('entryTimeInput').value;
             const exitTime = document.getElementById('exitTimeInput').value;
+            const isHoliday = document.getElementById('holidaySwitch').checked;
+
+            // Get old holiday state to check if it changed
+            const oldSchedule = schedules[selectedClass]?.[selectedDay.id];
+            const wasHoliday = oldSchedule?.isHoliday || false;
+            const holidayChanged = wasHoliday !== isHoliday;
 
             if (!schedules[selectedClass]) {
                 schedules[selectedClass] = {};
@@ -1313,13 +1556,117 @@
 
             schedules[selectedClass][selectedDay.id] = {
                 entryTime,
-                exitTime
+                exitTime,
+                isHoliday
             };
 
             saveSchedulesToStorage();
-            renderDayCards();
+
+            // Close modal first
             closeModal();
-            showToast(`Jadwal ${selectedDay.name} Kelas ${selectedClass} berhasil disimpan!`);
+
+            // Render cards after modal animation
+            setTimeout(() => {
+                renderDayCardsWithAnimation(selectedDay.id, isHoliday, holidayChanged);
+            }, 200);
+
+            const statusText = isHoliday ? ' (Libur)' : '';
+            showToast(`Jadwal ${selectedDay.name} Kelas ${selectedClass}${statusText} berhasil disimpan!`);
+        }
+
+        // Render day cards with flip and pulse animation
+        function renderDayCardsWithAnimation(changedDayId, isHoliday, holidayChanged) {
+            const container = document.getElementById('dayCardsContainer');
+            container.innerHTML = '';
+
+            days.forEach((day, index) => {
+                const schedule = schedules[selectedClass]?.[day.id] || {
+                    ...defaultSchedules[selectedClass],
+                    isHoliday: day.isWeekend ? true : false
+                };
+                const isWeekend = day.isWeekend;
+                // Gunakan isHoliday saja untuk styling (termasuk weekend)
+                const dayIsHoliday = schedule.isHoliday !== undefined ? schedule.isHoliday : isWeekend;
+                const showHolidayStyle = dayIsHoliday;
+
+                // Determine icon based on holiday status
+                let displayIcon = day.icon;
+                if (dayIsHoliday) {
+                    // Tampilkan icon liburan untuk semua hari yang libur
+                    displayIcon = index % 2 === 0 ? '\ud83c\udf1e' : '\ud83c\udf34';
+                }
+
+                const card = document.createElement('div');
+                const isChangedCard = day.id === changedDayId;
+
+                // Apply flipping class to the card itself when holiday status changed
+                const flipClass = isChangedCard && holidayChanged ? 'flipping' : '';
+                card.className = `day-card ${showHolidayStyle ? 'weekend' : ''} ${flipClass}`.trim();
+                card.onclick = () => openModal(day, schedule);
+
+                // Holiday badge if it's a custom holiday (not weekend)
+                const holidayBadge = dayIsHoliday && !isWeekend ? `
+                    <div class="absolute top-3 right-3 bg-amber-500 text-white text-xs font-bold px-2 py-1 rounded-full">
+                        LIBUR
+                    </div>
+                ` : '';
+
+                card.innerHTML = `
+                    ${holidayBadge}
+                    <div class="day-icon ${day.iconBg}" style="background: ${showHolidayStyle ? 'rgba(251, 191, 36, 0.3)' : ''}">
+                        ${displayIcon}
+                    </div>
+                    <h3 class="text-xl font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'} mb-2">${day.name}</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg ${showHolidayStyle ? 'bg-amber-200' : 'bg-green-100'} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${showHolidayStyle ? 'text-amber-700' : 'text-success'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'}">Masuk</p>
+                                <p class="font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'}">${schedule.entryTime}</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <div class="w-8 h-8 rounded-lg ${showHolidayStyle ? 'bg-amber-200' : 'bg-orange-100'} flex items-center justify-center">
+                                <svg class="w-4 h-4 ${showHolidayStyle ? 'text-amber-700' : 'text-warning'}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                                </svg>
+                            </div>
+                            <div>
+                                <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'}">Pulang</p>
+                                <p class="font-bold ${showHolidayStyle ? 'text-amber-800' : 'text-textPrimary'}">${schedule.exitTime}</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="mt-4 pt-4 border-t ${showHolidayStyle ? 'border-amber-200' : 'border-gray-100'}">
+                        <p class="text-xs ${showHolidayStyle ? 'text-amber-600' : 'text-textMuted'} flex items-center gap-1">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            Klik untuk edit
+                        </p>
+                    </div>
+                `;
+
+                container.appendChild(card);
+
+                // Add pulse animation to all cards with staggered delay
+                setTimeout(() => {
+                    const pulseClass = showHolidayStyle ? 'pulse-animation-holiday' : 'pulse-animation';
+                    card.classList.add(pulseClass);
+
+                    // Remove pulse class after animation completes
+                    setTimeout(() => {
+                        card.classList.remove(pulseClass);
+                    }, 800);
+                }, index * 100);
+            });
         }
 
         // Show toast notification
