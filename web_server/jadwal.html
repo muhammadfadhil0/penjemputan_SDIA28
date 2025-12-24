@@ -1029,6 +1029,74 @@
         }
 
         // ===============================
+        // SIDEBAR NAVIGATION FUNCTIONS
+        // ===============================
+
+        // Navigation item height for indicator
+        const ITEM_HEIGHT = 60;
+        const CURRENT_PAGE_INDEX = 3; // Index 3 = Jadwal (this page)
+
+        function initNavIndicator() {
+            const indicator = document.getElementById('navActiveIndicator');
+            if (!indicator) return;
+
+            // Get previous page index from localStorage
+            const previousIndex = parseInt(localStorage.getItem('navPreviousIndex') || '0');
+
+            // Disable transition initially, set to previous position
+            indicator.style.transition = 'none';
+            indicator.style.transform = `translateY(${previousIndex * ITEM_HEIGHT}px)`;
+
+            // Force reflow to apply the position immediately
+            indicator.offsetHeight;
+
+            // Re-enable transition and animate to current position
+            indicator.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
+
+            // Small delay to ensure the transition is applied
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    // Show the indicator and animate to current position
+                    indicator.style.opacity = '1';
+                    indicator.style.transform = `translateY(${CURRENT_PAGE_INDEX * ITEM_HEIGHT}px)`;
+                });
+            });
+
+            // Save current position for next navigation
+            localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+
+            // Setup click handlers to save position before navigation
+            setupNavClickHandlers();
+        }
+
+        // Setup click handlers for navigation items to save position before leaving
+        function setupNavClickHandlers() {
+            const navItems = document.querySelectorAll('.nav-item');
+            navItems.forEach(item => {
+                item.addEventListener('click', function (e) {
+                    // Prevent default anchor navigation
+                    e.preventDefault();
+
+                    const targetPage = this.getAttribute('data-page');
+                    const href = this.getAttribute('href');
+
+                    // Save current position before navigating
+                    localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+
+                    // If it's the current page, don't navigate
+                    if (targetPage === 'jadwal') {
+                        return;
+                    }
+
+                    // Navigate to the target page
+                    if (href) {
+                        window.location.href = href;
+                    }
+                });
+            });
+        }
+
+        // ===============================
         // PROFILE POPUP FUNCTIONS
         // ===============================
 
@@ -1083,56 +1151,6 @@
                 closeProfilePopup();
             }
         });
-
-        // Initialize nav indicator position (index 3 = Jadwal)
-        const ITEM_HEIGHT = 60;
-        const CURRENT_PAGE_INDEX = 3; // Index 3 = Jadwal (this page)
-
-        function initNavIndicator() {
-            const indicator = document.getElementById('navActiveIndicator');
-            if (!indicator) return;
-
-            // Get previous page index from localStorage
-            const previousIndex = parseInt(localStorage.getItem('navPreviousIndex') || '0');
-
-            // Disable transition initially, set to previous position
-            indicator.style.transition = 'none';
-            indicator.style.transform = `translateY(${previousIndex * ITEM_HEIGHT}px)`;
-
-            // Force reflow to apply the position immediately
-            indicator.offsetHeight;
-
-            // Re-enable transition and animate to current position
-            indicator.style.transition = 'transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)';
-
-            // Small delay to ensure the transition is applied
-            requestAnimationFrame(() => {
-                requestAnimationFrame(() => {
-                    // Show the indicator and animate to current position
-                    indicator.style.opacity = '1';
-                    indicator.style.transform = `translateY(${CURRENT_PAGE_INDEX * ITEM_HEIGHT}px)`;
-                });
-            });
-
-            // Save current position for next navigation
-            localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
-
-            // Setup click handlers to save position before navigation
-            setupNavClickHandlers();
-        }
-
-        // Setup click handlers for navigation items to save position before leaving
-        function setupNavClickHandlers() {
-            const navItems = document.querySelectorAll('.nav-item');
-            navItems.forEach(item => {
-                item.addEventListener('click', function (e) {
-                    const index = this.getAttribute('data-index');
-                    if (index !== null) {
-                        localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
-                    }
-                });
-            });
-        }
 
         // Initialize segmented indicator
         function initSegmentedIndicator() {

@@ -780,9 +780,23 @@
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
                 item.addEventListener('click', function (e) {
-                    const index = this.getAttribute('data-index');
-                    if (index !== null) {
-                        localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+                    // Prevent default anchor navigation
+                    e.preventDefault();
+
+                    const targetPage = this.getAttribute('data-page');
+                    const href = this.getAttribute('href');
+
+                    // Save current position before navigating
+                    localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
+
+                    // If it's the current page, don't navigate
+                    if (targetPage === 'riwayat') {
+                        return;
+                    }
+
+                    // Navigate to the target page
+                    if (href) {
+                        window.location.href = href;
                     }
                 });
             });
