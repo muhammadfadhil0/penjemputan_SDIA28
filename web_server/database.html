@@ -813,20 +813,104 @@
         </div>
     </div>
 
+    <!-- Manual Form Modal (Add/Edit Student) -->
+    <div class="modal-overlay" id="manualFormModal" onclick="closeManualModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-textPrimary" id="manualModalTitle">Tambah Siswa Baru</h3>
+                    <p class="text-sm text-textMuted mt-1">Lengkapi informasi siswa</p>
+                </div>
+                <button onclick="closeManualModal()"
+                    class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:rotate-90">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Form Fields -->
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-textSecondary mb-2">Nama Lengkap *</label>
+                    <input type="text" id="studentName" placeholder="Masukkan nama lengkap siswa"
+                        class="w-full px-4 py-3 border border-borderColor rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-textSecondary mb-2">Nama Panggilan</label>
+                    <input type="text" id="studentNickname" placeholder="Masukkan nama panggilan (opsional)"
+                        class="w-full px-4 py-3 border border-borderColor rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all">
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-textSecondary mb-2">Kelas *</label>
+                    <select id="studentClass"
+                        class="w-full px-4 py-3 border border-borderColor rounded-xl focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all bg-white">
+                        <option value="">Pilih Kelas</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- Action Buttons -->
+            <div class="flex gap-3 mt-6">
+                <button onclick="closeManualModal()"
+                    class="flex-1 px-6 py-3 border border-borderColor text-textSecondary rounded-xl font-semibold hover:bg-gray-50 transition-all">
+                    Batal
+                </button>
+                <button onclick="saveStudent()"
+                    class="flex-1 px-6 py-3 bg-primary text-white rounded-xl font-semibold hover:bg-blue-600 transition-all shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40">
+                    Simpan
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete Confirmation Modal -->
+    <div class="modal-overlay" id="deleteConfirmModal" onclick="closeDeleteModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="text-center">
+                <div class="w-16 h-16 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-8 h-8 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-textPrimary mb-2">Hapus Siswa?</h3>
+                <p class="text-textSecondary mb-1">Anda akan menghapus data siswa:</p>
+                <p class="text-lg font-semibold text-textPrimary mb-6" id="deleteStudentName">-</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeDeleteModal()"
+                    class="flex-1 px-6 py-3 border border-borderColor text-textSecondary rounded-xl font-semibold hover:bg-gray-50 transition-all">
+                    Batal
+                </button>
+                <button onclick="confirmDelete()"
+                    class="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40">
+                    Hapus
+                </button>
+            </div>
+        </div>
+    </div>
+
     <script>
-        // Sample Data
-        const students = [
-            { id: 1, name: "Muhammad Faiz Rahman", nickname: "Faiz", class: "3A", color: "bg-primaryLighter text-primary" },
-            { id: 2, name: "Siti Nurhaliza Putri", nickname: "Liza", class: "4B", color: "bg-green-100 text-success" },
-            { id: 3, name: "Ahmad Zaki Mubarak", nickname: "Zaki", class: "5A", color: "bg-orange-100 text-warning" },
-        ];
+        // API Base URL
+        const API_BASE = 'service/database';
+
+        // Data Storage
+        let students = [];
+        let classes = [];
+        let editingStudentId = null;
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             loadUserInfo();
             initNavIndicator();
-            renderStudents();
+            loadClasses();
+            loadStudents();
         });
 
         // Check if user is authenticated
@@ -845,21 +929,17 @@
                 const displayName = user.nama || 'Admin';
                 const displayRole = getRoleDisplay(user.role);
 
-                // Update sidebar name
                 const sidebarName = document.getElementById('sidebarUserName');
                 if (sidebarName) sidebarName.textContent = displayName;
 
-                // Update popup name
                 const popupName = document.getElementById('popupUserName');
                 if (popupName) popupName.textContent = displayName;
 
-                // Update popup role
                 const popupRole = document.getElementById('popupUserRole');
                 if (popupRole) popupRole.textContent = displayRole;
             }
         }
 
-        // Get display text for role
         function getRoleDisplay(role) {
             switch (role) {
                 case 'teacher':
@@ -868,6 +948,133 @@
                     return 'Viewer Kelas - SDIA 28';
                 default:
                     return 'Staff Penjemputan - SDIA 28';
+            }
+        }
+
+        // ===============================
+        // API FUNCTIONS
+        // ===============================
+
+        async function loadStudents() {
+            try {
+                const response = await fetch(`${API_BASE}/get_siswa.php`);
+                const result = await response.json();
+
+                if (result.success) {
+                    students = result.data;
+                    renderStudents();
+                } else {
+                    console.error('Failed to load students:', result.message);
+                    showToast('Gagal memuat data siswa', 'error');
+                }
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showToast('Error koneksi ke server', 'error');
+            }
+        }
+
+        async function loadClasses() {
+            try {
+                const response = await fetch(`${API_BASE}/get_kelas.php`);
+                const result = await response.json();
+
+                if (result.success) {
+                    classes = result.data;
+                    populateClassDropdown();
+                } else {
+                    console.error('Failed to load classes:', result.message);
+                }
+            } catch (error) {
+                console.error('Error loading classes:', error);
+            }
+        }
+
+        function populateClassDropdown() {
+            const select = document.getElementById('studentClass');
+            if (!select) return;
+
+            select.innerHTML = '<option value="">Pilih Kelas</option>';
+            classes.forEach(kelas => {
+                const option = document.createElement('option');
+                option.value = kelas.id;
+                option.textContent = kelas.nama_kelas;
+                select.appendChild(option);
+            });
+        }
+
+        async function saveStudent() {
+            const nama = document.getElementById('studentName').value.trim();
+            const namaPanggilan = document.getElementById('studentNickname').value.trim();
+            const kelasId = document.getElementById('studentClass').value;
+
+            if (!nama) {
+                showToast('Nama siswa harus diisi', 'error');
+                return;
+            }
+
+            if (!kelasId) {
+                showToast('Kelas harus dipilih', 'error');
+                return;
+            }
+
+            const data = {
+                nama: nama,
+                nama_panggilan: namaPanggilan,
+                kelas_id: parseInt(kelasId)
+            };
+
+            try {
+                let url = `${API_BASE}/add_siswa.php`;
+                if (editingStudentId) {
+                    url = `${API_BASE}/edit_siswa.php`;
+                    data.id = editingStudentId;
+                }
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(data)
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast(editingStudentId ? 'Siswa berhasil diupdate!' : 'Siswa berhasil ditambahkan!', 'success');
+                    closeManualModal();
+                    loadStudents();
+                } else {
+                    showToast(result.message || 'Gagal menyimpan data', 'error');
+                }
+            } catch (error) {
+                console.error('Error saving student:', error);
+                showToast('Error koneksi ke server', 'error');
+            }
+        }
+
+        async function confirmDeleteStudent(id) {
+            try {
+                const response = await fetch(`${API_BASE}/delete_siswa.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ id: id })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    showToast('Siswa berhasil dihapus!', 'success');
+                    closeDeleteModal();
+                    loadStudents();
+                } else {
+                    showToast(result.message || 'Gagal menghapus siswa', 'error');
+                }
+            } catch (error) {
+                console.error('Error deleting student:', error);
+                showToast('Error koneksi ke server', 'error');
             }
         }
 
@@ -897,20 +1104,16 @@
 
         function openProfile() {
             closeProfilePopup();
-            console.log('👤 Membuka halaman profil...');
         }
 
         function openAccountSettings() {
             closeProfilePopup();
-            console.log('⚙️ Membuka pengaturan akun...');
         }
 
         function logout() {
             closeProfilePopup();
 
             if (confirm('Apakah Anda yakin ingin keluar?')) {
-                console.log('👋 Keluar dari akun...');
-
                 localStorage.removeItem('user');
                 localStorage.removeItem('isLoggedIn');
 
@@ -920,26 +1123,62 @@
             }
         }
 
-        // Close popup on Escape key
         document.addEventListener('keydown', (e) => {
             if (e.key === 'Escape') {
                 closeProfilePopup();
+                closeAddModal();
+                closeManualModal();
+                closeDeleteModal();
             }
         });
 
-        // Render Students Table with Animation
+        // ===============================
+        // RENDER FUNCTIONS
+        // ===============================
+
+        function getClassColor(namaKelas) {
+            const tingkat = parseInt(namaKelas);
+            const colors = {
+                1: 'bg-pink-100 text-pink-600',
+                2: 'bg-purple-100 text-purple-600',
+                3: 'bg-primaryLighter text-primary',
+                4: 'bg-green-100 text-success',
+                5: 'bg-orange-100 text-warning',
+                6: 'bg-red-100 text-red-600',
+            };
+            return colors[tingkat] || 'bg-gray-100 text-gray-600';
+        }
+
         function renderStudents() {
             const tbody = document.getElementById('studentsTableBody');
             const totalCount = document.getElementById('totalStudents');
 
             totalCount.textContent = students.length;
 
+            if (students.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="4" class="px-6 py-12 text-center">
+                            <div class="text-textMuted">
+                                <svg class="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
+                                </svg>
+                                <p>Belum ada data siswa</p>
+                                <p class="text-sm mt-1">Klik tombol "Tambah" untuk menambahkan siswa baru</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
             tbody.innerHTML = students.map((student, index) => `
-                <tr class="student-row slide-in" style="animation-delay: ${index * 0.1}s">
-                    <td class="px-6 py-4 text-sm font-medium text-textPrimary">${student.name}</td>
-                    <td class="px-6 py-4 text-sm text-textSecondary">${student.nickname}</td>
+                <tr class="student-row slide-in" style="animation-delay: ${index * 0.05}s">
+                    <td class="px-6 py-4 text-sm font-medium text-textPrimary">${student.nama}</td>
+                    <td class="px-6 py-4 text-sm text-textSecondary">${student.nama_panggilan || '-'}</td>
                     <td class="px-6 py-4 text-sm">
-                        <span class="${student.color} px-3 py-1 rounded-full font-medium">${student.class}</span>
+                        <span class="${getClassColor(student.nama_kelas)} px-3 py-1 rounded-full font-medium">${student.nama_kelas}</span>
                     </td>
                     <td class="row-actions">
                         <button class="action-btn edit" onclick="editStudent(${student.id})">
@@ -961,10 +1200,12 @@
             `).join('');
         }
 
+        // ===============================
+        // NAVIGATION INDICATOR
+        // ===============================
 
-        // Navigation indicator
         const ITEM_HEIGHT = 60;
-        const CURRENT_PAGE_INDEX = 4; // Index 4 = Database (this page)
+        const CURRENT_PAGE_INDEX = 4;
 
         function initNavIndicator() {
             const indicator = document.getElementById('navActiveIndicator');
@@ -993,21 +1234,17 @@
             const navItems = document.querySelectorAll('.nav-item');
             navItems.forEach(item => {
                 item.addEventListener('click', function (e) {
-                    // Prevent default anchor navigation
                     e.preventDefault();
 
                     const targetPage = this.getAttribute('data-page');
                     const href = this.getAttribute('href');
 
-                    // Save current position before navigating
                     localStorage.setItem('navPreviousIndex', CURRENT_PAGE_INDEX.toString());
 
-                    // If it's the current page, don't navigate
                     if (targetPage === 'database') {
                         return;
                     }
 
-                    // Navigate to the target page
                     if (href) {
                         window.location.href = href;
                     }
@@ -1015,7 +1252,10 @@
             });
         }
 
-        // Modal functions
+        // ===============================
+        // MODAL FUNCTIONS
+        // ===============================
+
         function showAddModal() {
             const modal = document.getElementById('addMethodModal');
             modal.classList.remove('closing');
@@ -1040,82 +1280,136 @@
         function selectAddMethod(method) {
             closeAddModal();
             if (method === 'manual') {
-                console.log('Open manual add form');
-                // TODO: Show manual add form
+                editingStudentId = null;
+                document.getElementById('manualModalTitle').textContent = 'Tambah Siswa Baru';
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentNickname').value = '';
+                document.getElementById('studentClass').value = '';
+                showManualModal();
             } else if (method === 'excel') {
-                console.log('Open excel upload');
-                // TODO: Show excel upload dialog
+                showToast('Fitur import Excel akan segera hadir!', 'info');
+            }
+        }
+
+        function showManualModal() {
+            const modal = document.getElementById('manualFormModal');
+            modal.classList.remove('closing');
+            modal.classList.add('active');
+        }
+
+        function closeManualModal() {
+            const modal = document.getElementById('manualFormModal');
+            modal.classList.add('closing');
+
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+                editingStudentId = null;
+            }, 300);
+        }
+
+        function closeManualModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeManualModal();
             }
         }
 
         function editStudent(id) {
-            console.log('Edit student:', id);
-            // TODO: Show edit form
+            const student = students.find(s => s.id === id);
+            if (!student) {
+                showToast('Siswa tidak ditemukan', 'error');
+                return;
+            }
+
+            editingStudentId = id;
+            document.getElementById('manualModalTitle').textContent = 'Edit Data Siswa';
+            document.getElementById('studentName').value = student.nama;
+            document.getElementById('studentNickname').value = student.nama_panggilan || '';
+            document.getElementById('studentClass').value = student.kelas_id;
+            showManualModal();
         }
+
+        let deletingStudentId = null;
 
         function deleteStudent(id) {
-            console.log('Delete student:', id);
-            // TODO: Show delete confirmation
+            const student = students.find(s => s.id === id);
+            if (!student) {
+                showToast('Siswa tidak ditemukan', 'error');
+                return;
+            }
+
+            deletingStudentId = id;
+            document.getElementById('deleteStudentName').textContent = student.nama;
+            showDeleteModal();
+        }
+
+        function showDeleteModal() {
+            const modal = document.getElementById('deleteConfirmModal');
+            modal.classList.remove('closing');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteModal() {
+            const modal = document.getElementById('deleteConfirmModal');
+            modal.classList.add('closing');
+
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+                deletingStudentId = null;
+            }, 300);
+        }
+
+        function closeDeleteModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeDeleteModal();
+            }
+        }
+
+        function confirmDelete() {
+            if (deletingStudentId) {
+                confirmDeleteStudent(deletingStudentId);
+            }
         }
 
         // ===============================
-        // PROFILE POPUP FUNCTIONS
+        // TOAST NOTIFICATION
         // ===============================
 
-        function toggleProfilePopup() {
-            const overlay = document.getElementById('profileOverlay');
-            const popup = document.getElementById('profilePopup');
-
-            if (popup.classList.contains('active')) {
-                closeProfilePopup();
-            } else {
-                overlay.classList.add('active');
-                popup.classList.add('active');
+        function showToast(message, type = 'info') {
+            const existingToast = document.querySelector('.toast-notification');
+            if (existingToast) {
+                existingToast.remove();
             }
+
+            const toast = document.createElement('div');
+            toast.className = 'toast-notification';
+
+            const bgColor = type === 'success' ? 'bg-success' : type === 'error' ? 'bg-red-500' : 'bg-primary';
+
+            toast.innerHTML = `
+                <div class="fixed bottom-6 right-6 ${bgColor} text-white px-6 py-3 rounded-xl shadow-lg z-[200] flex items-center gap-3 bounce-in">
+                    ${type === 'success' ? `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                    ` : type === 'error' ? `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    ` : `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    `}
+                    <span class="font-medium">${message}</span>
+                </div>
+            `;
+
+            document.body.appendChild(toast);
+
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
         }
-
-        function closeProfilePopup() {
-            const overlay = document.getElementById('profileOverlay');
-            const popup = document.getElementById('profilePopup');
-
-            overlay.classList.remove('active');
-            popup.classList.remove('active');
-        }
-
-        function openProfile() {
-            closeProfilePopup();
-            // showToast('👤 Membuka halaman profil...');
-            // Navigate to profile page if it exists
-            // window.location.href = 'profile.html';
-        }
-
-        function openAccountSettings() {
-            closeProfilePopup();
-            // showToast('⚙️ Membuka pengaturan akun...');
-            // Navigate to account settings page if it exists
-            // window.location.href = 'account-settings.html';
-        }
-
-        function logout() {
-            closeProfilePopup();
-
-            // Show confirmation dialog
-            if (confirm('Apakah Anda yakin ingin keluar?')) {
-                // Hapus data sesi dari localStorage
-                localStorage.removeItem('user');
-                localStorage.removeItem('isLoggedIn');
-
-                // Redirect ke halaman login
-                window.location.href = 'login.html';
-            }
-        }
-
-        // Close popup when pressing Escape key
-        document.addEventListener('keydown', (e) => {
-            if (e.key === 'Escape') {
-                closeProfilePopup();
-            }
-        });
     </script>
 </body>
 
