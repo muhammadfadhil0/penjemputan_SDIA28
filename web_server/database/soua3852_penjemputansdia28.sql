@@ -172,6 +172,10 @@ CREATE TABLE `siswa` (
   `nama_panggilan` varchar(50) DEFAULT NULL,
   `kelas_id` int(11) NOT NULL,
   `foto_url` varchar(255) DEFAULT NULL,
+  `username` varchar(50) NOT NULL,
+  `password` varchar(100) NOT NULL,
+  `no_telepon_ortu` varchar(20) DEFAULT NULL,
+  `last_pickup_request` timestamp NULL DEFAULT NULL COMMENT 'Untuk fitur cooldown 10 menit',
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -179,12 +183,12 @@ CREATE TABLE `siswa` (
 -- Dumping data for table `siswa`
 --
 
-INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `created_at`) VALUES
-(1, 'Ahmad Farhan Pratama', 'Farhan', 5, NULL, '2025-12-22 08:51:20'),
-(2, 'Aisyah Putri Ramadhani', 'Aisyah', 5, NULL, '2025-12-22 08:51:20'),
-(3, 'Budi Santoso', 'Budi', 5, NULL, '2025-12-22 08:51:20'),
-(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, '2025-12-22 08:51:20'),
-(5, 'Dimas Prasetya', 'Dimas', 5, NULL, '2025-12-22 08:51:20');
+INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `created_at`) VALUES
+(1, 'Ahmad Farhan Pratama', 'Farhan', 5, NULL, 'siswa_farhan', 'siswa123', '081234567892', '2025-12-22 08:51:20'),
+(2, 'Aisyah Putri Ramadhani', 'Aisyah', 5, NULL, 'siswa_aisyah', 'siswa123', '081234567893', '2025-12-22 08:51:20'),
+(3, 'Budi Santoso', 'Budi', 5, NULL, 'siswa_budi', 'siswa123', '081234567894', '2025-12-22 08:51:20'),
+(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, 'siswa_citra', 'siswa123', '081234567895', '2025-12-22 08:51:20'),
+(5, 'Dimas Prasetya', 'Dimas', 5, NULL, 'siswa_dimas', 'siswa123', '081234567896', '2025-12-22 08:51:20');
 
 -- --------------------------------------------------------
 
@@ -211,10 +215,9 @@ CREATE TABLE `users` (
   `id` int(11) NOT NULL,
   `username` varchar(50) NOT NULL,
   `password` varchar(100) NOT NULL,
-  `role` enum('parent','teacher','class_viewer') NOT NULL DEFAULT 'parent',
+  `role` enum('guru','class_viewer') NOT NULL DEFAULT 'guru',
   `nama` varchar(100) NOT NULL,
   `no_telepon` varchar(20) DEFAULT NULL,
-  `last_pickup_request` timestamp NULL DEFAULT NULL COMMENT 'Untuk fitur cooldown 10 menit',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -223,11 +226,9 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `last_pickup_request`, `created_at`, `updated_at`) VALUES
-(1, 'siri.rofikah', 'guru123', 'teacher', 'Siri Rofikah S.Pd', '081234567890', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(2, 'ahmad.fadil', 'guru123', 'teacher', 'Ahmad Fadil S.Pd', '081234567891', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(3, 'bapak.farhan', 'ortu123', 'parent', 'Bapak Farhan', '081234567892', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(4, 'ibu.farhan', 'ortu123', 'parent', 'Ibu Farhan', '081234567893', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `created_at`, `updated_at`) VALUES
+(1, 'siri.rofikah', 'guru123', 'guru', 'Siri Rofikah S.Pd', '081234567890', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
+(2, 'ahmad.fadil', 'guru123', 'guru', 'Ahmad Fadil S.Pd', '081234567891', '2025-12-22 08:51:20', '2025-12-22 08:51:20');
 
 -- --------------------------------------------------------
 

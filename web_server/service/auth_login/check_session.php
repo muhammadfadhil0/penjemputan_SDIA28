@@ -51,7 +51,7 @@ if ($user_id <= 0 || empty($username)) {
 // Verifikasi user di database
 $query = "SELECT id, username, nama, role, no_telepon 
           FROM users 
-          WHERE id = ? AND username = ? AND role IN ('teacher', 'class_viewer')";
+          WHERE id = ? AND username = ? AND role IN ('guru', 'class_viewer')";
 
 $stmt = mysqli_prepare($conn, $query);
 

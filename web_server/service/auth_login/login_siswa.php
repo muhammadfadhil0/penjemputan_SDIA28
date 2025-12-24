@@ -1,9 +1,10 @@
 <?php
 /**
- * Backend Login - SDIA 28 Sistem Penjemputan
- * File: service/auth_login/login.php
+ * Backend Login Siswa - SDIA 28 Sistem Penjemputan
+ * File: service/auth_login/login_siswa.php
  * 
- * Endpoint untuk proses autentikasi user (guru piket)
+ * Endpoint untuk proses autentikasi siswa (dipakai orang tua login via akun siswa)
+ * Khusus untuk Flutter App
  */
 
 // Set header untuk response JSON dan CORS
@@ -56,11 +57,13 @@ if (empty($username) || empty($password)) {
     exit();
 }
 
-// Query untuk mencari user
-// Catatan: Untuk produksi, gunakan password_hash() dan password_verify()
-$query = "SELECT id, username, password, role, nama, no_telepon 
-          FROM users 
-          WHERE username = ? AND role IN ('guru', 'class_viewer')";
+// Query untuk mencari siswa dengan join ke kelas
+$query = "SELECT s.id, s.nama, s.nama_panggilan, s.username, s.password, 
+                 s.kelas_id, s.foto_url, s.no_telepon_ortu,
+                 k.nama_kelas, k.tingkat
+          FROM siswa s
+          JOIN kelas k ON s.kelas_id = k.id
+          WHERE s.username = ?";
 
 $stmt = mysqli_prepare($conn, $query);
 
@@ -91,8 +94,13 @@ if ($row = mysqli_fetch_assoc($result)) {
                 "id" => (int) $row['id'],
                 "username" => $row['username'],
                 "nama" => $row['nama'],
-                "role" => $row['role'],
-                "no_telepon" => $row['no_telepon']
+                "nama_panggilan" => $row['nama_panggilan'],
+                "role" => "siswa", // Role tetap siswa
+                "kelas_id" => (int) $row['kelas_id'],
+                "nama_kelas" => $row['nama_kelas'],
+                "tingkat" => (int) $row['tingkat'],
+                "foto_url" => $row['foto_url'],
+                "no_telepon_ortu" => $row['no_telepon_ortu']
             ]
         ]);
     } else {
@@ -104,7 +112,7 @@ if ($row = mysqli_fetch_assoc($result)) {
         ]);
     }
 } else {
-    // User tidak ditemukan
+    // Siswa tidak ditemukan
     http_response_code(401);
     echo json_encode([
         "success" => false,
