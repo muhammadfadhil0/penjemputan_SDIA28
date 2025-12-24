@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'pages/jadwal_page.dart';
 import 'pages/jemput_page.dart';
 import 'pages/profile_page.dart';
+import 'pages/login_page.dart';
 
 // Export pages for use in other files
 export 'pages/jadwal_page.dart';
@@ -32,7 +33,8 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Inter',
         useMaterial3: true,
       ),
-      home: const MainNavigation(),
+      // home: const MainNavigation(),
+      home: const LoginPage(),
     );
   }
 }
