@@ -1343,33 +1343,107 @@
             }
         }
 
-        // Load schedules from localStorage
-        function loadSchedules() {
-            const saved = localStorage.getItem('schoolSchedules');
-            if (saved) {
-                schedules = JSON.parse(saved);
-            } else {
-                // Initialize with defaults
-                for (let classNum = 1; classNum <= 6; classNum++) {
-                    schedules[classNum] = {};
-                    days.forEach(day => {
-                        schedules[classNum][day.id] = {
-                            ...defaultSchedules[classNum],
-                            // Sabtu dan Minggu default libur
-                            isHoliday: day.isWeekend ? true : false
-                        };
-                    });
+        // API Base URL
+        const API_BASE_URL = 'service/jadwal';
+
+        // Load schedules from backend API
+        async function loadSchedules() {
+            // Initialize schedules with defaults first
+            for (let classNum = 1; classNum <= 6; classNum++) {
+                schedules[classNum] = {};
+                days.forEach(day => {
+                    schedules[classNum][day.id] = {
+                        ...defaultSchedules[classNum],
+                        isHoliday: day.isWeekend ? true : false
+                    };
+                });
+            }
+
+            // Try to fetch from backend
+            try {
+                await fetchSchedulesFromAPI(selectedClass);
+            } catch (error) {
+                console.log('⚠️ Menggunakan data default (backend tidak tersedia):', error.message);
+                // Fallback to localStorage if available
+                const saved = localStorage.getItem('schoolSchedules');
+                if (saved) {
+                    schedules = JSON.parse(saved);
                 }
             }
         }
 
-        // Save schedules to localStorage
+        // Fetch schedules from API
+        async function fetchSchedulesFromAPI(tingkat) {
+            const response = await fetch(`${API_BASE_URL}/get_jadwal.php?tingkat=${tingkat}`);
+            const result = await response.json();
+
+            if (result.success && result.data && result.data.length > 0) {
+                // Process API data and merge into schedules
+                result.data.forEach(kelasData => {
+                    const tingkatNum = kelasData.tingkat;
+
+                    // Initialize if not exists
+                    if (!schedules[tingkatNum]) {
+                        schedules[tingkatNum] = {};
+                    }
+
+                    // Process each day's schedule
+                    Object.entries(kelasData.jadwal).forEach(([hari, jadwal]) => {
+                        schedules[tingkatNum][hari] = {
+                            entryTime: jadwal.jam_masuk,
+                            exitTime: jadwal.jam_pulang,
+                            isHoliday: jadwal.is_holiday || false,
+                            kelas_id: kelasData.kelas_id,
+                            jadwal_id: jadwal.id
+                        };
+                    });
+                });
+
+                console.log('✅ Data jadwal berhasil dimuat dari database');
+                return true;
+            }
+            return false;
+        }
+
+        // Save schedules to localStorage (as backup)
         function saveSchedulesToStorage() {
             localStorage.setItem('schoolSchedules', JSON.stringify(schedules));
         }
 
+        // Save schedule to backend API
+        async function saveScheduleToAPI(kelasId, hari, jamMasuk, jamPulang, isHoliday) {
+            try {
+                const response = await fetch(`${API_BASE_URL}/save_jadwal.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        kelas_id: kelasId,
+                        hari: hari,
+                        jam_masuk: jamMasuk,
+                        jam_pulang: jamPulang,
+                        is_holiday: isHoliday
+                    })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('✅ Jadwal berhasil disimpan ke database:', result.message);
+                    return true;
+                } else {
+                    console.error('❌ Gagal menyimpan jadwal:', result.message);
+                    return false;
+                }
+            } catch (error) {
+                console.error('❌ Error saat menyimpan jadwal:', error);
+                return false;
+            }
+        }
+
         // Select class
-        function selectClass(element, classNum) {
+        async function selectClass(element, classNum) {
             // Update active state
             document.querySelectorAll('.segmented-btn').forEach(btn => {
                 btn.classList.remove('active');
@@ -1382,6 +1456,14 @@
             indicator.style.left = `${element.offsetLeft}px`;
 
             selectedClass = classNum;
+
+            // Fetch schedules for this class from API
+            try {
+                await fetchSchedulesFromAPI(classNum);
+            } catch (error) {
+                console.log('⚠️ Menggunakan data lokal:', error.message);
+            }
+
             renderDayCards();
         }
 
@@ -1538,7 +1620,7 @@
         }
 
         // Save schedule with animations
-        function saveSchedule() {
+        async function saveSchedule() {
             if (!selectedDay) return;
 
             const entryTime = document.getElementById('entryTimeInput').value;
@@ -1550,28 +1632,58 @@
             const wasHoliday = oldSchedule?.isHoliday || false;
             const holidayChanged = wasHoliday !== isHoliday;
 
+            // Get kelas_id from schedule data or use default mapping
+            const kelasId = oldSchedule?.kelas_id || getKelasIdByTingkat(selectedClass);
+
             if (!schedules[selectedClass]) {
                 schedules[selectedClass] = {};
             }
 
+            // Update local state
             schedules[selectedClass][selectedDay.id] = {
                 entryTime,
                 exitTime,
-                isHoliday
+                isHoliday,
+                kelas_id: kelasId
             };
 
+            // Save to localStorage as backup
             saveSchedulesToStorage();
 
             // Close modal first
             closeModal();
 
+            // Try to save to backend API (only for weekdays)
+            const isWeekday = !selectedDay.isWeekend;
+            if (isWeekday) {
+                try {
+                    const result = await saveScheduleToAPI(kelasId, selectedDay.id, entryTime, exitTime, isHoliday);
+                    if (result) {
+                        showToast(`✅ Jadwal ${selectedDay.name} Kelas ${selectedClass} berhasil disimpan ke database!`);
+                    } else {
+                        showToast(`⚠️ Jadwal ${selectedDay.name} disimpan lokal (database tidak tersedia)`);
+                    }
+                } catch (error) {
+                    console.error('Error saving to API:', error);
+                    showToast(`⚠️ Jadwal ${selectedDay.name} disimpan lokal (error: ${error.message})`);
+                }
+            } else {
+                const statusText = isHoliday ? ' (Libur)' : '';
+                showToast(`Jadwal ${selectedDay.name} Kelas ${selectedClass}${statusText} berhasil disimpan!`);
+            }
+
             // Render cards after modal animation
             setTimeout(() => {
                 renderDayCardsWithAnimation(selectedDay.id, isHoliday, holidayChanged);
             }, 200);
+        }
 
-            const statusText = isHoliday ? ' (Libur)' : '';
-            showToast(`Jadwal ${selectedDay.name} Kelas ${selectedClass}${statusText} berhasil disimpan!`);
+        // Helper function to map tingkat to kelas_id
+        // Based on database: 1A=1, 1B=2, 2A=3, 2B=4, 3A=5, 3B=6, etc.
+        function getKelasIdByTingkat(tingkat) {
+            // Return first kelas of that tingkat (e.g., 3A for tingkat 3)
+            const mapping = { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9, 6: 11 };
+            return mapping[tingkat] || 1;
         }
 
         // Render day cards with flip and pulse animation

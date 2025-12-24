@@ -47,6 +47,7 @@ CREATE TABLE `jadwal_kelas` (
   `hari` enum('senin','selasa','rabu','kamis','jumat','sabtu') NOT NULL,
   `jam_masuk` time NOT NULL,
   `jam_pulang` time NOT NULL,
+  `is_holiday` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Status libur: 0=aktif, 1=libur',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
