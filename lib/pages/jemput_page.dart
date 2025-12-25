@@ -1,6 +1,7 @@
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/auth/auth_service.dart';
 
 // ============================================
 // PICKUP DASHBOARD PAGE
@@ -18,8 +19,12 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   late AnimationController _rotateController;
   late Animation<double> _pulseAnimation;
 
-  final String studentName = "Ahmad Farhan";
-  final String studentClass = "Kelas 3A";
+  final AuthService _authService = AuthService();
+
+  // Data siswa dari hasil login
+  String get studentName => _authService.currentUser?.displayName ?? "Siswa";
+  String get studentClass =>
+      "Kelas ${_authService.currentUser?.namaKelas ?? ""}";
 
   @override
   void initState() {

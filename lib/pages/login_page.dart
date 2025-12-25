@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/auth/auth_service.dart';
 
 // ============================================
 // LOGIN PAGE
@@ -18,7 +19,6 @@ class _LoginPageState extends State<LoginPage>
   final _passwordController = TextEditingController();
   bool _isPasswordVisible = false;
   bool _isLoading = false;
-  bool _rememberMe = false;
 
   late AnimationController _animationController;
   late Animation<double> _fadeAnimation;
@@ -58,23 +58,51 @@ class _LoginPageState extends State<LoginPage>
     super.dispose();
   }
 
+  final AuthService _authService = AuthService();
+
   Future<void> _handleLogin() async {
     if (!_formKey.currentState!.validate()) return;
 
     setState(() => _isLoading = true);
 
-    // Simulate login delay
-    await Future.delayed(const Duration(seconds: 2));
+    // Panggil auth service untuk login
+    final result = await _authService.login(
+      _emailController.text.trim(),
+      _passwordController.text,
+    );
 
     setState(() => _isLoading = false);
 
-    // TODO: Implement actual login logic
-    // Navigate to main page on success
-    if (mounted) {
+    if (result.success && mounted) {
+      // Login berhasil - navigasi ke halaman utama
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigation()),
       );
+    } else if (mounted) {
+      // Login gagal - tampilkan pesan error
+      _showErrorSnackBar(result.message);
     }
+  }
+
+  void _showErrorSnackBar(String message) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            const Icon(Icons.error_outline, color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(message, style: const TextStyle(fontSize: 14)),
+            ),
+          ],
+        ),
+        backgroundColor: Colors.red.shade600,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+        margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
+      ),
+    );
   }
 
   @override
