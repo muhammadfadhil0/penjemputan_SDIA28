@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/pickup/pickup_service.dart';
@@ -34,6 +35,15 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   Timer? _pollingTimer;
   Timer? _cooldownTimer;
   int _cooldownSeconds = 0;
+
+  // Connection status monitoring
+  final Connectivity _connectivity = Connectivity();
+  StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
+  bool _isConnected = true;
+
+  // Static flag to track if unstable connection bottomsheet has been shown this session
+  // This ensures the bottomsheet only appears once per app lifecycle
+  static bool _hasShownUnstableConnectionBottomSheet = false;
 
   // Data siswa dari hasil login
   String get studentName => _authService.currentUser?.displayName ?? "Siswa";
@@ -73,6 +83,12 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     // Start polling for status
     _checkPickupStatus();
     _startPolling();
+
+    // Initialize connectivity monitoring
+    _initConnectivity();
+    _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
+      _updateConnectionStatus,
+    );
   }
 
   @override
@@ -82,7 +98,209 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     _colorController.dispose();
     _pollingTimer?.cancel();
     _cooldownTimer?.cancel();
+    _connectivitySubscription?.cancel();
     super.dispose();
+  }
+
+  // Initialize connectivity check
+  Future<void> _initConnectivity() async {
+    try {
+      final result = await _connectivity.checkConnectivity();
+      _updateConnectionStatus(result);
+    } catch (e) {
+      debugPrint('Connectivity check failed: $e');
+    }
+  }
+
+  // Update connection status based on connectivity result
+  void _updateConnectionStatus(List<ConnectivityResult> result) {
+    if (!mounted) return;
+    final wasConnected = _isConnected;
+    setState(() {
+      _isConnected =
+          result.isNotEmpty && !result.contains(ConnectivityResult.none);
+    });
+
+    // Show bottom sheet when connection becomes unstable (only once per app session)
+    if (wasConnected &&
+        !_isConnected &&
+        !_hasShownUnstableConnectionBottomSheet) {
+      _hasShownUnstableConnectionBottomSheet = true;
+      _showUnstableConnectionBottomSheet();
+    }
+  }
+
+  // Show bottom sheet for unstable connection
+  void _showUnstableConnectionBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFEF4444), width: 3),
+              ),
+              child: const Icon(
+                Icons.wifi_off_rounded,
+                color: Color(0xFFEF4444),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Jaringan Anda tidak stabil',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Jaringan tidak stabil dapat menyebabkan kegagalan pengiriman data Ananda menuju server kami',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Show bottom sheet for stable connection
+  void _showStableConnectionBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFDCFCE7),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFF22C55E), width: 3),
+              ),
+              child: const Icon(
+                Icons.wifi_rounded,
+                color: Color(0xFF22C55E),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Koneksi Anda stabil',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Kami mendeteksi koneksi Anda stabil sehingga data Ananda terkirim sempurna menuju server kami',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFF22C55E),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // Handle connection status icon tap
+  void _handleConnectionStatusTap() {
+    if (_isConnected) {
+      _showStableConnectionBottomSheet();
+    } else {
+      _showUnstableConnectionBottomSheet();
+    }
   }
 
   void _startPolling() {
@@ -465,18 +683,33 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                         ],
                       ),
                     ),
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: AppColors.card,
-                        borderRadius: BorderRadius.circular(12),
-                        border: Border.all(color: AppColors.border),
-                      ),
-                      child: const Icon(
-                        Icons.notifications_outlined,
-                        color: AppColors.textSecondary,
-                        size: 22,
+                    GestureDetector(
+                      onTap: _handleConnectionStatusTap,
+                      child: AnimatedContainer(
+                        duration: const Duration(milliseconds: 300),
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: _isConnected
+                              ? const Color(0xFFDCFCE7)
+                              : const Color(0xFFFEE2E2),
+                          borderRadius: BorderRadius.circular(12),
+                          border: Border.all(
+                            color: _isConnected
+                                ? const Color(0xFF22C55E)
+                                : const Color(0xFFEF4444),
+                            width: 1.5,
+                          ),
+                        ),
+                        child: Icon(
+                          _isConnected
+                              ? Icons.wifi_rounded
+                              : Icons.wifi_off_rounded,
+                          color: _isConnected
+                              ? const Color(0xFF22C55E)
+                              : const Color(0xFFEF4444),
+                          size: 22,
+                        ),
                       ),
                     ),
                   ],

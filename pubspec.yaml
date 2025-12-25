@@ -40,6 +40,9 @@ dependencies:
   
   # Local storage for session persistence
   shared_preferences: ^2.2.2
+  
+  # Network connectivity check
+  connectivity_plus: ^6.1.4
 
 dev_dependencies:
   flutter_test:
