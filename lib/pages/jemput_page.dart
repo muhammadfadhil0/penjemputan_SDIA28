@@ -1,7 +1,12 @@
+import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
+import '../services/pickup/pickup_service.dart';
+
+// Pickup button states
+enum PickupButtonState { idle, queued, called, sending }
 
 // ============================================
 // PICKUP DASHBOARD PAGE
@@ -17,9 +22,18 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     with TickerProviderStateMixin {
   late AnimationController _pulseController;
   late AnimationController _rotateController;
+  late AnimationController _colorController;
   late Animation<double> _pulseAnimation;
+  late Animation<Color?> _buttonColorAnimation;
 
   final AuthService _authService = AuthService();
+  final PickupService _pickupService = PickupService();
+
+  // Pickup state management
+  PickupButtonState _buttonState = PickupButtonState.idle;
+  Timer? _pollingTimer;
+  Timer? _cooldownTimer;
+  int _cooldownSeconds = 0;
 
   // Data siswa dari hasil login
   String get studentName => _authService.currentUser?.displayName ?? "Siswa";
@@ -42,13 +56,290 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
       duration: const Duration(seconds: 20),
       vsync: this,
     )..repeat();
+
+    _colorController = AnimationController(
+      duration: const Duration(milliseconds: 500),
+      vsync: this,
+    );
+
+    _buttonColorAnimation =
+        ColorTween(
+          begin: AppColors.primary,
+          end: const Color(0xFFF59E0B),
+        ).animate(
+          CurvedAnimation(parent: _colorController, curve: Curves.easeInOut),
+        );
+
+    // Start polling for status
+    _checkPickupStatus();
+    _startPolling();
   }
 
   @override
   void dispose() {
     _pulseController.dispose();
     _rotateController.dispose();
+    _colorController.dispose();
+    _pollingTimer?.cancel();
+    _cooldownTimer?.cancel();
     super.dispose();
+  }
+
+  void _startPolling() {
+    _pollingTimer = Timer.periodic(const Duration(seconds: 3), (_) {
+      _checkPickupStatus();
+    });
+  }
+
+  Future<void> _checkPickupStatus() async {
+    if (_authService.currentUser == null) return;
+
+    final status = await _pickupService.getPickupStatus(
+      _authService.currentUser!.id,
+    );
+    if (status == null || !mounted) return;
+
+    setState(() {
+      if (status.isQueued) {
+        _setButtonState(PickupButtonState.queued);
+        _cooldownSeconds = 0;
+      } else if ((status.isCalled || status.inCooldown) &&
+          status.cooldownRemainingSeconds > 0) {
+        // Only show TUNGGU state if there's actual cooldown time remaining
+        _setButtonState(PickupButtonState.called);
+        _cooldownSeconds = status.cooldownRemainingSeconds;
+        _startCooldownTimer();
+      } else {
+        // IDLE - no active request or cooldown expired
+        _setButtonState(PickupButtonState.idle);
+        _cooldownSeconds = 0;
+        _cooldownTimer?.cancel();
+      }
+    });
+  }
+
+  void _setButtonState(PickupButtonState newState) {
+    if (_buttonState == newState) return;
+
+    final wasIdle = _buttonState == PickupButtonState.idle;
+    final wasSending = _buttonState == PickupButtonState.sending;
+    _buttonState = newState;
+
+    // Trigger color animation
+    if (newState == PickupButtonState.idle) {
+      _colorController.reverse();
+    } else if (wasIdle || wasSending) {
+      // Animate to yellow when transitioning from idle OR from sending
+      _colorController.forward();
+    }
+  }
+
+  void _startCooldownTimer() {
+    // Cancel existing timer if any
+    _cooldownTimer?.cancel();
+
+    // Only start timer if there are seconds remaining
+    if (_cooldownSeconds <= 0) return;
+
+    _cooldownTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (!mounted) {
+        timer.cancel();
+        return;
+      }
+      setState(() {
+        _cooldownSeconds--;
+        if (_cooldownSeconds <= 0) {
+          timer.cancel();
+          _setButtonState(PickupButtonState.idle);
+          _cooldownSeconds = 0;
+        }
+      });
+    });
+  }
+
+  String _formatCooldown(int seconds) {
+    final minutes = seconds ~/ 60;
+    final secs = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${secs.toString().padLeft(2, '0')}';
+  }
+
+  void _handleButtonTap() {
+    switch (_buttonState) {
+      case PickupButtonState.idle:
+        _showPickupBottomSheet();
+        break;
+      case PickupButtonState.queued:
+        _showQueuedBottomSheet();
+        break;
+      case PickupButtonState.called:
+        _showWaitBottomSheet();
+        break;
+      case PickupButtonState.sending:
+        // Do nothing - button is disabled during sending
+        break;
+    }
+  }
+
+  void _showQueuedBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF59E0B), width: 3),
+              ),
+              child: const Icon(
+                Icons.hourglass_top,
+                color: Color(0xFFF59E0B),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Antre Pemanggilan',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            const Text(
+              'Pemanggilan Ananda masih dalam antrean, silahkan tunggu.',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  void _showWaitBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEF3C7),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFF59E0B), width: 3),
+              ),
+              child: const Icon(
+                Icons.timer_outlined,
+                color: Color(0xFFF59E0B),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Tunggu Sebentar Lagi',
+              style: TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Ananda mungkin sedang perjalanan menuju Lobby. Tunggu ${_formatCooldown(_cooldownSeconds)} untuk memanggil Ananda kembali.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFF59E0B),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
   }
 
   void _showPickupBottomSheet() {
@@ -75,9 +366,20 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
               begin: const Offset(0, 1),
               end: Offset.zero,
             ).animate(curvedAnimation),
-            child: const Material(
+            child: Material(
               color: Colors.transparent,
-              child: PickupBottomSheet(),
+              child: PickupBottomSheet(
+                onSendingStateChange: (isSending) {
+                  setState(() {
+                    if (isSending) {
+                      _buttonState = PickupButtonState.sending;
+                    } else {
+                      // After sending, check status again
+                      _checkPickupStatus();
+                    }
+                  });
+                },
+              ),
             ),
           ),
         );
@@ -87,107 +389,53 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: AppColors.background,
-      body: SafeArea(
-        child: Column(
-          children: [
-            const SizedBox(height: 16),
+    // Background color based on state
+    final bgColor = _buttonState == PickupButtonState.idle
+        ? AppColors.background
+        : const Color(0xFFFFFBEB); // Light yellow for queued/called/sending
 
-            // Header dengan profil siswa
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: Row(
-                children: [
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: AppColors.primaryLight,
-                        width: 2,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.2),
-                          blurRadius: 12,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: ClipOval(
-                      child: Container(
-                        color: AppColors.primaryLighter,
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.primary,
-                          size: 32,
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 2),
-                        Text(
-                          studentName,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Text(
-                          studentClass,
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 13,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      color: AppColors.card,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.border),
-                    ),
-                    child: const Icon(
-                      Icons.notifications_outlined,
-                      color: AppColors.textSecondary,
-                      size: 22,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+    return AnimatedContainer(
+      duration: const Duration(milliseconds: 400),
+      curve: Curves.easeInOut,
+      color: bgColor,
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        body: SafeArea(
+          child: Column(
+            children: [
+              const SizedBox(height: 16),
 
-            const SizedBox(height: 24),
-
-            // Guru Penjaga Card
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              child: ShadcnCard(
-                padding: const EdgeInsets.all(16),
+              // Header dengan profil siswa
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
                     Container(
-                      padding: const EdgeInsets.all(10),
+                      width: 56,
+                      height: 56,
                       decoration: BoxDecoration(
-                        color: Colors.amber.shade50,
-                        borderRadius: BorderRadius.circular(10),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: AppColors.primaryLight,
+                          width: 2,
+                        ),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.primary.withValues(alpha: 0.2),
+                            blurRadius: 12,
+                            offset: const Offset(0, 4),
+                          ),
+                        ],
                       ),
-                      child: Icon(
-                        Icons.person_pin_rounded,
-                        color: Colors.amber.shade700,
-                        size: 24,
+                      child: ClipOval(
+                        child: Container(
+                          color: AppColors.primaryLighter,
+                          child: const Icon(
+                            Icons.person,
+                            color: AppColors.primary,
+                            size: 32,
+                          ),
+                        ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -195,175 +443,317 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(
-                            'Saat ini guru yang bertugas',
-                            style: TextStyle(
-                              color: AppColors.textMuted,
-                              fontSize: 12,
-                            ),
-                          ),
                           const SizedBox(height: 2),
-                          const Text(
-                            'Siri Rofikah S.Pd',
-                            style: TextStyle(
+                          Text(
+                            studentName,
+                            style: const TextStyle(
                               color: AppColors.textPrimary,
-                              fontSize: 15,
+                              fontSize: 20,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-
-            const SizedBox(height: 12),
-
-            // Main Pickup Button (dengan animasi)
-            Expanded(
-              child: Center(
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: 260,
-                      height: 260,
-                      child: Stack(
-                        alignment: Alignment.center,
-                        children: [
-                          // Outer rotating dashed circle
-                          AnimatedBuilder(
-                            animation: _rotateController,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: _rotateController.value * 2 * math.pi,
-                                child: CustomPaint(
-                                  size: const Size(260, 260),
-                                  painter: DashedCirclePainter(
-                                    color: AppColors.border,
-                                    strokeWidth: 2,
-                                    dashLength: 8,
-                                    gapLength: 6,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          // Inner rotating dashed circle (reverse)
-                          AnimatedBuilder(
-                            animation: _rotateController,
-                            builder: (context, child) {
-                              return Transform.rotate(
-                                angle: -_rotateController.value * 2 * math.pi,
-                                child: CustomPaint(
-                                  size: const Size(230, 230),
-                                  painter: DashedCirclePainter(
-                                    color: AppColors.primaryLight.withValues(
-                                      alpha: 0.4,
-                                    ),
-                                    strokeWidth: 1.5,
-                                    dashLength: 12,
-                                    gapLength: 8,
-                                  ),
-                                ),
-                              );
-                            },
-                          ),
-                          // Main button with pulse
-                          AnimatedBuilder(
-                            animation: _pulseAnimation,
-                            builder: (context, child) {
-                              return Transform.scale(
-                                scale: _pulseAnimation.value,
-                                child: child,
-                              );
-                            },
-                            child: AnimatedScaleOnTap(
-                              onTap: _showPickupBottomSheet,
-                              scaleDown: 0.92,
-                              child: Container(
-                                width: 180,
-                                height: 180,
-                                decoration: BoxDecoration(
-                                  shape: BoxShape.circle,
-                                  color: AppColors.card,
-                                  border: Border.all(
-                                    color: AppColors.primary,
-                                    width: 3,
-                                  ),
-                                  boxShadow: [
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.25,
-                                      ),
-                                      blurRadius: 30,
-                                      spreadRadius: 0,
-                                      offset: const Offset(0, 8),
-                                    ),
-                                    BoxShadow(
-                                      color: AppColors.primary.withValues(
-                                        alpha: 0.1,
-                                      ),
-                                      blurRadius: 60,
-                                      spreadRadius: 10,
-                                    ),
-                                  ],
-                                ),
-                                child: const Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(
-                                      Icons.directions_car_rounded,
-                                      color: AppColors.primary,
-                                      size: 48,
-                                    ),
-                                    SizedBox(height: 8),
-                                    Text(
-                                      'JEMPUT',
-                                      style: TextStyle(
-                                        color: AppColors.primary,
-                                        fontSize: 20,
-                                        fontWeight: FontWeight.w700,
-                                        letterSpacing: 2,
-                                      ),
-                                    ),
-                                  ],
-                                ),
-                              ),
+                          Text(
+                            studentClass,
+                            style: const TextStyle(
+                              color: AppColors.textMuted,
+                              fontSize: 13,
                             ),
                           ),
                         ],
                       ),
                     ),
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: AppColors.card,
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: const Icon(
+                        Icons.notifications_outlined,
+                        color: AppColors.textSecondary,
+                        size: 22,
+                      ),
+                    ),
                   ],
                 ),
               ),
-            ),
 
-            // Bottom hint
-            const Padding(
-              padding: EdgeInsets.only(bottom: 16),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(
-                    Icons.touch_app_outlined,
-                    color: AppColors.textMuted,
-                    size: 18,
+              const SizedBox(height: 24),
+
+              // Guru Penjaga Card
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 20),
+                child: ShadcnCard(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(10),
+                        decoration: BoxDecoration(
+                          color: Colors.amber.shade50,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Icon(
+                          Icons.person_pin_rounded,
+                          color: Colors.amber.shade700,
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Saat ini guru yang bertugas',
+                              style: TextStyle(
+                                color: AppColors.textMuted,
+                                fontSize: 12,
+                              ),
+                            ),
+                            const SizedBox(height: 2),
+                            const Text(
+                              'Siri Rofikah S.Pd',
+                              style: TextStyle(
+                                color: AppColors.textPrimary,
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
                   ),
-                  SizedBox(width: 6),
-                  Text(
-                    'Tekan tombol untuk meminta jemput',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 13),
-                  ),
-                ],
+                ),
               ),
-            ),
-          ],
+
+              const SizedBox(height: 12),
+
+              // Main Pickup Button (dengan animasi)
+              Expanded(
+                child: Center(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 260,
+                        height: 260,
+                        child: Stack(
+                          alignment: Alignment.center,
+                          children: [
+                            // Outer rotating dashed circle
+                            AnimatedBuilder(
+                              animation: _rotateController,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: _rotateController.value * 2 * math.pi,
+                                  child: CustomPaint(
+                                    size: const Size(260, 260),
+                                    painter: DashedCirclePainter(
+                                      color: AppColors.border,
+                                      strokeWidth: 2,
+                                      dashLength: 8,
+                                      gapLength: 6,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            // Inner rotating dashed circle (reverse)
+                            AnimatedBuilder(
+                              animation: _rotateController,
+                              builder: (context, child) {
+                                return Transform.rotate(
+                                  angle: -_rotateController.value * 2 * math.pi,
+                                  child: CustomPaint(
+                                    size: const Size(230, 230),
+                                    painter: DashedCirclePainter(
+                                      color: AppColors.primaryLight.withValues(
+                                        alpha: 0.4,
+                                      ),
+                                      strokeWidth: 1.5,
+                                      dashLength: 12,
+                                      gapLength: 8,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                            // Main button with pulse and color animation
+                            AnimatedBuilder(
+                              animation: Listenable.merge([
+                                _pulseAnimation,
+                                _colorController,
+                              ]),
+                              builder: (context, child) {
+                                final color =
+                                    _buttonColorAnimation.value ??
+                                    AppColors.primary;
+                                return Transform.scale(
+                                  scale: _pulseAnimation.value,
+                                  child: AnimatedScaleOnTap(
+                                    onTap: _handleButtonTap,
+                                    scaleDown: 0.92,
+                                    child: Container(
+                                      width: 180,
+                                      height: 180,
+                                      decoration: BoxDecoration(
+                                        shape: BoxShape.circle,
+                                        color: AppColors.card,
+                                        border: Border.all(
+                                          color: color,
+                                          width: 3,
+                                        ),
+                                        boxShadow: [
+                                          BoxShadow(
+                                            color: color.withOpacity(0.25),
+                                            blurRadius: 30,
+                                            spreadRadius: 0,
+                                            offset: const Offset(0, 8),
+                                          ),
+                                          BoxShadow(
+                                            color: color.withOpacity(0.1),
+                                            blurRadius: 60,
+                                            spreadRadius: 10,
+                                          ),
+                                        ],
+                                      ),
+                                      child: Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            _buttonState ==
+                                                    PickupButtonState.idle
+                                                ? Icons.directions_car_rounded
+                                                : _buttonState ==
+                                                      PickupButtonState.queued
+                                                ? Icons.hourglass_top_rounded
+                                                : _buttonState ==
+                                                      PickupButtonState.sending
+                                                ? Icons.upload_rounded
+                                                : Icons.timer_outlined,
+                                            color: color,
+                                            size: 42,
+                                          ),
+                                          const SizedBox(height: 6),
+                                          Text(
+                                            _buttonState ==
+                                                    PickupButtonState.idle
+                                                ? 'JEMPUT'
+                                                : _buttonState ==
+                                                      PickupButtonState.queued
+                                                ? 'ANTRE'
+                                                : _buttonState ==
+                                                      PickupButtonState.sending
+                                                ? 'MENGIRIM'
+                                                : 'TUNGGU',
+                                            style: TextStyle(
+                                              color: color,
+                                              fontSize: 20,
+                                              fontWeight: FontWeight.w700,
+                                              letterSpacing: 2,
+                                            ),
+                                          ),
+                                          if (_buttonState ==
+                                              PickupButtonState.queued) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Dalam antrean',
+                                              style: TextStyle(
+                                                color: color.withOpacity(0.7),
+                                                fontSize: 11,
+                                              ),
+                                            ),
+                                          ],
+                                          if (_buttonState ==
+                                              PickupButtonState.sending) ...[
+                                            const SizedBox(height: 4),
+                                            SizedBox(
+                                              width: 16,
+                                              height: 16,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                                valueColor:
+                                                    AlwaysStoppedAnimation<
+                                                      Color
+                                                    >(color),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              'Mengirim data..',
+                                              style: TextStyle(
+                                                color: color.withOpacity(0.7),
+                                                fontSize: 10,
+                                              ),
+                                            ),
+                                          ],
+                                          if (_buttonState ==
+                                                  PickupButtonState.called &&
+                                              _cooldownSeconds > 0) ...[
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              _formatCooldown(_cooldownSeconds),
+                                              style: TextStyle(
+                                                color: color,
+                                                fontSize: 16,
+                                                fontWeight: FontWeight.w600,
+                                              ),
+                                            ),
+                                          ],
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+              // Bottom hint - dynamic based on state
+              Padding(
+                padding: const EdgeInsets.only(bottom: 16),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      _buttonState == PickupButtonState.idle
+                          ? Icons.touch_app_outlined
+                          : _buttonState == PickupButtonState.queued
+                          ? Icons.hourglass_empty
+                          : Icons.directions_walk,
+                      color: AppColors.textMuted,
+                      size: 18,
+                    ),
+                    const SizedBox(width: 6),
+                    Text(
+                      _buttonState == PickupButtonState.idle
+                          ? 'Tekan tombol untuk meminta jemput'
+                          : _buttonState == PickupButtonState.queued
+                          ? 'Murid sedang antrean pemanggilan'
+                          : 'Ananda sedang menuju lobby',
+                      style: const TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
         ),
-      ),
+      ), // Close AnimatedContainer
     );
   }
 }
@@ -418,7 +808,9 @@ class DashedCirclePainter extends CustomPainter {
 // PICKUP BOTTOM SHEET
 // ============================================
 class PickupBottomSheet extends StatefulWidget {
-  const PickupBottomSheet({super.key});
+  final Function(bool isSending)? onSendingStateChange;
+
+  const PickupBottomSheet({super.key, this.onSendingStateChange});
 
   @override
   State<PickupBottomSheet> createState() => _PickupBottomSheetState();
@@ -432,6 +824,10 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
   final TextEditingController _otherPersonController = TextEditingController();
   final TextEditingController _ojekLainnyaController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
+
+  // Services
+  final PickupService _pickupService = PickupService();
+  final AuthService _authService = AuthService();
 
   @override
   void dispose() {
@@ -466,21 +862,100 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     }
   }
 
-  void _submitRequest() {
+  // Helper to get penjemput detail based on selection
+  String? _getPenjemputDetail() {
+    if (_selectedPicker == 'ojek') {
+      if (_selectedOjek == 'lainnya') {
+        return _ojekLainnyaController.text.isNotEmpty
+            ? _ojekLainnyaController.text
+            : null;
+      }
+      return _selectedOjek; // gojek, grab, maxim
+    } else if (_selectedPicker == 'lainnya') {
+      return _otherPersonController.text.isNotEmpty
+          ? _otherPersonController.text
+          : null;
+    }
+    return null;
+  }
+
+  // Helper to format TimeOfDay to HH:mm format
+  String? _formatTimeOfDay(TimeOfDay? time) {
+    if (time == null) return null;
+    final hour = time.hour.toString().padLeft(2, '0');
+    final minute = time.minute.toString().padLeft(2, '0');
+    return '$hour:$minute';
+  }
+
+  Future<void> _submitRequest() async {
+    // Check if user is logged in
+    if (_authService.currentUser == null) {
+      Navigator.pop(context);
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: const Row(
+            children: [
+              Icon(Icons.error, color: Colors.white, size: 20),
+              SizedBox(width: 10),
+              Text('Silakan login terlebih dahulu'),
+            ],
+          ),
+          backgroundColor: Colors.red,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+      return;
+    }
+
+    // Notify parent that we're sending
+    widget.onSendingStateChange?.call(true);
+
+    // Call API to submit pickup request
+    final result = await _pickupService.requestPickup(
+      siswaId: _authService.currentUser!.id,
+      penjemput: _selectedPicker,
+      penjemputDetail: _getPenjemputDetail(),
+      estimasiWaktu: _selectedArrival,
+      waktuEstimasi: _selectedArrival == 'akan_tiba'
+          ? _formatTimeOfDay(_estimatedTime)
+          : null,
+    );
+
+    // Notify parent that sending is complete
+    widget.onSendingStateChange?.call(false);
+
+    if (!mounted) return;
     Navigator.pop(context);
+
+    // Show result snackbar
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: const Row(
+        content: Row(
           children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Text('Permintaan jemput berhasil dikirim!'),
+            Icon(
+              result.success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+              size: 20,
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                result.success
+                    ? 'Permintaan jemput berhasil! Nomor antrian: ${result.nomorAntrian}'
+                    : result.message,
+              ),
+            ),
           ],
         ),
-        backgroundColor: AppColors.primary,
+        backgroundColor: result.success ? AppColors.primary : Colors.red,
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
+        duration: const Duration(seconds: 4),
       ),
     );
   }
@@ -1268,16 +1743,25 @@ class _SwipeToConfirmState extends State<SwipeToConfirm>
                 ),
               ),
 
-              // Confirmed text
+              // Confirmed text - show 'Memproses..'
               if (_isConfirmed)
                 const Center(
                   child: Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
-                      Icon(Icons.check_rounded, color: Colors.white, size: 22),
-                      SizedBox(width: 8),
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10),
                       Text(
-                        'Sukses',
+                        'Memproses..',
                         style: TextStyle(
                           fontSize: 14,
                           fontWeight: FontWeight.w600,

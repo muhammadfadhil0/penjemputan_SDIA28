@@ -760,25 +760,17 @@
                             Cek Sound
                         </button>
 
-                        <!-- Hentikan Pemanggilan Button -->
-                        <button onclick="stopAutoCalling()" id="btnStopCalling"
-                            class="w-full bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-400 text-red-600 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all">
-                            <svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                                <rect x="6" y="6" width="12" height="12" rx="2" />
-                            </svg>
-                            Hentikan Pemanggilan
-                        </button>
-
-                        <!-- Mulai Pemanggilan Button -->
-                        <button onclick="startAutoCalling()" id="btnStartCalling"
+                        <!-- Toggle Pemanggilan Button -->
+                        <button onclick="toggleAutoCalling()" id="btnToggleCalling"
                             class="w-full bg-success hover:bg-green-600 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all btn-hover shadow-lg shadow-success/30">
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg id="iconToggleCalling" class="w-5 h-5" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
-                            Mulai Pemanggilan
+                            <span id="textToggleCalling">Mulai Pemanggilan</span>
                         </button>
                     </div>
 
@@ -919,31 +911,10 @@
     </div>
 
     <script>
-        // Dummy Data
-        const students = [
-            { name: "Ahmad Farhan Pratama", class: "Kelas 3A" },
-            { name: "Siti Aisyah Putri", class: "Kelas 2B" },
-            { name: "Muhammad Rizki", class: "Kelas 4C" },
-            { name: "Fatimah Zahra", class: "Kelas 1A" },
-            { name: "Umar Abdullah", class: "Kelas 5B" },
-            { name: "Khadijah Amira", class: "Kelas 3C" },
-            { name: "Yusuf Hakim", class: "Kelas 2A" },
-            { name: "Zainab Salsabila", class: "Kelas 4B" },
-            { name: "Ibrahim Maulana", class: "Kelas 1C" },
-            { name: "Maryam Azzahra", class: "Kelas 5A" },
-            { name: "Hasan Basri", class: "Kelas 3B" },
-            { name: "Hafsa Nurul", class: "Kelas 2C" },
-        ];
-
-        let queue = [
-            { name: "Ahmad Farhan Pratama", class: "Kelas 3A", pickupBy: "Ayah", status: "waiting" },
-            { name: "Siti Aisyah Putri", class: "Kelas 2B", pickupBy: "Ibu", status: "waiting" },
-            { name: "Muhammad Rizki", class: "Kelas 4C", pickupBy: "Kakak", status: "waiting" },
-            { name: "Fatimah Zahra", class: "Kelas 1A", pickupBy: "Ayah", status: "waiting" },
-            { name: "Umar Abdullah", class: "Kelas 5B", pickupBy: "Ibu", status: "waiting" },
-        ];
-
-        let calledCount = 8;
+        // Queue data will be fetched from API
+        let students = [];
+        let queue = [];
+        let calledCount = 0;
         let selectedVoice = 'male';
         let selectedStudent = null;
 
@@ -955,15 +926,18 @@
         let countdownInterval = null;
         const COUNTDOWN_START = 5; // seconds
 
+        // Auto-refresh interval
+        let refreshInterval = null;
+        const REFRESH_INTERVAL_MS = 3000; // 3 seconds
+
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             loadUserInfo();
-            updateQueueList();
-            updateStats();
+            fetchQueue(); // Fetch from API instead of using dummy data
             startConnectionSimulation();
-            populateStudentDropdown();
             updateCountdownUI();
+            startAutoRefresh(); // Start auto-refresh
         });
 
         // Check if user is authenticated
@@ -1008,12 +982,81 @@
             }
         }
 
+        // ===============================
+        // API FETCH FUNCTIONS
+        // ===============================
+
+        // Fetch queue from API
+        // withAnimation = true for initial load or manual refresh, false for auto-refresh
+        async function fetchQueue(withAnimation = true) {
+            const previousQueueLength = queue.length;
+
+            try {
+                const response = await fetch('service/pickup/get_pickup_queue.php');
+                const data = await response.json();
+
+                if (data.success) {
+                    // Map API data to local format
+                    queue = data.queue.map(item => ({
+                        id: item.id,
+                        name: item.nama_siswa,
+                        class: item.nama_kelas,
+                        pickupBy: item.penjemput,
+                        status: item.status
+                    }));
+
+                    // Update stats from API
+                    calledCount = data.stats.called;
+
+                    // Update students list for dropdown
+                    students = data.students || [];
+
+                    // Update UI - pass withAnimation flag
+                    updateQueueList(withAnimation);
+                    updateStats();
+                    populateStudentDropdown();
+
+                    // If auto-calling is active and new student arrived, start countdown
+                    if (isAutoCallingActive && !isPaused && !isSpeaking) {
+                        if (previousQueueLength === 0 && queue.length > 0) {
+                            // New student arrived while waiting
+                            countdownValue = COUNTDOWN_START;
+                            startCountdown();
+                            showToast('Siswa baru masuk - memulai countdown!');
+                        }
+                        updateCountdownUI();
+                    }
+                }
+            } catch (error) {
+                console.error('Error fetching queue:', error);
+            }
+        }
+
+        // Start auto-refresh (without animation)
+        function startAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+            }
+            // Auto-refresh without animation
+            refreshInterval = setInterval(() => fetchQueue(false), REFRESH_INTERVAL_MS);
+        }
+
+        // Stop auto-refresh (useful when page is hidden)
+        function stopAutoRefresh() {
+            if (refreshInterval) {
+                clearInterval(refreshInterval);
+                refreshInterval = null;
+            }
+        }
+
         // Populate student dropdown
         function populateStudentDropdown() {
             const dropdown = document.getElementById('studentDropdown');
+            if (!dropdown) return;
+
             dropdown.innerHTML = students.map(student => `
                 <div class="px-4 py-3 hover:bg-primaryLighter cursor-pointer border-b border-borderColor last:border-0 transition-colors"
-                    onclick="selectStudent('${student.name}', '${student.class}')">
+                    onclick="selectStudent(${student.id}, '${student.name}', '${student.class}')">
                     <p class="font-medium text-textPrimary">${student.name}</p>
                     <p class="text-sm text-textMuted">${student.class}</p>
                 </div>
@@ -1036,18 +1079,22 @@
         });
 
         // Select student from dropdown
-        function selectStudent(name, className) {
+        function selectStudent(id, name, className) {
             document.getElementById('inputStudentName').value = name;
             document.getElementById('inputClass').value = className;
             document.getElementById('studentDropdown').classList.add('hidden');
-            selectedStudent = { name, class: className };
+            selectedStudent = { id, name, class: className };
         }
 
         // Update queue list UI
-        function updateQueueList() {
+        // withAnimation = true to show slide-in animation, false for silent update
+        function updateQueueList(withAnimation = true) {
             const queueList = document.getElementById('queueList');
+            const animationClass = withAnimation ? 'slide-in' : '';
+            const animationStyle = withAnimation ? 'animation-delay: ${index * 0.05}s' : '';
+
             queueList.innerHTML = queue.map((item, index) => `
-                <div class="flex items-center gap-4 p-4 bg-bgMain rounded-xl border border-borderColor hover:border-primaryLight transition-all slide-in" style="animation-delay: ${index * 0.05}s">
+                <div class="flex items-center gap-4 p-4 bg-bgMain rounded-xl border border-borderColor hover:border-primaryLight transition-all ${withAnimation ? 'slide-in' : ''}" ${withAnimation ? `style="animation-delay: ${index * 0.05}s"` : ''}>
                     <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center font-semibold text-primary">
                         ${index + 1}
                     </div>
@@ -1084,8 +1131,8 @@
             document.getElementById('totalCount').textContent = queue.length + calledCount;
         }
 
-        // Add to queue
-        function addToQueue() {
+        // Add to queue via API
+        async function addToQueue() {
             const name = document.getElementById('inputStudentName').value;
             const className = document.getElementById('inputClass').value;
             const pickupBy = document.getElementById('inputPickupBy').value;
@@ -1095,25 +1142,75 @@
                 return;
             }
 
-            queue.push({ name, class: className, pickupBy, status: 'waiting' });
-            updateQueueList();
-            updateStats();
+            if (!selectedStudent || !selectedStudent.id) {
+                showToast('Pilih siswa dari daftar!', 'error');
+                return;
+            }
 
-            // Clear inputs
-            document.getElementById('inputStudentName').value = '';
-            document.getElementById('inputClass').value = '';
-            document.getElementById('inputPickupBy').value = '';
-            selectedStudent = null;
+            try {
+                const response = await fetch('service/pickup/add_pickup_request.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        siswa_id: selectedStudent.id,
+                        penjemput: pickupBy.toLowerCase(),
+                        estimasi_waktu: 'tiba'
+                    })
+                });
 
-            showToast(`${name} ditambahkan ke antrean!`);
+                const data = await response.json();
+
+                if (data.success) {
+                    // Clear inputs
+                    document.getElementById('inputStudentName').value = '';
+                    document.getElementById('inputClass').value = '';
+                    document.getElementById('inputPickupBy').value = '';
+                    selectedStudent = null;
+
+                    showToast(`${name} ditambahkan ke antrean! Nomor: ${data.data.nomor_antrian}`);
+
+                    // Refresh queue
+                    await fetchQueue();
+                } else {
+                    showToast(data.message || 'Gagal menambahkan ke antrean', 'error');
+                }
+            } catch (error) {
+                console.error('Error adding to queue:', error);
+                showToast('Gagal terhubung ke server', 'error');
+            }
         }
 
-        // Remove from queue
-        function removeFromQueue(index) {
-            const removed = queue.splice(index, 1)[0];
-            updateQueueList();
-            updateStats();
-            showToast(`${removed.name} dihapus dari antrean!`);
+        // Remove from queue via API (cancel request)
+        async function removeFromQueue(index) {
+            const item = queue[index];
+            if (!item || !item.id) {
+                showToast('Item tidak valid', 'error');
+                return;
+            }
+
+            try {
+                const response = await fetch('service/pickup/update_pickup_status.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        request_id: item.id,
+                        status: 'dibatalkan'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    showToast(`${item.name} dihapus dari antrean!`);
+                    // Refresh queue
+                    await fetchQueue();
+                } else {
+                    showToast(data.message || 'Gagal menghapus dari antrean', 'error');
+                }
+            } catch (error) {
+                console.error('Error removing from queue:', error);
+                showToast('Gagal terhubung ke server', 'error');
+            }
         }
 
         // ===============================
@@ -1144,6 +1241,12 @@
                 pausedButtons.classList.add('flex');
                 statusDiv.className = 'mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-center';
                 statusText.textContent = '⏸️ Pemanggilan dijeda';
+            } else if (queue.length === 0) {
+                // Active but waiting for students
+                stoppedState.classList.remove('hidden');
+                stoppedState.classList.add('flex');
+                statusDiv.className = 'mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-center';
+                statusText.textContent = '⏳ Menunggu siswa masuk antrean...';
             } else {
                 // Active countdown state
                 countdownDisplay.classList.remove('hidden');
@@ -1154,17 +1257,19 @@
         }
 
         function startAutoCalling() {
-            if (queue.length === 0) {
-                showToast('Tidak ada siswa dalam antrean!', 'error');
-                return;
-            }
-
+            // Allow starting even with empty queue - will wait for students
             isAutoCallingActive = true;
             isPaused = false;
-            countdownValue = COUNTDOWN_START;
+
+            if (queue.length > 0) {
+                countdownValue = COUNTDOWN_START;
+                startCountdown();
+                showToast('Pemanggilan otomatis dimulai!');
+            } else {
+                showToast('Pemanggilan aktif - menunggu siswa masuk antrean...');
+            }
             updateCountdownUI();
-            startCountdown();
-            showToast('Pemanggilan otomatis dimulai!');
+            updateToggleButton();
         }
 
         function stopAutoCalling() {
@@ -1173,7 +1278,43 @@
             clearInterval(countdownInterval);
             countdownInterval = null;
             updateCountdownUI();
+            updateToggleButton();
             showToast('Pemanggilan otomatis dihentikan!');
+        }
+
+        function toggleAutoCalling() {
+            if (isAutoCallingActive) {
+                stopAutoCalling();
+            } else {
+                startAutoCalling();
+            }
+        }
+
+        function updateToggleButton() {
+            const btn = document.getElementById('btnToggleCalling');
+            const icon = document.getElementById('iconToggleCalling');
+            const text = document.getElementById('textToggleCalling');
+
+            if (isAutoCallingActive) {
+                // Show Stop state (red)
+                btn.className = 'w-full bg-red-50 hover:bg-red-100 border-2 border-red-200 hover:border-red-400 text-red-600 py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all';
+                icon.innerHTML = '<rect x="6" y="6" width="12" height="12" rx="2" />';
+                icon.setAttribute('fill', 'currentColor');
+                icon.removeAttribute('stroke');
+                text.textContent = 'Hentikan Pemanggilan';
+            } else {
+                // Show Start state (green)
+                btn.className = 'w-full bg-success hover:bg-green-600 text-white py-3.5 rounded-xl font-semibold flex items-center justify-center gap-3 transition-all btn-hover shadow-lg shadow-success/30';
+                icon.innerHTML = `
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                `;
+                icon.removeAttribute('fill');
+                icon.setAttribute('stroke', 'currentColor');
+                text.textContent = 'Mulai Pemanggilan';
+            }
         }
 
         function startCountdown() {
@@ -1213,29 +1354,60 @@
         function skipStudent() {
             if (queue.length === 0) return;
 
-            const skipped = queue.shift();
-            updateQueueList();
+            const skipped = queue[0];
+
+            // Update status to dibatalkan via API
+            if (skipped && skipped.id) {
+                fetch('service/pickup/update_pickup_status.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        request_id: skipped.id,
+                        status: 'dibatalkan'
+                    })
+                }).then(() => fetchQueue(false));
+            }
+
+            queue.shift();
+            updateQueueList(false);
             updateStats();
             showToast(`${skipped.name} dilewati!`);
 
-            // Resume if there are more students
+            // Continue if there are more students, otherwise wait
             if (queue.length > 0) {
                 isPaused = false;
                 countdownValue = COUNTDOWN_START;
-                updateCountdownUI();
-            } else {
-                stopAutoCalling();
             }
+            // Don't stop auto-calling - just wait for new students
+            updateCountdownUI();
         }
 
         // Call student (used by auto-call)
-        function callStudent() {
+        async function callStudent() {
             if (queue.length === 0) {
                 showToast('Tidak ada siswa dalam antrean!', 'error');
                 return;
             }
 
-            const student = queue.shift();
+            const student = queue[0];
+
+            // Update status to 'dipanggil' via API
+            if (student && student.id) {
+                try {
+                    await fetch('service/pickup/update_pickup_status.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            request_id: student.id,
+                            status: 'dipanggil'
+                        })
+                    });
+                } catch (error) {
+                    console.error('Error updating status:', error);
+                }
+            }
+
+            queue.shift();
             calledCount++;
             updateQueueList();
             updateStats();
@@ -1322,7 +1494,7 @@
                                 countdownValue = COUNTDOWN_START;
                                 updateCountdownUI();
                             } else {
-                                stopAutoCalling();
+                                updateCountdownUI(); // Don't stop, just wait for new students
                             }
                         }
                     });
@@ -1341,7 +1513,7 @@
                                 countdownValue = COUNTDOWN_START;
                                 updateCountdownUI();
                             } else {
-                                stopAutoCalling();
+                                updateCountdownUI(); // Don't stop, just wait for new students
                             }
                         }
                     });
@@ -1359,7 +1531,8 @@
                             document.getElementById('countdownNumber').textContent = countdownValue;
                             updateCountdownUI();
                         } else {
-                            stopAutoCalling();
+                            // Don't stop, just go to waiting state
+                            updateCountdownUI();
                         }
                     }
                 };
@@ -1377,7 +1550,8 @@
                             document.getElementById('countdownNumber').textContent = countdownValue;
                             updateCountdownUI();
                         } else {
-                            stopAutoCalling();
+                            // Don't stop, just go to waiting state
+                            updateCountdownUI();
                         }
                     }
                 };
@@ -1396,7 +1570,8 @@
                         countdownValue = COUNTDOWN_START;
                         updateCountdownUI();
                     } else {
-                        stopAutoCalling();
+                        // Don't stop, just go to waiting state
+                        updateCountdownUI();
                     }
                 }
             }
