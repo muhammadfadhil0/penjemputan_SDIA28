@@ -948,8 +948,8 @@
             }
         }
 
-        // Load user info from localStorage
-        function loadUserInfo() {
+        // Load user info from localStorage and set active teacher
+        async function loadUserInfo() {
             const userData = localStorage.getItem('user');
             if (userData) {
                 const user = JSON.parse(userData);
@@ -967,6 +967,19 @@
                 // Update popup role
                 const popupRole = document.getElementById('popupUserRole');
                 if (popupRole) popupRole.textContent = displayRole;
+
+                // Set active teacher in database (for Flutter app to detect)
+                if (user.id && user.role === 'guru') {
+                    try {
+                        await fetch('service/auth_login/set_active_teacher.php', {
+                            method: 'POST',
+                            headers: { 'Content-Type': 'application/json' },
+                            body: JSON.stringify({ user_id: user.id })
+                        });
+                    } catch (error) {
+                        console.error('Error setting active teacher:', error);
+                    }
+                }
             }
         }
 
@@ -1724,12 +1737,31 @@
             // window.location.href = 'account-settings.html';
         }
 
-        function logout() {
+        async function logout() {
             closeProfilePopup();
 
             // Show confirmation dialog
             if (confirm('Apakah Anda yakin ingin keluar?')) {
                 showToast('👋 Keluar dari akun...');
+
+                // Get user data before clearing
+                const userData = localStorage.getItem('user');
+                let userId = 0;
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    userId = user.id || 0;
+                }
+
+                // Clear active teacher session on server
+                try {
+                    await fetch('service/auth_login/logout.php', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ user_id: userId })
+                    });
+                } catch (error) {
+                    console.error('Error clearing teacher session:', error);
+                }
 
                 // Hapus data sesi dari localStorage
                 localStorage.removeItem('user');

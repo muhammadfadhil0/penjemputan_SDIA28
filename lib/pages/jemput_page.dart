@@ -5,6 +5,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/pickup/pickup_service.dart';
+import '../services/teacher/teacher_service.dart';
 
 // Pickup button states
 enum PickupButtonState { idle, queued, called, sending }
@@ -29,6 +30,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
 
   final AuthService _authService = AuthService();
   final PickupService _pickupService = PickupService();
+  final TeacherService _teacherService = TeacherService();
 
   // Pickup state management
   PickupButtonState _buttonState = PickupButtonState.idle;
@@ -44,6 +46,11 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   // Static flag to track if unstable connection bottomsheet has been shown this session
   // This ensures the bottomsheet only appears once per app lifecycle
   static bool _hasShownUnstableConnectionBottomSheet = false;
+
+  // Active teacher state
+  String _activeTeacherName = '';
+  bool _isLoadingTeacher = true;
+  Timer? _teacherPollingTimer;
 
   // Data siswa dari hasil login
   String get studentName => _authService.currentUser?.displayName ?? "Siswa";
@@ -89,6 +96,10 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     _connectivitySubscription = _connectivity.onConnectivityChanged.listen(
       _updateConnectionStatus,
     );
+
+    // Fetch active teacher and start polling
+    _fetchActiveTeacher();
+    _startTeacherPolling();
   }
 
   @override
@@ -99,7 +110,25 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     _pollingTimer?.cancel();
     _cooldownTimer?.cancel();
     _connectivitySubscription?.cancel();
+    _teacherPollingTimer?.cancel();
     super.dispose();
+  }
+
+  // Fetch active teacher from server
+  Future<void> _fetchActiveTeacher() async {
+    final teacher = await _teacherService.getActiveTeacher();
+    if (!mounted) return;
+    setState(() {
+      _activeTeacherName = teacher?.nama ?? '';
+      _isLoadingTeacher = false;
+    });
+  }
+
+  // Start polling for active teacher every 5 seconds
+  void _startTeacherPolling() {
+    _teacherPollingTimer = Timer.periodic(const Duration(seconds: 5), (_) {
+      _fetchActiveTeacher();
+    });
   }
 
   // Initialize connectivity check
@@ -743,21 +772,51 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Saat ini guru yang bertugas',
+                              'GURU PIKET',
                               style: TextStyle(
                                 color: AppColors.textMuted,
                                 fontSize: 12,
                               ),
                             ),
                             const SizedBox(height: 2),
-                            const Text(
-                              'Siri Rofikah S.Pd',
-                              style: TextStyle(
-                                color: AppColors.textPrimary,
-                                fontSize: 15,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                            _isLoadingTeacher
+                                ? Row(
+                                    children: [
+                                      SizedBox(
+                                        width: 14,
+                                        height: 14,
+                                        child: CircularProgressIndicator(
+                                          strokeWidth: 2,
+                                          color: AppColors.textMuted,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 8),
+                                      Text(
+                                        'Memuat...',
+                                        style: TextStyle(
+                                          color: AppColors.textMuted,
+                                          fontSize: 14,
+                                        ),
+                                      ),
+                                    ],
+                                  )
+                                : Text(
+                                    _activeTeacherName.isEmpty
+                                        ? 'Tidak ada guru bertugas'
+                                        : _activeTeacherName,
+                                    style: TextStyle(
+                                      color: _activeTeacherName.isEmpty
+                                          ? AppColors.textMuted
+                                          : AppColors.textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: _activeTeacherName.isEmpty
+                                          ? FontWeight.normal
+                                          : FontWeight.w600,
+                                      fontStyle: _activeTeacherName.isEmpty
+                                          ? FontStyle.italic
+                                          : FontStyle.normal,
+                                    ),
+                                  ),
                           ],
                         ),
                       ),
