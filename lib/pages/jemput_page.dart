@@ -628,21 +628,21 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                                         mainAxisAlignment:
                                             MainAxisAlignment.center,
                                         children: [
-                                          Icon(
-                                            _buttonState ==
-                                                    PickupButtonState.idle
-                                                ? Icons.directions_car_rounded
-                                                : _buttonState ==
-                                                      PickupButtonState.queued
-                                                ? Icons.hourglass_top_rounded
-                                                : _buttonState ==
-                                                      PickupButtonState.sending
-                                                ? Icons.upload_rounded
-                                                : Icons.timer_outlined,
-                                            color: color,
-                                            size: 42,
-                                          ),
-                                          const SizedBox(height: 6),
+                                          // Only show icon for JEMPUT and ANTRE states
+                                          if (_buttonState ==
+                                                  PickupButtonState.idle ||
+                                              _buttonState ==
+                                                  PickupButtonState.queued) ...[
+                                            Icon(
+                                              _buttonState ==
+                                                      PickupButtonState.idle
+                                                  ? Icons.directions_car_rounded
+                                                  : Icons.hourglass_top_rounded,
+                                              color: color,
+                                              size: 42,
+                                            ),
+                                            const SizedBox(height: 6),
+                                          ],
                                           Text(
                                             _buttonState ==
                                                     PickupButtonState.idle
