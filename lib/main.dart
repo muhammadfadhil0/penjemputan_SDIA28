@@ -6,6 +6,7 @@ import 'pages/jemput_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'services/auth/auth_service.dart';
+import 'services/notifications/notification_service.dart';
 
 // Export pages for use in other files
 export 'pages/jadwal_page.dart';
@@ -14,7 +15,12 @@ export 'pages/profile_page.dart';
 export 'pages/data_siswa_page.dart';
 export 'pages/riwayat_penjemputan_page.dart';
 
-void main() {
+void main() async {
+  WidgetsFlutterBinding.ensureInitialized();
+
+  // Initialize notification service
+  await NotificationService().initialize();
+
   runApp(const MyApp());
 }
 

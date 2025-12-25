@@ -6,6 +6,10 @@ import 'package:timezone/timezone.dart' as tz;
 import 'package:timezone/data/latest.dart' as tz_data;
 import 'notification_settings_model.dart';
 
+/// Global navigator key untuk navigasi dari notification callback
+// ignore: unused_element
+// final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
+
 /// Service untuk mengelola notifikasi penjemputan
 class NotificationService {
   // Singleton instance
@@ -25,6 +29,9 @@ class NotificationService {
 
   // Flag untuk cek apakah sudah diinisialisasi
   bool _isInitialized = false;
+
+  // Current settings cache
+  NotificationSettings? _cachedSettings;
 
   /// Inisialisasi notification service
   Future<void> initialize() async {
@@ -55,18 +62,22 @@ class NotificationService {
     await _notifications.initialize(
       initSettings,
       onDidReceiveNotificationResponse: _onNotificationTapped,
+      onDidReceiveBackgroundNotificationResponse:
+          _onBackgroundNotificationTapped,
     );
 
     _isInitialized = true;
     debugPrint('NotificationService: Initialized');
+
+    // Load cached settings
+    _cachedSettings = await loadSettings();
   }
 
-  /// Handler ketika notifikasi di-tap
+  /// Handler ketika notifikasi di-tap saat app foreground
   void _onNotificationTapped(NotificationResponse response) {
     debugPrint(
       'NotificationService: Notification tapped - ${response.payload}',
     );
-    // Bisa ditambahkan navigasi ke halaman tertentu
   }
 
   /// Request permission untuk menampilkan notifikasi
@@ -126,6 +137,10 @@ class NotificationService {
     // Konversi ke TZDateTime
     final tzNotificationTime = tz.TZDateTime.from(notificationTime, tz.local);
 
+    // Format waktu pulang untuk ditampilkan
+    final formattedPickupTime =
+        '${pickupTime.hour.toString().padLeft(2, '0')}:${pickupTime.minute.toString().padLeft(2, '0')}';
+
     // Android notification details
     const androidDetails = AndroidNotificationDetails(
       'pickup_reminder_channel',
@@ -148,10 +163,6 @@ class NotificationService {
       android: androidDetails,
       iOS: iosDetails,
     );
-
-    // Format waktu pulang untuk ditampilkan
-    final formattedPickupTime =
-        '${pickupTime.hour.toString().padLeft(2, '0')}:${pickupTime.minute.toString().padLeft(2, '0')}';
 
     // Jadwalkan notifikasi
     try {
@@ -227,6 +238,7 @@ class NotificationService {
   Future<void> saveSettings(NotificationSettings settings) async {
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_settingsKey, jsonEncode(settings.toJson()));
+    _cachedSettings = settings; // Update cache
     debugPrint('NotificationService: Settings saved');
   }
 
@@ -277,4 +289,12 @@ class NotificationService {
       notificationDetails,
     );
   }
+}
+
+/// Handler untuk background notification - harus top-level function
+@pragma('vm:entry-point')
+void _onBackgroundNotificationTapped(NotificationResponse response) {
+  debugPrint(
+    'NotificationService: Background notification tapped - ${response.payload}',
+  );
 }
