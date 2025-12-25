@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 24, 2025 at 03:13 PM
+-- Generation Time: Dec 25, 2025 at 02:14 PM
 -- Server version: 10.11.15-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -47,21 +47,22 @@ CREATE TABLE `jadwal_kelas` (
   `hari` enum('senin','selasa','rabu','kamis','jumat','sabtu') NOT NULL,
   `jam_masuk` time NOT NULL,
   `jam_pulang` time NOT NULL,
-  `is_holiday` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Status libur: 0=aktif, 1=libur',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `is_holiday` tinyint(1) NOT NULL DEFAULT 0 COMMENT 'Status libur: 0=aktif, 1=libur'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `jadwal_kelas`
 --
 
-INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`, `created_at`, `updated_at`) VALUES
-(1, 5, 'senin', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(2, 5, 'selasa', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(3, 5, 'rabu', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(4, 5, 'kamis', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(5, 5, 'jumat', '07:00:00', '11:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20');
+INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`, `created_at`, `updated_at`, `is_holiday`) VALUES
+(1, 5, 'senin', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
+(2, 5, 'selasa', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
+(3, 5, 'rabu', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-24 08:32:54', 0),
+(4, 5, 'kamis', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
+(5, 5, 'jumat', '07:00:00', '11:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
+(6, 1, 'senin', '07:00:00', '11:30:00', '2025-12-24 08:27:28', '2025-12-24 08:32:59', 0);
 
 -- --------------------------------------------------------
 
@@ -172,10 +173,10 @@ CREATE TABLE `siswa` (
   `nama_panggilan` varchar(50) DEFAULT NULL,
   `kelas_id` int(11) NOT NULL,
   `foto_url` varchar(255) DEFAULT NULL,
-  `username` varchar(50) NOT NULL,
-  `password` varchar(100) NOT NULL,
+  `username` varchar(50) DEFAULT NULL,
+  `password` varchar(100) DEFAULT NULL,
   `no_telepon_ortu` varchar(20) DEFAULT NULL,
-  `last_pickup_request` timestamp NULL DEFAULT NULL COMMENT 'Untuk fitur cooldown 10 menit',
+  `last_pickup_request` timestamp NULL DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
@@ -183,12 +184,12 @@ CREATE TABLE `siswa` (
 -- Dumping data for table `siswa`
 --
 
-INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `created_at`) VALUES
-(1, 'Ahmad Farhan Pratama', 'Farhan', 5, NULL, 'siswa_farhan', 'siswa123', '081234567892', '2025-12-22 08:51:20'),
-(2, 'Aisyah Putri Ramadhani', 'Aisyah', 5, NULL, 'siswa_aisyah', 'siswa123', '081234567893', '2025-12-22 08:51:20'),
-(3, 'Budi Santoso', 'Budi', 5, NULL, 'siswa_budi', 'siswa123', '081234567894', '2025-12-22 08:51:20'),
-(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, 'siswa_citra', 'siswa123', '081234567895', '2025-12-22 08:51:20'),
-(5, 'Dimas Prasetya', 'Dimas', 5, NULL, 'siswa_dimas', 'siswa123', '081234567896', '2025-12-22 08:51:20');
+INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `last_pickup_request`, `created_at`) VALUES
+(1, 'Ahmad Farhan Pratama', 'Farhan', 8, NULL, 'siswa_farhan', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(2, 'Aisyah Putri Ramadhani', 'Aisyah', 5, NULL, 'siswa_aisyah', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(3, 'Budi Santoso', 'Budi', 5, NULL, 'siswa_budi', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, 'siswa_citra', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(5, 'Dimas Prasetya', 'Dimas', 5, NULL, 'siswa_dimas', 'siswa123', NULL, NULL, '2025-12-22 08:51:20');
 
 -- --------------------------------------------------------
 
@@ -218,6 +219,7 @@ CREATE TABLE `users` (
   `role` enum('guru','class_viewer') NOT NULL DEFAULT 'guru',
   `nama` varchar(100) NOT NULL,
   `no_telepon` varchar(20) DEFAULT NULL,
+  `last_pickup_request` timestamp NULL DEFAULT NULL COMMENT 'Untuk fitur cooldown 10 menit',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
   `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
@@ -226,9 +228,11 @@ CREATE TABLE `users` (
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `created_at`, `updated_at`) VALUES
-(1, 'siri.rofikah', 'guru123', 'guru', 'Siri Rofikah S.Pd', '081234567890', '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
-(2, 'ahmad.fadil', 'guru123', 'guru', 'Ahmad Fadil S.Pd', '081234567891', '2025-12-22 08:51:20', '2025-12-22 08:51:20');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `last_pickup_request`, `created_at`, `updated_at`) VALUES
+(1, 'siri.rofikah', 'guru123', 'guru', 'Siri Rofikah S.Pd', '081234567890', NULL, '2025-12-22 08:51:20', '2025-12-24 09:10:40'),
+(2, 'ahmad.fadil', 'guru123', 'guru', 'Ahmad Fadil S.Pd', '081234567891', NULL, '2025-12-22 08:51:20', '2025-12-24 09:10:40'),
+(3, 'bapak.farhan', 'ortu123', '', 'Bapak Farhan', '081234567892', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20'),
+(4, 'ibu.farhan', 'ortu123', '', 'Ibu Farhan', '081234567893', NULL, '2025-12-22 08:51:20', '2025-12-22 08:51:20');
 
 -- --------------------------------------------------------
 
@@ -327,6 +331,7 @@ ALTER TABLE `permintaan_jemput`
 --
 ALTER TABLE `siswa`
   ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `idx_siswa_username` (`username`),
   ADD KEY `idx_kelas` (`kelas_id`),
   ADD KEY `idx_nama` (`nama`);
 
@@ -362,7 +367,7 @@ ALTER TABLE `guru_piket`
 -- AUTO_INCREMENT for table `jadwal_kelas`
 --
 ALTER TABLE `jadwal_kelas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=7;
 
 --
 -- AUTO_INCREMENT for table `kelas`
