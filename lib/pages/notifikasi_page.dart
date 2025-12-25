@@ -4,6 +4,7 @@ import '../services/notifications/notification_service.dart';
 import '../services/notifications/notification_settings_model.dart';
 import '../services/auth/auth_service.dart';
 import '../services/jadwal/jadwal_service.dart';
+import '../services/jadwal/schedule_change_monitor.dart';
 
 // ============================================
 // NOTIFIKASI PAGE
@@ -22,9 +23,14 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   bool _isLoading = true;
   String _notificationSound = 'Bell';
 
+  // Developer mode
+  int _headerTapCount = 0;
+  bool _developerModeEnabled = false;
+
   final NotificationService _notificationService = NotificationService();
   final AuthService _authService = AuthService();
   final JadwalService _jadwalService = JadwalService();
+  final ScheduleChangeMonitor _scheduleChangeMonitor = ScheduleChangeMonitor();
 
   @override
   void initState() {
@@ -43,6 +49,11 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         _notificationSound = settings.notificationSound;
         _isLoading = false;
       });
+
+      // Start monitoring jika pengingat perubahan jadwal aktif
+      if (settings.scheduleChangeEnabled) {
+        _scheduleChangeMonitor.startMonitoring();
+      }
     }
   }
 
@@ -190,6 +201,126 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
     }
   }
 
+  /// Handler untuk tap pada header "Notifikasi"
+  void _onHeaderTap() {
+    _headerTapCount++;
+
+    if (_headerTapCount >= 5) {
+      _headerTapCount = 0;
+
+      if (_developerModeEnabled) {
+        // Sudah aktif, matikan
+        setState(() {
+          _developerModeEnabled = false;
+        });
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Menu debug disembunyikan'),
+            backgroundColor: Colors.grey,
+          ),
+        );
+      } else {
+        // Belum aktif, tampilkan bottom sheet
+        _showDeveloperModeBottomSheet();
+      }
+    }
+  }
+
+  /// Menampilkan bottom sheet konfirmasi developer mode
+  void _showDeveloperModeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.orange.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(16),
+              ),
+              child: const Icon(
+                Icons.code_rounded,
+                color: Colors.orange,
+                size: 48,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Aktifkan fitur Developer?',
+              style: TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 18,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+            const SizedBox(height: 8),
+            const Text(
+              'Berguna untuk mendebug aplikasi perihal notifikasi',
+              textAlign: TextAlign.center,
+              style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  setState(() {
+                    _developerModeEnabled = true;
+                  });
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('🧑‍💻 Selamat datang Developer!'),
+                      backgroundColor: AppColors.primary,
+                    ),
+                  );
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                child: const Text(
+                  'Saya Developer',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 12),
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text(
+                'Batal',
+                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+              ),
+            ),
+            const SizedBox(height: 40),
+          ],
+        ),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -226,12 +357,15 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                     ),
                   ),
                   const SizedBox(width: 16),
-                  const Text(
-                    'Notifikasi',
-                    style: TextStyle(
-                      color: AppColors.textPrimary,
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  GestureDetector(
+                    onTap: _onHeaderTap,
+                    child: const Text(
+                      'Notifikasi',
+                      style: TextStyle(
+                        color: AppColors.textPrimary,
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -296,87 +430,252 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                         setState(() {
                           _pengingatPerubahanJadwal = value;
                         });
+
+                        // Start/stop monitoring berdasarkan toggle
+                        if (value) {
+                          _scheduleChangeMonitor.startMonitoring();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Pengingat perubahan jadwal diaktifkan',
+                              ),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        } else {
+                          _scheduleChangeMonitor.stopMonitoring();
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text(
+                                'Pengingat perubahan jadwal dinonaktifkan',
+                              ),
+                              backgroundColor: Colors.grey,
+                            ),
+                          );
+                        }
+
                         _saveSettingsAndSchedule();
                       },
                     ),
 
                     const SizedBox(height: 24),
 
-                    // Section Header - Test
-                    const Padding(
-                      padding: EdgeInsets.only(left: 4, bottom: 12),
-                      child: Text(
-                        'Test Notifikasi',
-                        style: TextStyle(
-                          color: AppColors.textMuted,
-                          fontSize: 13,
-                          fontWeight: FontWeight.w500,
+                    // Section Header - Debug (hidden by default)
+                    if (_developerModeEnabled) ...[
+                      const Padding(
+                        padding: EdgeInsets.only(left: 4, bottom: 12),
+                        child: Text(
+                          'Debug (Developer)',
+                          style: TextStyle(
+                            color: AppColors.textMuted,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w500,
+                          ),
                         ),
                       ),
-                    ),
 
-                    // Test Notification Button
-                    GestureDetector(
-                      onTap: () async {
-                        await _notificationService.showTestNotification();
-                        if (mounted) {
-                          ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Notifikasi test dikirim!'),
-                              backgroundColor: AppColors.primary,
-                            ),
-                          );
-                        }
-                      },
-                      child: ShadcnCard(
-                        padding: const EdgeInsets.all(16),
-                        child: Row(
-                          children: [
-                            Container(
-                              padding: const EdgeInsets.all(10),
-                              decoration: BoxDecoration(
-                                color: Colors.orange.withValues(alpha: 0.15),
-                                borderRadius: BorderRadius.circular(10),
+                      // Test Notification Button
+                      GestureDetector(
+                        onTap: () async {
+                          await _notificationService.showTestNotification();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text('Notifikasi test dikirim!'),
+                                backgroundColor: AppColors.primary,
                               ),
-                              child: const Icon(
-                                Icons.notifications_active_rounded,
-                                color: Colors.orange,
-                                size: 22,
+                            );
+                          }
+                        },
+                        child: ShadcnCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.orange.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.notifications_active_rounded,
+                                  color: Colors.orange,
+                                  size: 22,
+                                ),
                               ),
-                            ),
-                            const SizedBox(width: 14),
-                            const Expanded(
-                              child: Column(
-                                crossAxisAlignment: CrossAxisAlignment.start,
-                                children: [
-                                  Text(
-                                    'Kirim Notifikasi Test',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.w500,
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Kirim Notifikasi Test',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
-                                  ),
-                                  SizedBox(height: 4),
-                                  Text(
-                                    'Tap untuk menguji apakah notifikasi berfungsi',
-                                    style: TextStyle(
-                                      color: AppColors.textMuted,
-                                      fontSize: 12,
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Tap untuk menguji apakah notifikasi berfungsi',
+                                      style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 12,
+                                      ),
                                     ),
-                                  ),
-                                ],
+                                  ],
+                                ),
                               ),
-                            ),
-                            const Icon(
-                              Icons.arrow_forward_ios_rounded,
-                              color: AppColors.textMuted,
-                              size: 16,
-                            ),
-                          ],
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppColors.textMuted,
+                                size: 16,
+                              ),
+                            ],
+                          ),
                         ),
                       ),
-                    ),
+
+                      const SizedBox(height: 12),
+
+                      // Test Schedule Change Notification Button
+                      GestureDetector(
+                        onTap: () async {
+                          await _notificationService
+                              .showScheduleChangeNotification();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Notifikasi perubahan jadwal test dikirim!',
+                                ),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          }
+                        },
+                        child: ShadcnCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.blue.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.calendar_today_rounded,
+                                  color: Colors.blue,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Test Notifikasi Perubahan Jadwal',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Tap untuk test notifikasi perubahan jadwal',
+                                      style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppColors.textMuted,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+
+                      const SizedBox(height: 12),
+
+                      // Force Check Schedule Changes Button
+                      GestureDetector(
+                        onTap: () async {
+                          // Reset last seen dan mulai ulang monitoring
+                          await _scheduleChangeMonitor.resetLastSeen();
+                          _scheduleChangeMonitor.stopMonitoring();
+                          await _scheduleChangeMonitor.startMonitoring();
+                          if (mounted) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              const SnackBar(
+                                content: Text(
+                                  'Pengecekan jadwal dimulai ulang!',
+                                ),
+                                backgroundColor: AppColors.primary,
+                              ),
+                            );
+                          }
+                        },
+                        child: ShadcnCard(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(10),
+                                decoration: BoxDecoration(
+                                  color: Colors.green.withValues(alpha: 0.15),
+                                  borderRadius: BorderRadius.circular(10),
+                                ),
+                                child: const Icon(
+                                  Icons.refresh_rounded,
+                                  color: Colors.green,
+                                  size: 22,
+                                ),
+                              ),
+                              const SizedBox(width: 14),
+                              const Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Cek Jadwal Sekarang',
+                                      style: TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.w500,
+                                      ),
+                                    ),
+                                    SizedBox(height: 4),
+                                    Text(
+                                      'Cek ulang perubahan jadwal skearang',
+                                      style: TextStyle(
+                                        color: AppColors.textMuted,
+                                        fontSize: 12,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              const Icon(
+                                Icons.arrow_forward_ios_rounded,
+                                color: AppColors.textMuted,
+                                size: 16,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 40),
+                    ], // Close if (_developerModeEnabled)
                   ],
                 ),
               ),

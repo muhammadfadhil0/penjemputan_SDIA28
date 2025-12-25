@@ -259,6 +259,42 @@ class NotificationService {
     return const NotificationSettings();
   }
 
+  /// Menampilkan notifikasi perubahan jadwal
+  Future<void> showScheduleChangeNotification() async {
+    await initialize();
+
+    const androidDetails = AndroidNotificationDetails(
+      'schedule_change_channel',
+      'Perubahan Jadwal',
+      channelDescription: 'Notifikasi saat ada perubahan jadwal kepulangan',
+      importance: Importance.high,
+      priority: Priority.high,
+      ticker: 'Perubahan Jadwal',
+      icon: '@mipmap/ic_launcher',
+    );
+
+    const iosDetails = DarwinNotificationDetails(
+      presentAlert: true,
+      presentBadge: true,
+      presentSound: true,
+    );
+
+    const notificationDetails = NotificationDetails(
+      android: androidDetails,
+      iOS: iosDetails,
+    );
+
+    await _notifications.show(
+      1002, // ID unik untuk notifikasi perubahan jadwal
+      '📅 Perubahan Jadwal Pulang',
+      'Cek jadwal kepulangan Ananda sekarang!',
+      notificationDetails,
+      payload: 'schedule_change',
+    );
+
+    debugPrint('NotificationService: Schedule change notification shown');
+  }
+
   /// Menampilkan notifikasi test (untuk debugging)
   Future<void> showTestNotification() async {
     await initialize();
