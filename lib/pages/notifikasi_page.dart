@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:permission_handler/permission_handler.dart';
 import '../main.dart';
 import '../services/notifications/notification_service.dart';
 import '../services/notifications/notification_settings_model.dart';
 import '../services/auth/auth_service.dart';
 import '../services/jadwal/jadwal_service.dart';
 import '../services/jadwal/schedule_change_monitor.dart';
+import 'pengaturan_page.dart';
 
 // ============================================
 // NOTIFIKASI PAGE
@@ -306,14 +308,6 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
-            TextButton(
-              onPressed: () => Navigator.pop(context),
-              child: const Text(
-                'Batal',
-                style: TextStyle(color: AppColors.textMuted, fontSize: 14),
-              ),
-            ),
             const SizedBox(height: 40),
           ],
         ),
@@ -426,7 +420,21 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                       subtitle:
                           'Dapatkan notifikasi saat jadwal kepulangan berubah',
                       value: _pengingatPerubahanJadwal,
-                      onChanged: (value) {
+                      onChanged: (value) async {
+                        // Jika ingin mengaktifkan, cek dulu status battery optimization
+                        if (value) {
+                          final batteryStatus = await Permission
+                              .ignoreBatteryOptimizations
+                              .status;
+                          if (!batteryStatus.isGranted) {
+                            // Battery optimization masih aktif, tampilkan bottom sheet
+                            if (mounted) {
+                              _showBatteryOptimizationRequiredBottomSheet();
+                            }
+                            return; // Batalkan toggle
+                          }
+                        }
+
                         setState(() {
                           _pengingatPerubahanJadwal = value;
                         });
@@ -841,6 +849,98 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                   fontSize: 11,
                 ),
               ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Menampilkan bottom sheet yang menginformasikan perlu menonaktifkan optimalisasi baterai
+  void _showBatteryOptimizationRequiredBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.all(24),
+        decoration: const BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              Container(
+                padding: const EdgeInsets.all(14),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(14),
+                ),
+                child: const Icon(
+                  Icons.battery_alert_rounded,
+                  color: Colors.orange,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Fitur ini membutuhkan fungsi lain berjalan agar tetap aktif',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+              const SizedBox(height: 10),
+              const Text(
+                'Fitur ini membuat aplikasi mengecek apakah ada perubahan jadwal di server kami selama 10 menit, diperlukan mengaktifkan fitur Nonaktifkan Optimalisasi Baterai',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 13,
+                  height: 1.4,
+                ),
+              ),
+              const SizedBox(height: 20),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const PengaturanPage(),
+                      ),
+                    );
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Buka Pengaturan',
+                    style: TextStyle(fontSize: 15, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 40),
             ],
           ),
         ),
