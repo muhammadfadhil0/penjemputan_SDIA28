@@ -6,7 +6,9 @@ import 'pages/jemput_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'services/auth/auth_service.dart';
+import 'services/auth/multi_account_service.dart';
 import 'services/notifications/notification_service.dart';
+import 'widgets/account_switch_transition.dart';
 
 // Export pages for use in other files
 export 'pages/jadwal_page.dart';
@@ -64,6 +66,10 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _checkSession() async {
     final authService = AuthService();
+    final multiAccountService = MultiAccountService();
+
+    // Initialize multi-account service
+    await multiAccountService.init();
 
     // Coba load session yang tersimpan
     final hasSession = await authService.loadStoredUser();
@@ -72,6 +78,14 @@ class _SplashPageState extends State<SplashPage> {
 
     // Navigate berdasarkan status session
     if (hasSession) {
+      // Sync first account to multi-account if not exists
+      if (authService.currentUser != null &&
+          !multiAccountService.isAccountRegistered(
+            authService.currentUser!.id,
+          )) {
+        await multiAccountService.addAccount(authService.currentUser!);
+      }
+
       // Ada session tersimpan, langsung ke halaman utama
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigation()),
@@ -235,7 +249,7 @@ class _MainNavigationState extends State<MainNavigation>
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: _pages[_currentIndex],
+      body: AccountSwitchAnimatedPage(child: _pages[_currentIndex]),
       bottomNavigationBar: _buildBottomNavBar(),
     );
   }

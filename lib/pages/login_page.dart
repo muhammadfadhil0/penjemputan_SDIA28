@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
+import '../services/auth/multi_account_service.dart';
 
 // ============================================
 // LOGIN PAGE
@@ -74,6 +75,13 @@ class _LoginPageState extends State<LoginPage>
     setState(() => _isLoading = false);
 
     if (result.success && mounted) {
+      // Register first account to multi-account service
+      if (result.user != null) {
+        final multiAccountService = MultiAccountService();
+        await multiAccountService.init();
+        await multiAccountService.addAccount(result.user!);
+      }
+
       // Login berhasil - navigasi ke halaman utama
       Navigator.of(context).pushReplacement(
         MaterialPageRoute(builder: (context) => const MainNavigation()),

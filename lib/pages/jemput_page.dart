@@ -4,8 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
+import '../services/auth/multi_account_service.dart';
 import '../services/pickup/pickup_service.dart';
 import '../services/teacher/teacher_service.dart';
+import '../widgets/stacked_avatars.dart';
+import '../widgets/account_switcher_bottomsheet.dart';
 
 // Pickup button states
 enum PickupButtonState { idle, queued, called, sending }
@@ -31,6 +34,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   final AuthService _authService = AuthService();
   final PickupService _pickupService = PickupService();
   final TeacherService _teacherService = TeacherService();
+  final MultiAccountService _multiAccountService = MultiAccountService();
 
   // Pickup state management
   PickupButtonState _buttonState = PickupButtonState.idle;
@@ -100,6 +104,21 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     // Fetch active teacher and start polling
     _fetchActiveTeacher();
     _startTeacherPolling();
+
+    // Listen for account changes
+    _authService.addAccountChangedListener(_onAccountChanged);
+  }
+
+  // Handle account change
+  void _onAccountChanged(user) {
+    if (mounted) {
+      setState(() {
+        // Refresh data for new account
+        _checkPickupStatus();
+        _buttonState = PickupButtonState.idle;
+        _cooldownSeconds = 0;
+      });
+    }
   }
 
   @override
@@ -111,7 +130,19 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     _cooldownTimer?.cancel();
     _connectivitySubscription?.cancel();
     _teacherPollingTimer?.cancel();
+    _authService.removeAccountChangedListener(_onAccountChanged);
     super.dispose();
+  }
+
+  // Handle avatar tap for account switching
+  void _handleAvatarTap() {
+    // Selalu tampilkan account switcher, meskipun hanya 1 akun
+    showAccountSwitcher(
+      context,
+      onAccountSwitched: () {
+        setState(() {});
+      },
+    );
   }
 
   // Fetch active teacher from server
@@ -660,61 +691,15 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                 padding: const EdgeInsets.symmetric(horizontal: 20),
                 child: Row(
                   children: [
-                    Container(
-                      width: 56,
-                      height: 56,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: AppColors.primaryLight,
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: AppColors.primary.withValues(alpha: 0.2),
-                            blurRadius: 12,
-                            offset: const Offset(0, 4),
-                          ),
-                        ],
-                      ),
-                      child: ClipOval(
-                        child: _authService.currentUser?.fotoUrl != null
-                            ? Image.network(
-                                _authService.currentUser!.fotoUrl!,
-                                fit: BoxFit.cover,
-                                loadingBuilder:
-                                    (context, child, loadingProgress) {
-                                      if (loadingProgress == null) return child;
-                                      return Container(
-                                        color: AppColors.primaryLighter,
-                                        child: const Center(
-                                          child: CircularProgressIndicator(
-                                            color: AppColors.primary,
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                      );
-                                    },
-                                errorBuilder: (context, error, stackTrace) {
-                                  return Container(
-                                    color: AppColors.primaryLighter,
-                                    child: const Icon(
-                                      Icons.person,
-                                      color: AppColors.primary,
-                                      size: 32,
-                                    ),
-                                  );
-                                },
-                              )
-                            : Container(
-                                color: AppColors.primaryLighter,
-                                child: const Icon(
-                                  Icons.person,
-                                  color: AppColors.primary,
-                                  size: 32,
-                                ),
-                              ),
-                      ),
+                    // Stacked avatars for multiple accounts
+                    StackedAvatars(
+                      accounts: _multiAccountService.accounts.isNotEmpty
+                          ? _multiAccountService.accounts
+                          : (_authService.currentUser != null
+                                ? [_authService.currentUser!]
+                                : []),
+                      size: 56,
+                      onTap: _handleAvatarTap,
                     ),
                     const SizedBox(width: 14),
                     Expanded(

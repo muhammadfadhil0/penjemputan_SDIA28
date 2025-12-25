@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/auth/auth_service.dart';
+import '../services/auth/multi_account_service.dart';
 
 // ============================================
 // LOGIN MERGE MURID PAGE
@@ -25,7 +27,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
     super.dispose();
   }
 
-  void _handleMerge() {
+  Future<void> _handleMerge() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
@@ -33,21 +35,111 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
       final navigator = Navigator.of(context);
       final messenger = ScaffoldMessenger.of(context);
 
-      // Simulate API call
-      Future.delayed(const Duration(seconds: 2), () {
-        setState(() => _isLoading = false);
+      try {
+        // Call actual login API
+        final authService = AuthService();
+        final result = await authService.login(
+          _nisController.text.trim(),
+          _passwordController.text,
+        );
 
-        // Show success message
+        if (!mounted) return;
+
+        if (result.success && result.user != null) {
+          // Check if account already exists
+          final multiAccountService = MultiAccountService();
+          if (multiAccountService.isAccountRegistered(result.user!.id)) {
+            setState(() => _isLoading = false);
+            messenger.showSnackBar(
+              SnackBar(
+                content: const Row(
+                  children: [
+                    Icon(
+                      Icons.warning_amber_rounded,
+                      color: Colors.white,
+                      size: 20,
+                    ),
+                    SizedBox(width: 10),
+                    Expanded(child: Text('Akun ini sudah terdaftar')),
+                  ],
+                ),
+                backgroundColor: Colors.orange,
+                behavior: SnackBarBehavior.floating,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                margin: const EdgeInsets.all(16),
+              ),
+            );
+            return;
+          }
+
+          // Add account to MultiAccountService
+          await multiAccountService.addAccount(result.user!);
+
+          setState(() => _isLoading = false);
+
+          // Show success message
+          messenger.showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      '${result.user!.displayName} berhasil ditambahkan!',
+                    ),
+                  ),
+                ],
+              ),
+              backgroundColor: Colors.green,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+
+          navigator.pop();
+        } else {
+          setState(() => _isLoading = false);
+          messenger.showSnackBar(
+            SnackBar(
+              content: Row(
+                children: [
+                  const Icon(
+                    Icons.error_outline,
+                    color: Colors.white,
+                    size: 20,
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(child: Text(result.message)),
+                ],
+              ),
+              backgroundColor: Colors.red,
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        }
+      } catch (e) {
+        if (!mounted) return;
+        setState(() => _isLoading = false);
         messenger.showSnackBar(
           SnackBar(
             content: const Row(
               children: [
-                Icon(Icons.check_circle, color: Colors.white, size: 20),
+                Icon(Icons.error_outline, color: Colors.white, size: 20),
                 SizedBox(width: 10),
-                Text('Murid berhasil dihubungkan!'),
+                Expanded(child: Text('Terjadi kesalahan. Silakan coba lagi.')),
               ],
             ),
-            backgroundColor: Colors.green,
+            backgroundColor: Colors.red,
             behavior: SnackBarBehavior.floating,
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(10),
@@ -55,9 +147,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
             margin: const EdgeInsets.all(16),
           ),
         );
-
-        navigator.pop();
-      });
+      }
     }
   }
 
@@ -73,7 +163,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
           onPressed: () => Navigator.pop(context),
         ),
         title: const Text(
-          'Hubungkan Murid',
+          'Tambah Akun',
           style: TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
@@ -124,7 +214,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
               // Info text
               Center(
                 child: Text(
-                  'Masukkan data login murid yang ingin dihubungkan',
+                  'Masukkan data login murid yang ingin ditambahkan dalam aplikasi Anda',
                   style: TextStyle(
                     fontSize: 14,
                     color: AppColors.textSecondary,
@@ -139,7 +229,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
               const SizedBox(height: 8),
               TextFormField(
                 controller: _nisController,
-                keyboardType: TextInputType.number,
+                keyboardType: TextInputType.name,
                 decoration: _inputDecoration(
                   hint: 'Masukkan username',
                   prefixIcon: Icons.badge_outlined,
@@ -215,7 +305,7 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
                             Icon(Icons.link, size: 20),
                             SizedBox(width: 8),
                             Text(
-                              'Hubungkan Murid',
+                              'Tambah Akun Murid',
                               style: TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.w600,

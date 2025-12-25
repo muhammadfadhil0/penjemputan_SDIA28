@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'package:http/http.dart' as http;
 import '../auth/auth_service.dart';
+import '../auth/multi_account_service.dart';
 
 /// Response wrapper untuk hasil upload foto
 class PhotoUploadResult {
@@ -49,6 +50,12 @@ class SiswaPhotoService {
         // Update foto di auth service
         if (fotoUrl != null) {
           await AuthService().updateUserFoto(fotoUrl);
+
+          // Sync dengan multi-account service
+          final authUser = AuthService().currentUser;
+          if (authUser != null) {
+            await MultiAccountService().updateAccount(authUser);
+          }
         }
 
         return PhotoUploadResult(
@@ -85,6 +92,12 @@ class SiswaPhotoService {
         // Update foto di auth service (set ke null)
         await AuthService().updateUserFoto(null);
 
+        // Sync dengan multi-account service
+        final authUser = AuthService().currentUser;
+        if (authUser != null) {
+          await MultiAccountService().updateAccount(authUser);
+        }
+
         return PhotoUploadResult(
           success: true,
           message: responseData['message'] ?? 'Foto berhasil dihapus!',
@@ -120,6 +133,12 @@ class SiswaPhotoService {
       if (response.statusCode == 200 && responseData['success'] == true) {
         // Update foto di auth service
         await AuthService().updateUserFoto(avatarUrl);
+
+        // Sync dengan multi-account service
+        final authUser = AuthService().currentUser;
+        if (authUser != null) {
+          await MultiAccountService().updateAccount(authUser);
+        }
 
         return PhotoUploadResult(
           success: true,

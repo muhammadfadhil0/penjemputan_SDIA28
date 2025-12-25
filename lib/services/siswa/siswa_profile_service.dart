@@ -52,6 +52,18 @@ class SiswaProfileService {
         body: jsonEncode(body),
       );
 
+      // Debug: Print response details
+      print('Profile update response status: ${response.statusCode}');
+      print('Profile update response body: ${response.body}');
+
+      // Check if response body is empty
+      if (response.body.isEmpty) {
+        return ProfileUpdateResult(
+          success: false,
+          message: 'Server mengembalikan response kosong. Cek PHP error log.',
+        );
+      }
+
       final responseData = jsonDecode(response.body);
 
       if (response.statusCode == 200 && responseData['success'] == true) {
@@ -67,6 +79,8 @@ class SiswaProfileService {
         );
       }
     } catch (e) {
+      // Debug: Print actual error
+      print('Profile update error: $e');
       return ProfileUpdateResult(
         success: false,
         message:

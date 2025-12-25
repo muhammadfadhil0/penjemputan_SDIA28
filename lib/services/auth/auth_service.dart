@@ -12,6 +12,9 @@ class AuthResult {
   AuthResult({required this.success, required this.message, this.user});
 }
 
+/// Callback untuk notifikasi perubahan akun
+typedef OnAccountChangedCallback = void Function(SiswaUser? user);
+
 /// Service untuk menangani autentikasi siswa
 class AuthService {
   // Base URL untuk API backend
@@ -30,11 +33,38 @@ class AuthService {
   /// User yang sedang login (cached dalam memory)
   SiswaUser? _currentUser;
 
+  /// List of listeners for account changes
+  final List<OnAccountChangedCallback> _accountChangedListeners = [];
+
   /// Getter untuk user saat ini
   SiswaUser? get currentUser => _currentUser;
 
   /// Cek apakah user sudah login
   bool get isLoggedIn => _currentUser != null;
+
+  /// Tambah listener untuk perubahan akun
+  void addAccountChangedListener(OnAccountChangedCallback callback) {
+    _accountChangedListeners.add(callback);
+  }
+
+  /// Hapus listener
+  void removeAccountChangedListener(OnAccountChangedCallback callback) {
+    _accountChangedListeners.remove(callback);
+  }
+
+  /// Notify semua listeners tentang perubahan akun
+  void _notifyAccountChanged() {
+    for (final listener in _accountChangedListeners) {
+      listener(_currentUser);
+    }
+  }
+
+  /// Switch ke akun lain (digunakan oleh MultiAccountService)
+  Future<void> switchToAccount(SiswaUser user) async {
+    _currentUser = user;
+    await _saveUserToStorage(user);
+    _notifyAccountChanged();
+  }
 
   /// Login dengan username dan password siswa
   Future<AuthResult> login(String username, String password) async {

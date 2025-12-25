@@ -4,6 +4,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:image_cropper/image_cropper.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
+import '../services/auth/multi_account_service.dart';
 import '../services/siswa/siswa_photo_service.dart';
 import '../services/siswa/siswa_profile_service.dart';
 
@@ -453,6 +454,13 @@ class _DataSiswaPageState extends State<DataSiswaPage> {
             nama: result.updatedData!['nama'],
             namaPanggilan: result.updatedData!['nama_panggilan'],
           );
+
+          // Sync dengan multi-account service
+          final authUser = _authService.currentUser;
+          if (authUser != null) {
+            await MultiAccountService().updateAccount(authUser);
+          }
+
           setState(() {});
         }
       }

@@ -17,6 +17,7 @@ class JadwalPage extends StatefulWidget {
 
 class _JadwalPageState extends State<JadwalPage> {
   final JadwalService _jadwalService = JadwalService();
+  final AuthService _authService = AuthService();
 
   bool _isLoading = true;
   String? _errorMessage;
@@ -27,6 +28,22 @@ class _JadwalPageState extends State<JadwalPage> {
   void initState() {
     super.initState();
     _initJadwal();
+    _authService.addAccountChangedListener(_onAccountChanged);
+  }
+
+  @override
+  void dispose() {
+    _authService.removeAccountChangedListener(_onAccountChanged);
+    super.dispose();
+  }
+
+  // Handle account change - reload schedule for new account
+  void _onAccountChanged(user) {
+    if (mounted && user != null) {
+      // Reset current kelas and reload jadwal for new account
+      _currentKelasId = user.kelasId;
+      _loadJadwal();
+    }
   }
 
   /// Inisialisasi jadwal - gunakan cache jika tersedia
