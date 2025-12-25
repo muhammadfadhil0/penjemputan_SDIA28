@@ -21,6 +21,12 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   int _menitSebelumPulang = 15; // Default 15 menit
   bool _isLoading = true;
 
+  // New settings for alert mode and sounds
+  AlertMode _alertMode = AlertMode.notification;
+  String _notificationSound =
+      'Bell'; // file name in assets/sounds/notification/
+  String _alarmSound = 'Kami Al Azhar'; // file name in assets/sounds/ringtone/
+
   final NotificationService _notificationService = NotificationService();
   final AuthService _authService = AuthService();
   final JadwalService _jadwalService = JadwalService();
@@ -39,6 +45,9 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         _pengingatPenjemputan = settings.pickupReminderEnabled;
         _pengingatPerubahanJadwal = settings.scheduleChangeEnabled;
         _menitSebelumPulang = settings.minutesBeforePickup;
+        _alertMode = settings.alertMode;
+        _notificationSound = settings.notificationSound;
+        _alarmSound = settings.alarmSound;
         _isLoading = false;
       });
     }
@@ -52,6 +61,9 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       pickupReminderEnabled: _pengingatPenjemputan,
       minutesBeforePickup: _menitSebelumPulang,
       scheduleChangeEnabled: _pengingatPerubahanJadwal,
+      alertMode: _alertMode,
+      notificationSound: _notificationSound,
+      alarmSound: _alarmSound,
     );
 
     // Simpan settings
@@ -278,7 +290,15 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                       duration: const Duration(milliseconds: 300),
                       curve: Curves.easeOutCubic,
                       child: _pengingatPenjemputan
-                          ? _buildTimeSelector()
+                          ? Column(
+                              children: [
+                                _buildTimeSelector(),
+                                const SizedBox(height: 12),
+                                _buildModeSelector(),
+                                const SizedBox(height: 12),
+                                _buildSoundOptions(),
+                              ],
+                            )
                           : const SizedBox.shrink(),
                     ),
 
@@ -544,6 +564,212 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+
+  /// Build mode selector (Notifikasi vs Layar Penuh)
+  Widget _buildModeSelector() {
+    return ShadcnCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLighter,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.display_settings_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Mode Pengingat',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          Row(
+            children: [
+              _buildModeOption(
+                AlertMode.notification,
+                Icons.notifications_rounded,
+                'Notifikasi',
+              ),
+              const SizedBox(width: 8),
+              _buildModeOption(
+                AlertMode.fullscreen,
+                Icons.fullscreen_rounded,
+                'Layar Penuh',
+              ),
+            ],
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildModeOption(AlertMode mode, IconData icon, String label) {
+    final isSelected = _alertMode == mode;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setState(() => _alertMode = mode);
+          _saveSettingsAndSchedule();
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 14, horizontal: 12),
+          decoration: BoxDecoration(
+            color: isSelected
+                ? AppColors.primary
+                : AppColors.border.withValues(alpha: 0.5),
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+                size: 20,
+              ),
+              const SizedBox(width: 8),
+              Text(
+                label,
+                style: TextStyle(
+                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                  fontSize: 13,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// Build sound options based on selected mode
+  Widget _buildSoundOptions() {
+    return ShadcnCard(
+      padding: const EdgeInsets.all(16),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLighter,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Icon(
+                  Icons.volume_up_rounded,
+                  color: AppColors.primary,
+                  size: 18,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Text(
+                'Suara',
+                style: TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Sound selection based on mode
+          if (_alertMode == AlertMode.notification) ...[
+            _buildSoundDisplay(
+              label: 'Suara Notifikasi',
+              folder: 'notification',
+              currentSound: _notificationSound,
+              onSoundChanged: (value) {
+                setState(() => _notificationSound = value);
+                _saveSettingsAndSchedule();
+              },
+            ),
+          ] else ...[
+            _buildSoundDisplay(
+              label: 'Suara Alarm',
+              folder: 'ringtone',
+              currentSound: _alarmSound,
+              onSoundChanged: (value) {
+                setState(() => _alarmSound = value);
+                _saveSettingsAndSchedule();
+              },
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  /// Build sound display with current sound name
+  Widget _buildSoundDisplay({
+    required String label,
+    required String folder,
+    required String currentSound,
+    required ValueChanged<String> onSoundChanged,
+  }) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+      decoration: BoxDecoration(
+        color: AppColors.border.withValues(alpha: 0.3),
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        children: [
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label,
+                style: const TextStyle(
+                  color: AppColors.textMuted,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                currentSound,
+                style: const TextStyle(
+                  color: AppColors.textPrimary,
+                  fontSize: 15,
+                  fontWeight: FontWeight.w500,
+                ),
+              ),
+            ],
+          ),
+          const Icon(
+            Icons.music_note_rounded,
+            color: AppColors.primary,
+            size: 24,
+          ),
+        ],
       ),
     );
   }

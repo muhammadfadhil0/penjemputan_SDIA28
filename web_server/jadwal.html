@@ -843,6 +843,37 @@
                 width: 260px;
             }
         }
+
+        /* Variant Button Styles */
+        .variant-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 14px;
+            color: #6b7280;
+            background: #f3f4f6;
+            border: 2px solid transparent;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .variant-btn:hover:not(.active) {
+            background: #e5e7eb;
+            color: #3b82f6;
+        }
+
+        .variant-btn.active {
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            color: white;
+            border-color: #3b82f6;
+            box-shadow: 0 4px 12px rgba(59, 130, 246, 0.3);
+        }
+
+        .variant-btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
     </style>
 </head>
 
@@ -1004,12 +1035,24 @@
 
             <div class="segmented-container" id="segmentedContainer">
                 <div class="segmented-indicator" id="segmentedIndicator"></div>
-                <div class="segmented-btn active" data-class="1" onclick="selectClass(this, '1')">Kelas 1</div>
-                <div class="segmented-btn" data-class="2" onclick="selectClass(this, '2')">Kelas 2</div>
-                <div class="segmented-btn" data-class="3" onclick="selectClass(this, '3')">Kelas 3</div>
-                <div class="segmented-btn" data-class="4" onclick="selectClass(this, '4')">Kelas 4</div>
-                <div class="segmented-btn" data-class="5" onclick="selectClass(this, '5')">Kelas 5</div>
-                <div class="segmented-btn" data-class="6" onclick="selectClass(this, '6')">Kelas 6</div>
+                <div class="segmented-btn active" data-class="1" onclick="selectTingkat(this, '1')">Kelas 1</div>
+                <div class="segmented-btn" data-class="2" onclick="selectTingkat(this, '2')">Kelas 2</div>
+                <div class="segmented-btn" data-class="3" onclick="selectTingkat(this, '3')">Kelas 3</div>
+                <div class="segmented-btn" data-class="4" onclick="selectTingkat(this, '4')">Kelas 4</div>
+                <div class="segmented-btn" data-class="5" onclick="selectTingkat(this, '5')">Kelas 5</div>
+                <div class="segmented-btn" data-class="6" onclick="selectTingkat(this, '6')">Kelas 6</div>
+            </div>
+
+            <!-- Class Variant Selector (A/B/C/D) -->
+            <div class="flex items-center gap-3 mt-4">
+                <span class="text-sm font-medium text-textSecondary">Pilih Kelas:</span>
+                <div class="flex gap-2" id="variantContainer">
+                    <button class="variant-btn active" data-variant="A" onclick="selectVariant('A')">A</button>
+                    <button class="variant-btn" data-variant="B" onclick="selectVariant('B')">B</button>
+                    <button class="variant-btn" data-variant="C" onclick="selectVariant('C')">C</button>
+                    <button class="variant-btn" data-variant="D" onclick="selectVariant('D')">D</button>
+                </div>
+                <span class="text-sm font-semibold text-primary ml-2" id="selectedClassName">Kelas 1A</span>
             </div>
         </div>
 
@@ -1138,7 +1181,7 @@
             { id: 'minggu', name: 'Minggu', icon: '🌴', bgColor: 'bg-amber-50', iconBg: 'bg-amber-100', isWeekend: true }
         ];
 
-        // Default schedules for each class
+        // Default schedules for each tingkat
         const defaultSchedules = {
             '1': { entryTime: '07:00', exitTime: '11:30' },
             '2': { entryTime: '07:00', exitTime: '12:00' },
@@ -1148,11 +1191,33 @@
             '6': { entryTime: '07:00', exitTime: '14:00' }
         };
 
-        // Current selected class
-        let selectedClass = '1';
+        // Mapping tingkat + variant to kelas_id
+        const kelasMapping = {
+            '1': { 'A': 1, 'B': 2, 'C': 13, 'D': 14 },
+            '2': { 'A': 3, 'B': 4, 'C': 15, 'D': 16 },
+            '3': { 'A': 5, 'B': 6, 'C': 17, 'D': 18 },
+            '4': { 'A': 7, 'B': 8, 'C': 19, 'D': 20 },
+            '5': { 'A': 9, 'B': 10, 'C': 21, 'D': 22 },
+            '6': { 'A': 11, 'B': 12, 'C': 23 }  // Kelas 6 hanya A-C
+        };
+
+        // Variants available per tingkat
+        const variantsPerTingkat = {
+            '1': ['A', 'B', 'C', 'D'],
+            '2': ['A', 'B', 'C', 'D'],
+            '3': ['A', 'B', 'C', 'D'],
+            '4': ['A', 'B', 'C', 'D'],
+            '5': ['A', 'B', 'C', 'D'],
+            '6': ['A', 'B', 'C']  // Kelas 6 hanya A-C
+        };
+
+        // Current selected tingkat, variant, and kelas_id
+        let selectedTingkat = '1';
+        let selectedVariant = 'A';
+        let selectedKelasId = 1;
         let selectedDay = null;
 
-        // Schedules storage (class -> day -> schedule)
+        // Schedules storage (kelas_id -> day -> schedule)
         let schedules = {};
 
         // Initialize
@@ -1348,58 +1413,43 @@
 
         // Load schedules from backend API
         async function loadSchedules() {
-            // Initialize schedules with defaults first
-            for (let classNum = 1; classNum <= 6; classNum++) {
-                schedules[classNum] = {};
-                days.forEach(day => {
-                    schedules[classNum][day.id] = {
-                        ...defaultSchedules[classNum],
-                        isHoliday: day.isWeekend ? true : false
-                    };
-                });
-            }
+            // Update variant buttons based on initial tingkat
+            updateVariantButtons();
+            updateSelectedClassName();
 
-            // Try to fetch from backend
+            // Try to fetch from backend for current kelas
             try {
-                await fetchSchedulesFromAPI(selectedClass);
+                await fetchSchedulesByKelasId(selectedKelasId);
             } catch (error) {
                 console.log('⚠️ Menggunakan data default (backend tidak tersedia):', error.message);
-                // Fallback to localStorage if available
-                const saved = localStorage.getItem('schoolSchedules');
-                if (saved) {
-                    schedules = JSON.parse(saved);
-                }
             }
         }
 
-        // Fetch schedules from API
-        async function fetchSchedulesFromAPI(tingkat) {
-            const response = await fetch(`${API_BASE_URL}/get_jadwal.php?tingkat=${tingkat}`);
+        // Fetch schedules by kelas_id
+        async function fetchSchedulesByKelasId(kelasId) {
+            const response = await fetch(`${API_BASE_URL}/get_jadwal_siswa.php?kelas_id=${kelasId}`);
             const result = await response.json();
 
-            if (result.success && result.data && result.data.length > 0) {
-                // Process API data and merge into schedules
-                result.data.forEach(kelasData => {
-                    const tingkatNum = kelasData.tingkat;
+            if (result.success && result.data) {
+                const kelasData = result.data;
 
-                    // Initialize if not exists
-                    if (!schedules[tingkatNum]) {
-                        schedules[tingkatNum] = {};
-                    }
+                // Initialize if not exists
+                if (!schedules[kelasId]) {
+                    schedules[kelasId] = {};
+                }
 
-                    // Process each day's schedule
-                    Object.entries(kelasData.jadwal).forEach(([hari, jadwal]) => {
-                        schedules[tingkatNum][hari] = {
-                            entryTime: jadwal.jam_masuk,
-                            exitTime: jadwal.jam_pulang,
-                            isHoliday: jadwal.is_holiday || false,
-                            kelas_id: kelasData.kelas_id,
-                            jadwal_id: jadwal.id
-                        };
-                    });
+                // Process each day's schedule
+                Object.entries(kelasData.jadwal).forEach(([hari, jadwal]) => {
+                    schedules[kelasId][hari] = {
+                        entryTime: jadwal.jam_masuk,
+                        exitTime: jadwal.jam_pulang,
+                        isHoliday: jadwal.is_holiday || false,
+                        kelas_id: kelasId,
+                        jadwal_id: jadwal.id
+                    };
                 });
 
-                console.log('✅ Data jadwal berhasil dimuat dari database');
+                console.log(`✅ Data jadwal kelas ${kelasData.nama_kelas} berhasil dimuat dari database`);
                 return true;
             }
             return false;
@@ -1442,9 +1492,9 @@
             }
         }
 
-        // Select class
-        async function selectClass(element, classNum) {
-            // Update active state
+        // Select tingkat (grade level)
+        async function selectTingkat(element, tingkat) {
+            // Update active state for tingkat buttons
             document.querySelectorAll('.segmented-btn').forEach(btn => {
                 btn.classList.remove('active');
             });
@@ -1455,16 +1505,87 @@
             indicator.style.width = `${element.offsetWidth}px`;
             indicator.style.left = `${element.offsetLeft}px`;
 
-            selectedClass = classNum;
+            selectedTingkat = tingkat;
 
-            // Fetch schedules for this class from API
+            // Update variant buttons based on new tingkat
+            updateVariantButtons();
+
+            // Select first available variant
+            const availableVariants = variantsPerTingkat[tingkat];
+            if (!availableVariants.includes(selectedVariant)) {
+                selectedVariant = availableVariants[0];
+            }
+
+            // Update kelas_id
+            selectedKelasId = kelasMapping[tingkat][selectedVariant];
+            updateSelectedClassName();
+
+            // Fetch schedules for this kelas from API
             try {
-                await fetchSchedulesFromAPI(classNum);
+                await fetchSchedulesByKelasId(selectedKelasId);
             } catch (error) {
                 console.log('⚠️ Menggunakan data lokal:', error.message);
             }
 
             renderDayCards();
+        }
+
+        // Select variant (A/B/C/D)
+        async function selectVariant(variant) {
+            selectedVariant = variant;
+            selectedKelasId = kelasMapping[selectedTingkat][variant];
+
+            // Update active state for variant buttons
+            document.querySelectorAll('.variant-btn').forEach(btn => {
+                btn.classList.remove('active');
+                if (btn.getAttribute('data-variant') === variant) {
+                    btn.classList.add('active');
+                }
+            });
+
+            updateSelectedClassName();
+
+            // Fetch schedules for this kelas from API
+            try {
+                await fetchSchedulesByKelasId(selectedKelasId);
+            } catch (error) {
+                console.log('⚠️ Menggunakan data lokal:', error.message);
+            }
+
+            renderDayCards();
+        }
+
+        // Update variant buttons based on current tingkat
+        function updateVariantButtons() {
+            const container = document.getElementById('variantContainer');
+            const availableVariants = variantsPerTingkat[selectedTingkat];
+
+            container.querySelectorAll('.variant-btn').forEach(btn => {
+                const variant = btn.getAttribute('data-variant');
+                if (availableVariants.includes(variant)) {
+                    btn.disabled = false;
+                    btn.style.display = 'block';
+                } else {
+                    btn.disabled = true;
+                    btn.style.display = 'none';
+                    btn.classList.remove('active');
+                }
+
+                // Set active state
+                if (variant === selectedVariant && availableVariants.includes(variant)) {
+                    btn.classList.add('active');
+                } else {
+                    btn.classList.remove('active');
+                }
+            });
+        }
+
+        // Update selected class name display
+        function updateSelectedClassName() {
+            const nameEl = document.getElementById('selectedClassName');
+            if (nameEl) {
+                nameEl.textContent = `Kelas ${selectedTingkat}${selectedVariant}`;
+            }
         }
 
         // Render day cards
@@ -1473,8 +1594,8 @@
             container.innerHTML = '';
 
             days.forEach((day, index) => {
-                const schedule = schedules[selectedClass]?.[day.id] || {
-                    ...defaultSchedules[selectedClass],
+                const schedule = schedules[selectedKelasId]?.[day.id] || {
+                    ...defaultSchedules[selectedTingkat],
                     isHoliday: day.isWeekend ? true : false
                 };
                 const isWeekend = day.isWeekend;
@@ -1566,7 +1687,7 @@
             modalDayIcon.textContent = day.icon;
             modalDayIcon.style.background = day.isWeekend ? 'rgba(251, 191, 36, 0.3)' : '';
             modalDayName.textContent = day.name;
-            modalClassName.textContent = `Kelas ${selectedClass}`;
+            modalClassName.textContent = `Kelas ${selectedTingkat}${selectedVariant}`;
             entryTimeInput.value = schedule.entryTime;
             exitTimeInput.value = schedule.exitTime;
 
@@ -1628,19 +1749,19 @@
             const isHoliday = document.getElementById('holidaySwitch').checked;
 
             // Get old holiday state to check if it changed
-            const oldSchedule = schedules[selectedClass]?.[selectedDay.id];
+            const oldSchedule = schedules[selectedKelasId]?.[selectedDay.id];
             const wasHoliday = oldSchedule?.isHoliday || false;
             const holidayChanged = wasHoliday !== isHoliday;
 
-            // Get kelas_id from schedule data or use default mapping
-            const kelasId = oldSchedule?.kelas_id || getKelasIdByTingkat(selectedClass);
+            // Use current kelas_id
+            const kelasId = selectedKelasId;
 
-            if (!schedules[selectedClass]) {
-                schedules[selectedClass] = {};
+            if (!schedules[selectedKelasId]) {
+                schedules[selectedKelasId] = {};
             }
 
             // Update local state
-            schedules[selectedClass][selectedDay.id] = {
+            schedules[selectedKelasId][selectedDay.id] = {
                 entryTime,
                 exitTime,
                 isHoliday,
@@ -1659,7 +1780,7 @@
                 try {
                     const result = await saveScheduleToAPI(kelasId, selectedDay.id, entryTime, exitTime, isHoliday);
                     if (result) {
-                        showToast(`✅ Jadwal ${selectedDay.name} Kelas ${selectedClass} berhasil disimpan ke database!`);
+                        showToast(`✅ Jadwal ${selectedDay.name} Kelas ${selectedTingkat}${selectedVariant} berhasil disimpan ke database!`);
                     } else {
                         showToast(`⚠️ Jadwal ${selectedDay.name} disimpan lokal (database tidak tersedia)`);
                     }
@@ -1669,7 +1790,7 @@
                 }
             } else {
                 const statusText = isHoliday ? ' (Libur)' : '';
-                showToast(`Jadwal ${selectedDay.name} Kelas ${selectedClass}${statusText} berhasil disimpan!`);
+                showToast(`Jadwal ${selectedDay.name} Kelas ${selectedTingkat}${selectedVariant}${statusText} berhasil disimpan!`);
             }
 
             // Render cards after modal animation
@@ -1678,12 +1799,10 @@
             }, 200);
         }
 
-        // Helper function to map tingkat to kelas_id
-        // Based on database: 1A=1, 1B=2, 2A=3, 2B=4, 3A=5, 3B=6, etc.
+        // Helper function - no longer needed as we use selectedKelasId directly
+        // Keeping for backward compatibility
         function getKelasIdByTingkat(tingkat) {
-            // Return first kelas of that tingkat (e.g., 3A for tingkat 3)
-            const mapping = { 1: 1, 2: 3, 3: 5, 4: 7, 5: 9, 6: 11 };
-            return mapping[tingkat] || 1;
+            return kelasMapping[tingkat]?.['A'] || 1;
         }
 
         // Render day cards with flip and pulse animation
@@ -1692,8 +1811,8 @@
             container.innerHTML = '';
 
             days.forEach((day, index) => {
-                const schedule = schedules[selectedClass]?.[day.id] || {
-                    ...defaultSchedules[selectedClass],
+                const schedule = schedules[selectedKelasId]?.[day.id] || {
+                    ...defaultSchedules[selectedTingkat],
                     isHoliday: day.isWeekend ? true : false
                 };
                 const isWeekend = day.isWeekend;
