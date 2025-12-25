@@ -5,6 +5,7 @@ import 'pages/jadwal_page.dart';
 import 'pages/jemput_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
+import 'services/auth/auth_service.dart';
 
 // Export pages for use in other files
 export 'pages/jadwal_page.dart';
@@ -33,8 +34,90 @@ class MyApp extends StatelessWidget {
         fontFamily: 'Inter',
         useMaterial3: true,
       ),
-      // home: const MainNavigation(),
-      home: const LoginPage(),
+      home: const SplashPage(),
+    );
+  }
+}
+
+// ============================================
+// SPLASH PAGE - Session Check
+// ============================================
+class SplashPage extends StatefulWidget {
+  const SplashPage({super.key});
+
+  @override
+  State<SplashPage> createState() => _SplashPageState();
+}
+
+class _SplashPageState extends State<SplashPage> {
+  @override
+  void initState() {
+    super.initState();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    final authService = AuthService();
+
+    // Coba load session yang tersimpan
+    final hasSession = await authService.loadStoredUser();
+
+    if (!mounted) return;
+
+    // Navigate berdasarkan status session
+    if (hasSession) {
+      // Ada session tersimpan, langsung ke halaman utama
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+      );
+    } else {
+      // Tidak ada session, ke halaman login
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+      );
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            // Logo
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 20,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(20),
+                child: Image.asset('lib/assets/logo.png', fit: BoxFit.cover),
+              ),
+            ),
+            const SizedBox(height: 24),
+            // Loading indicator
+            const SizedBox(
+              width: 24,
+              height: 24,
+              child: CircularProgressIndicator(
+                color: AppColors.primary,
+                strokeWidth: 2.5,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
