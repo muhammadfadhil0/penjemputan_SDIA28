@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 25, 2025 at 02:14 PM
+-- Generation Time: Dec 25, 2025 at 06:16 PM
 -- Server version: 10.11.15-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -38,6 +38,26 @@ CREATE TABLE `guru_piket` (
 -- --------------------------------------------------------
 
 --
+-- Table structure for table `guru_session_aktif`
+--
+
+CREATE TABLE `guru_session_aktif` (
+  `id` int(11) NOT NULL,
+  `user_id` int(11) NOT NULL,
+  `login_time` timestamp NULL DEFAULT current_timestamp(),
+  `last_heartbeat` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `guru_session_aktif`
+--
+
+INSERT INTO `guru_session_aktif` (`id`, `user_id`, `login_time`, `last_heartbeat`) VALUES
+(21, 2, '2025-12-25 11:06:35', '2025-12-25 11:06:35');
+
+-- --------------------------------------------------------
+
+--
 -- Table structure for table `jadwal_kelas`
 --
 
@@ -60,9 +80,9 @@ INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`,
 (1, 5, 'senin', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
 (2, 5, 'selasa', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
 (3, 5, 'rabu', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-24 08:32:54', 0),
-(4, 5, 'kamis', '07:00:00', '14:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
+(4, 5, 'kamis', '07:00:00', '15:30:00', '2025-12-22 08:51:20', '2025-12-25 10:16:28', 0),
 (5, 5, 'jumat', '07:00:00', '11:30:00', '2025-12-22 08:51:20', '2025-12-22 08:51:20', 0),
-(6, 1, 'senin', '07:00:00', '11:30:00', '2025-12-24 08:27:28', '2025-12-24 08:32:59', 0);
+(6, 1, 'senin', '07:00:00', '11:30:00', '2025-12-24 08:27:28', '2025-12-25 07:52:46', 0);
 
 -- --------------------------------------------------------
 
@@ -161,6 +181,31 @@ CREATE TABLE `permintaan_jemput` (
   `waktu_dijemput` timestamp NULL DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `permintaan_jemput`
+--
+
+INSERT INTO `permintaan_jemput` (`id`, `siswa_id`, `user_id`, `penjemput`, `penjemput_detail`, `estimasi_waktu`, `waktu_estimasi`, `status`, `nomor_antrian`, `waktu_request`, `waktu_dipanggil`, `waktu_dijemput`) VALUES
+(1, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 1, '2025-12-25 08:07:19', '2025-12-25 08:07:39', NULL),
+(2, 4, 4, 'ibu', NULL, 'tiba', NULL, 'dibatalkan', 2, '2025-12-25 08:08:51', NULL, NULL),
+(3, 3, 3, 'ojek', 'maxim', 'tiba', NULL, 'dibatalkan', 3, '2025-12-25 08:09:37', NULL, NULL),
+(4, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 4, '2025-12-25 08:48:14', '2025-12-25 08:48:29', NULL),
+(5, 3, 3, 'lainnya', 'paman', 'tiba', NULL, 'dibatalkan', 5, '2025-12-25 09:09:30', NULL, NULL),
+(6, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 6, '2025-12-25 09:10:07', NULL, NULL),
+(7, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 7, '2025-12-25 09:16:41', NULL, NULL),
+(8, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 8, '2025-12-25 09:22:15', NULL, NULL),
+(9, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 9, '2025-12-25 09:24:24', NULL, NULL),
+(10, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 10, '2025-12-25 09:24:50', NULL, NULL),
+(11, 3, 3, 'lainnya', 'paman', 'tiba', NULL, 'dipanggil', 11, '2025-12-25 09:25:08', '2025-12-25 09:25:16', NULL),
+(12, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 12, '2025-12-25 09:28:55', NULL, NULL),
+(13, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 13, '2025-12-25 09:32:55', NULL, NULL),
+(14, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 14, '2025-12-25 09:33:22', NULL, NULL),
+(15, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 15, '2025-12-25 09:36:22', NULL, NULL),
+(16, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 16, '2025-12-25 09:36:47', NULL, NULL),
+(17, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 17, '2025-12-25 09:38:13', NULL, NULL),
+(18, 4, 4, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 18, '2025-12-25 09:39:31', '2025-12-25 09:39:47', NULL),
+(19, 4, 4, 'ojek', 'maxim', 'tiba', NULL, 'dipanggil', 19, '2025-12-25 10:56:16', '2025-12-25 10:56:27', NULL);
+
 -- --------------------------------------------------------
 
 --
@@ -185,10 +230,10 @@ CREATE TABLE `siswa` (
 --
 
 INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `last_pickup_request`, `created_at`) VALUES
-(1, 'Ahmad Farhan Pratama', 'Farhan', 8, NULL, 'siswa_farhan', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(1, 'Ahmad Farhan Pratama', 'Farhan', 8, NULL, 'siswa_farhan', 'siswa123', NULL, '2025-12-25 08:07:19', '2025-12-22 08:51:20'),
 (2, 'Aisyah Putri Ramadhani', 'Aisyah', 5, NULL, 'siswa_aisyah', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
-(3, 'Budi Santoso', 'Budi', 5, NULL, 'siswa_budi', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
-(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, 'siswa_citra', 'siswa123', NULL, NULL, '2025-12-22 08:51:20'),
+(3, 'Budi Santoso', 'Budi', 5, NULL, 'siswa_budi', 'siswa123', NULL, '2025-12-25 09:25:08', '2025-12-22 08:51:20'),
+(4, 'Citra Dewi Lestari', 'Citra', 5, NULL, 'siswa_citra', 'siswa123', NULL, '2025-12-25 10:56:16', '2025-12-22 08:51:20'),
 (5, 'Dimas Prasetya', 'Dimas', 5, NULL, 'siswa_dimas', 'siswa123', NULL, NULL, '2025-12-22 08:51:20');
 
 -- --------------------------------------------------------
@@ -284,6 +329,13 @@ ALTER TABLE `guru_piket`
   ADD KEY `idx_user` (`user_id`);
 
 --
+-- Indexes for table `guru_session_aktif`
+--
+ALTER TABLE `guru_session_aktif`
+  ADD PRIMARY KEY (`id`),
+  ADD KEY `idx_user` (`user_id`);
+
+--
 -- Indexes for table `jadwal_kelas`
 --
 ALTER TABLE `jadwal_kelas`
@@ -364,6 +416,12 @@ ALTER TABLE `guru_piket`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
+-- AUTO_INCREMENT for table `guru_session_aktif`
+--
+ALTER TABLE `guru_session_aktif`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=22;
+
+--
 -- AUTO_INCREMENT for table `jadwal_kelas`
 --
 ALTER TABLE `jadwal_kelas`
@@ -391,7 +449,7 @@ ALTER TABLE `orang_tua_siswa`
 -- AUTO_INCREMENT for table `permintaan_jemput`
 --
 ALTER TABLE `permintaan_jemput`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=20;
 
 --
 -- AUTO_INCREMENT for table `siswa`
@@ -438,6 +496,12 @@ CREATE ALGORITHM=UNDEFINED DEFINER=`soua3852`@`localhost` SQL SECURITY DEFINER V
 --
 ALTER TABLE `guru_piket`
   ADD CONSTRAINT `guru_piket_ibfk_1` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE ON UPDATE CASCADE;
+
+--
+-- Constraints for table `guru_session_aktif`
+--
+ALTER TABLE `guru_session_aktif`
+  ADD CONSTRAINT `fk_guru_session` FOREIGN KEY (`user_id`) REFERENCES `users` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `jadwal_kelas`
