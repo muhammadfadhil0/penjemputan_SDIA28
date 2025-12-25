@@ -124,14 +124,42 @@ class _ProfilePageState extends State<ProfilePage> {
                       ],
                     ),
                     child: ClipOval(
-                      child: Container(
-                        color: AppColors.primaryLighter,
-                        child: const Icon(
-                          Icons.person,
-                          color: AppColors.primary,
-                          size: 50,
-                        ),
-                      ),
+                      child: _authService.currentUser?.fotoUrl != null
+                          ? Image.network(
+                              _authService.currentUser!.fotoUrl!,
+                              fit: BoxFit.cover,
+                              loadingBuilder:
+                                  (context, child, loadingProgress) {
+                                    if (loadingProgress == null) return child;
+                                    return Container(
+                                      color: AppColors.primaryLighter,
+                                      child: const Center(
+                                        child: CircularProgressIndicator(
+                                          color: AppColors.primary,
+                                          strokeWidth: 2,
+                                        ),
+                                      ),
+                                    );
+                                  },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: AppColors.primaryLighter,
+                                  child: const Icon(
+                                    Icons.person,
+                                    color: AppColors.primary,
+                                    size: 50,
+                                  ),
+                                );
+                              },
+                            )
+                          : Container(
+                              color: AppColors.primaryLighter,
+                              child: const Icon(
+                                Icons.person,
+                                color: AppColors.primary,
+                                size: 50,
+                              ),
+                            ),
                     ),
                   ),
                   const SizedBox(height: 16),

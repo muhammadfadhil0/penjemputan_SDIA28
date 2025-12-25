@@ -602,8 +602,8 @@
                     </div>
 
                     <div class="flex items-center gap-5" id="currentQueue">
-                        <div
-                            class="w-20 h-20 rounded-full bg-primaryLighter border-3 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20">
+                        <div id="currentStudentPhoto"
+                            class="w-20 h-20 rounded-full bg-primaryLighter border-3 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
                             <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
@@ -1015,7 +1015,8 @@
                         name: item.nama_siswa,
                         class: item.nama_kelas,
                         pickupBy: item.penjemput,
-                        status: item.status
+                        status: item.status,
+                        fotoUrl: item.foto_url
                     }));
 
                     // Update stats from API
@@ -1108,8 +1109,11 @@
 
             queueList.innerHTML = queue.map((item, index) => `
                 <div class="flex items-center gap-4 p-4 bg-bgMain rounded-xl border border-borderColor hover:border-primaryLight transition-all ${withAnimation ? 'slide-in' : ''}" ${withAnimation ? `style="animation-delay: ${index * 0.05}s"` : ''}>
-                    <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center font-semibold text-primary">
-                        ${index + 1}
+                    <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center overflow-hidden border-2 border-primaryLight">
+                        ${item.fotoUrl
+                    ? `<img src="${item.fotoUrl}" alt="${item.name}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<span class=\'font-semibold text-primary\'>${index + 1}</span>'">`
+                    : `<span class="font-semibold text-primary">${index + 1}</span>`
+                }
                     </div>
                     <div class="flex-1">
                         <p class="font-medium text-textPrimary">${item.name}</p>
@@ -1126,14 +1130,23 @@
             document.getElementById('queueListCount').textContent = `${queue.length} siswa menunggu`;
 
             // Update current queue display
+            const currentPhotoEl = document.getElementById('currentStudentPhoto');
             if (queue.length > 0) {
                 document.getElementById('currentStudentName').textContent = queue[0].name;
                 document.getElementById('currentStudentClass').textContent = queue[0].class;
                 document.getElementById('currentPickupBy').textContent = queue[0].pickupBy;
+
+                // Update current student photo
+                if (queue[0].fotoUrl) {
+                    currentPhotoEl.innerHTML = `<img src="${queue[0].fotoUrl}" alt="${queue[0].name}" class="w-full h-full object-cover" onerror="this.parentElement.innerHTML='<svg class=\\'w-10 h-10 text-primary\\' fill=\\'none\\' stroke=\\'currentColor\\' viewBox=\\'0 0 24 24\\'><path stroke-linecap=\\'round\\' stroke-linejoin=\\'round\\' stroke-width=\\'2\\' d=\\'M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z\\' /></svg>'">`;
+                } else {
+                    currentPhotoEl.innerHTML = `<svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`;
+                }
             } else {
                 document.getElementById('currentStudentName').textContent = '-';
                 document.getElementById('currentStudentClass').textContent = '-';
                 document.getElementById('currentPickupBy').textContent = '-';
+                currentPhotoEl.innerHTML = `<svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" /></svg>`;
             }
         }
 

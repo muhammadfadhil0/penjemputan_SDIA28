@@ -678,14 +678,42 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                         ],
                       ),
                       child: ClipOval(
-                        child: Container(
-                          color: AppColors.primaryLighter,
-                          child: const Icon(
-                            Icons.person,
-                            color: AppColors.primary,
-                            size: 32,
-                          ),
-                        ),
+                        child: _authService.currentUser?.fotoUrl != null
+                            ? Image.network(
+                                _authService.currentUser!.fotoUrl!,
+                                fit: BoxFit.cover,
+                                loadingBuilder:
+                                    (context, child, loadingProgress) {
+                                      if (loadingProgress == null) return child;
+                                      return Container(
+                                        color: AppColors.primaryLighter,
+                                        child: const Center(
+                                          child: CircularProgressIndicator(
+                                            color: AppColors.primary,
+                                            strokeWidth: 2,
+                                          ),
+                                        ),
+                                      );
+                                    },
+                                errorBuilder: (context, error, stackTrace) {
+                                  return Container(
+                                    color: AppColors.primaryLighter,
+                                    child: const Icon(
+                                      Icons.person,
+                                      color: AppColors.primary,
+                                      size: 32,
+                                    ),
+                                  );
+                                },
+                              )
+                            : Container(
+                                color: AppColors.primaryLighter,
+                                child: const Icon(
+                                  Icons.person,
+                                  color: AppColors.primary,
+                                  size: 32,
+                                ),
+                              ),
                       ),
                     ),
                     const SizedBox(width: 14),
@@ -802,7 +830,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                                   )
                                 : Text(
                                     _activeTeacherName.isEmpty
-                                        ? 'Tidak ada guru bertugas'
+                                        ? 'Tidak ada data'
                                         : _activeTeacherName,
                                     style: TextStyle(
                                       color: _activeTeacherName.isEmpty

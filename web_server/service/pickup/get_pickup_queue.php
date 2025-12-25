@@ -29,6 +29,7 @@ $queue_query = "SELECT
                     pj.nomor_antrian,
                     s.nama as nama_siswa,
                     s.nama_panggilan,
+                    s.foto_url,
                     k.nama_kelas,
                     pj.penjemput,
                     pj.penjemput_detail,
@@ -58,6 +59,7 @@ while ($row = mysqli_fetch_assoc($queue_result)) {
         'nomor_antrian' => intval($row['nomor_antrian']),
         'nama_siswa' => $row['nama_siswa'],
         'nama_panggilan' => $row['nama_panggilan'],
+        'foto_url' => $row['foto_url'],
         'nama_kelas' => 'Kelas ' . $row['nama_kelas'],
         'penjemput' => $penjemput_display,
         'penjemput_raw' => $row['penjemput'],
@@ -87,7 +89,7 @@ $stats = [
 ];
 
 // Get all students for dropdown (to add manually from web dashboard)
-$students_query = "SELECT s.id, s.nama, s.nama_panggilan, k.nama_kelas 
+$students_query = "SELECT s.id, s.nama, s.nama_panggilan, s.foto_url, k.nama_kelas 
                    FROM siswa s 
                    JOIN kelas k ON s.kelas_id = k.id 
                    ORDER BY k.nama_kelas, s.nama";
@@ -99,6 +101,7 @@ while ($row = mysqli_fetch_assoc($students_result)) {
         'id' => intval($row['id']),
         'name' => $row['nama'],
         'nickname' => $row['nama_panggilan'],
+        'foto_url' => $row['foto_url'],
         'class' => 'Kelas ' . $row['nama_kelas']
     ];
 }

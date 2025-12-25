@@ -43,6 +43,10 @@ dependencies:
   
   # Network connectivity check
   connectivity_plus: ^6.1.4
+  
+  # Image picker and cropper for profile photo
+  image_picker: ^1.0.7
+  image_cropper: ^8.0.2
 
 dev_dependencies:
   flutter_test:

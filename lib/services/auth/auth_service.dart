@@ -115,4 +115,51 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getBool(_isLoggedInKey) ?? false;
   }
+
+  /// Update foto profil user di memory dan storage
+  Future<void> updateUserFoto(String? fotoUrl) async {
+    if (_currentUser != null) {
+      // Buat user baru dengan foto yang diupdate
+      _currentUser = SiswaUser(
+        id: _currentUser!.id,
+        username: _currentUser!.username,
+        nama: _currentUser!.nama,
+        namaPanggilan: _currentUser!.namaPanggilan,
+        role: _currentUser!.role,
+        kelasId: _currentUser!.kelasId,
+        namaKelas: _currentUser!.namaKelas,
+        tingkat: _currentUser!.tingkat,
+        fotoUrl: fotoUrl,
+        noTeleponOrtu: _currentUser!.noTeleponOrtu,
+      );
+
+      // Simpan ke storage
+      await _saveUserToStorage(_currentUser!);
+    }
+  }
+
+  /// Update profile user (nama dan nama panggilan) di memory dan storage
+  Future<void> updateUserProfile({
+    required String nama,
+    String? namaPanggilan,
+  }) async {
+    if (_currentUser != null) {
+      // Buat user baru dengan data yang diupdate
+      _currentUser = SiswaUser(
+        id: _currentUser!.id,
+        username: _currentUser!.username,
+        nama: nama,
+        namaPanggilan: namaPanggilan,
+        role: _currentUser!.role,
+        kelasId: _currentUser!.kelasId,
+        namaKelas: _currentUser!.namaKelas,
+        tingkat: _currentUser!.tingkat,
+        fotoUrl: _currentUser!.fotoUrl,
+        noTeleponOrtu: _currentUser!.noTeleponOrtu,
+      );
+
+      // Simpan ke storage
+      await _saveUserToStorage(_currentUser!);
+    }
+  }
 }
