@@ -47,6 +47,10 @@ dependencies:
   # Image picker and cropper for profile photo
   image_picker: ^1.0.7
   image_cropper: ^8.0.2
+  
+  # Local notifications for pickup reminders
+  flutter_local_notifications: ^19.0.0
+  timezone: ^0.10.0
 
 dev_dependencies:
   flutter_test:

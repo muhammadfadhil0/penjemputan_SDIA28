@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import '../main.dart';
+import '../services/notifications/notification_service.dart';
+import '../services/notifications/notification_settings_model.dart';
+import '../services/auth/auth_service.dart';
+import '../services/jadwal/jadwal_service.dart';
 
 // ============================================
 // NOTIFIKASI PAGE
@@ -12,12 +16,188 @@ class NotifikasiPage extends StatefulWidget {
 }
 
 class _NotifikasiPageState extends State<NotifikasiPage> {
-  bool _pengingatPenjemputan = true;
+  bool _pengingatPenjemputan = false;
   bool _pengingatPerubahanJadwal = false;
   int _menitSebelumPulang = 15; // Default 15 menit
+  bool _isLoading = true;
+
+  final NotificationService _notificationService = NotificationService();
+  final AuthService _authService = AuthService();
+  final JadwalService _jadwalService = JadwalService();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadSettings();
+  }
+
+  /// Memuat pengaturan notifikasi dari storage
+  Future<void> _loadSettings() async {
+    final settings = await _notificationService.loadSettings();
+    if (mounted) {
+      setState(() {
+        _pengingatPenjemputan = settings.pickupReminderEnabled;
+        _pengingatPerubahanJadwal = settings.scheduleChangeEnabled;
+        _menitSebelumPulang = settings.minutesBeforePickup;
+        _isLoading = false;
+      });
+    }
+  }
+
+  /// Menyimpan pengaturan dan menjadwalkan/membatalkan notifikasi
+  Future<void> _saveSettingsAndSchedule() async {
+    debugPrint('NotifikasiPage: _saveSettingsAndSchedule called');
+
+    final settings = NotificationSettings(
+      pickupReminderEnabled: _pengingatPenjemputan,
+      minutesBeforePickup: _menitSebelumPulang,
+      scheduleChangeEnabled: _pengingatPerubahanJadwal,
+    );
+
+    // Simpan settings
+    await _notificationService.saveSettings(settings);
+    debugPrint('NotifikasiPage: Settings saved');
+
+    if (_pengingatPenjemputan) {
+      debugPrint('NotifikasiPage: Pengingat aktif, requesting permission...');
+
+      // Request permission jika belum
+      final hasPermission = await _notificationService.requestPermission();
+      debugPrint('NotifikasiPage: Permission result = $hasPermission');
+
+      if (!hasPermission) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Izin notifikasi diperlukan untuk fitur ini'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+        return;
+      }
+
+      debugPrint('NotifikasiPage: Calling _scheduleNotification...');
+      // Ambil data siswa dan jadwal untuk scheduling
+      await _scheduleNotification();
+      debugPrint('NotifikasiPage: _scheduleNotification completed');
+    } else {
+      debugPrint('NotifikasiPage: Pengingat nonaktif, cancelling...');
+      // Batalkan notifikasi jika dinonaktifkan
+      await _notificationService.cancelPickupNotification();
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Pengingat penjemputan dinonaktifkan'),
+            backgroundColor: Colors.grey,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Menjadwalkan notifikasi berdasarkan jadwal hari ini
+  Future<void> _scheduleNotification() async {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      _showDebugSnackbar('Error: User tidak ditemukan');
+      return;
+    }
+
+    // Clear cache dan ambil jadwal fresh dari server
+    _jadwalService.clearCache();
+
+    // Ambil jadwal berdasarkan kelas siswa
+    final jadwalResult = await _jadwalService.getJadwalByKelas(
+      currentUser.kelasId,
+    );
+    if (!jadwalResult.success || jadwalResult.jadwal == null) {
+      _showDebugSnackbar(
+        'Error: Gagal mengambil jadwal - ${jadwalResult.message}',
+      );
+      return;
+    }
+
+    // Ambil jadwal hari ini
+    final todaySchedule = jadwalResult.jadwal!.todaySchedule;
+    if (todaySchedule == null) {
+      _showDebugSnackbar('Error: Tidak ada jadwal untuk hari ini');
+      return;
+    }
+
+    if (todaySchedule.isHoliday) {
+      _showDebugSnackbar('Info: Hari ini libur, notifikasi tidak dijadwalkan');
+      return;
+    }
+
+    // Hitung waktu notifikasi untuk debug
+    final parts = todaySchedule.jamPulang.split(':');
+    final hour = int.tryParse(parts[0]) ?? 14;
+    final minute = int.tryParse(parts[1]) ?? 0;
+    final now = DateTime.now();
+    var pickupTime = DateTime(now.year, now.month, now.day, hour, minute);
+    final notificationTime = pickupTime.subtract(
+      Duration(minutes: _menitSebelumPulang),
+    );
+
+    // Jadwalkan notifikasi
+    await _notificationService.scheduleDailyPickupNotification(
+      pickupTimeString: todaySchedule.jamPulang,
+      minutesBefore: _menitSebelumPulang,
+      studentName: currentUser.displayName,
+    );
+
+    if (mounted) {
+      final nowStr =
+          '${now.hour.toString().padLeft(2, '0')}:${now.minute.toString().padLeft(2, '0')}';
+      final notifStr =
+          '${notificationTime.hour.toString().padLeft(2, '0')}:${notificationTime.minute.toString().padLeft(2, '0')}';
+
+      if (notificationTime.isBefore(now)) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Waktu notifikasi ($notifStr) sudah lewat! Sekarang: $nowStr',
+            ),
+            backgroundColor: Colors.orange,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(
+              'Notifikasi dijadwalkan: $notifStr (pulang ${todaySchedule.jamPulang})',
+            ),
+            backgroundColor: AppColors.primary,
+            duration: const Duration(seconds: 4),
+          ),
+        );
+      }
+    }
+  }
+
+  void _showDebugSnackbar(String message) {
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(message),
+          backgroundColor: Colors.red,
+          duration: const Duration(seconds: 4),
+        ),
+      );
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    if (_isLoading) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
+
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
@@ -89,6 +269,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                         setState(() {
                           _pengingatPenjemputan = value;
                         });
+                        _saveSettingsAndSchedule();
                       },
                     ),
 
@@ -114,7 +295,86 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                         setState(() {
                           _pengingatPerubahanJadwal = value;
                         });
+                        _saveSettingsAndSchedule();
                       },
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Section Header - Test
+                    const Padding(
+                      padding: EdgeInsets.only(left: 4, bottom: 12),
+                      child: Text(
+                        'Test Notifikasi',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 13,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                    ),
+
+                    // Test Notification Button
+                    GestureDetector(
+                      onTap: () async {
+                        await _notificationService.showTestNotification();
+                        if (mounted) {
+                          ScaffoldMessenger.of(context).showSnackBar(
+                            const SnackBar(
+                              content: Text('Notifikasi test dikirim!'),
+                              backgroundColor: AppColors.primary,
+                            ),
+                          );
+                        }
+                      },
+                      child: ShadcnCard(
+                        padding: const EdgeInsets.all(16),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: const EdgeInsets.all(10),
+                              decoration: BoxDecoration(
+                                color: Colors.orange.withValues(alpha: 0.15),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: const Icon(
+                                Icons.notifications_active_rounded,
+                                color: Colors.orange,
+                                size: 22,
+                              ),
+                            ),
+                            const SizedBox(width: 14),
+                            const Expanded(
+                              child: Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text(
+                                    'Kirim Notifikasi Test',
+                                    style: TextStyle(
+                                      color: AppColors.textPrimary,
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                  SizedBox(height: 4),
+                                  Text(
+                                    'Tap untuk menguji apakah notifikasi berfungsi',
+                                    style: TextStyle(
+                                      color: AppColors.textMuted,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            ),
+                            const Icon(
+                              Icons.arrow_forward_ios_rounded,
+                              color: AppColors.textMuted,
+                              size: 16,
+                            ),
+                          ],
+                        ),
+                      ),
                     ),
                   ],
                 ),
@@ -246,6 +506,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
           setState(() {
             _menitSebelumPulang = menit;
           });
+          _saveSettingsAndSchedule();
         },
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 200),
