@@ -20,6 +20,14 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
+  final AuthService _authService = AuthService();
+
+  // Data user yang sedang login
+  String get _userName => _authService.currentUser?.nama ?? 'User';
+  String get _userClass => _authService.currentUser != null
+      ? 'Kelas ${_authService.currentUser!.namaKelas} • SDIA 28'
+      : 'Siswa SDIA 28';
+
   void _showHubungkanMuridBottomSheet() {
     showGeneralDialog(
       context: context,
@@ -127,18 +135,21 @@ class _ProfilePageState extends State<ProfilePage> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text(
-                    'Ahmad Farhan',
-                    style: TextStyle(
+                  Text(
+                    _userName,
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 24,
                       fontWeight: FontWeight.bold,
                     ),
                   ),
                   const SizedBox(height: 4),
-                  const Text(
-                    'Kelas 3A • SDIA 28',
-                    style: TextStyle(color: AppColors.textMuted, fontSize: 14),
+                  Text(
+                    _userClass,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 14,
+                    ),
                   ),
                 ],
               ),
