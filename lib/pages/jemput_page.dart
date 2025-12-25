@@ -369,13 +369,16 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
             child: Material(
               color: Colors.transparent,
               child: PickupBottomSheet(
-                onSendingStateChange: (isSending) {
+                onSendingStateChange: (isSending, {bool? success}) {
                   setState(() {
                     if (isSending) {
                       _buttonState = PickupButtonState.sending;
+                    } else if (success == true) {
+                      // Request success - directly set to queued state
+                      _setButtonState(PickupButtonState.queued);
                     } else {
-                      // After sending, check status again
-                      _checkPickupStatus();
+                      // Request failed - return to idle
+                      _setButtonState(PickupButtonState.idle);
                     }
                   });
                 },
@@ -808,7 +811,7 @@ class DashedCirclePainter extends CustomPainter {
 // PICKUP BOTTOM SHEET
 // ============================================
 class PickupBottomSheet extends StatefulWidget {
-  final Function(bool isSending)? onSendingStateChange;
+  final Function(bool isSending, {bool? success})? onSendingStateChange;
 
   const PickupBottomSheet({super.key, this.onSendingStateChange});
 
@@ -912,7 +915,10 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     }
 
     // Notify parent that we're sending
-    widget.onSendingStateChange?.call(true);
+    widget.onSendingStateChange?.call(true, success: null);
+
+    // Close bottom sheet first so user can see the 'MENGIRIM' state on main button
+    Navigator.pop(context);
 
     // Call API to submit pickup request
     final result = await _pickupService.requestPickup(
@@ -925,14 +931,11 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
           : null,
     );
 
-    // Notify parent that sending is complete
-    widget.onSendingStateChange?.call(false);
+    // Notify parent that sending is complete with success status
+    widget.onSendingStateChange?.call(false, success: result.success);
 
-    if (!mounted) return;
-    Navigator.pop(context);
-
-    // Show result snackbar
-    ScaffoldMessenger.of(context).showSnackBar(
+    // Show result snackbar (using navigatorKey or root context since this widget is unmounted)
+    ScaffoldMessenger.maybeOf(context)?.showSnackBar(
       SnackBar(
         content: Row(
           children: [
