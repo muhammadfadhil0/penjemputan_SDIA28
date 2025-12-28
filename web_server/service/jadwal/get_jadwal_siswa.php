@@ -88,7 +88,7 @@ $query = "SELECT jk.id, jk.hari,
                  jk.is_holiday
           FROM jadwal_kelas jk
           WHERE jk.kelas_id = ?
-          ORDER BY FIELD(jk.hari, 'senin','selasa','rabu','kamis','jumat')";
+          ORDER BY FIELD(jk.hari, 'senin','selasa','rabu','kamis','jumat','sabtu','minggu')";
 
 $stmt = mysqli_prepare($conn, $query);
 mysqli_stmt_bind_param($stmt, "i", $kelas_id);
@@ -135,14 +135,16 @@ if (empty($jadwal)) {
     $tingkat = (int)$kelas_data['tingkat'];
     $default_exit = $default_exit_times[$tingkat] ?? '14:00';
     
-    $days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+    $days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'];
+    $weekends = ['sabtu', 'minggu'];
     foreach ($days as $day) {
+        $isWeekend = in_array($day, $weekends);
         $jadwal[$day] = [
             'id' => null,
             'hari' => $day,
             'jam_masuk' => '07:00',
-            'jam_pulang' => $default_exit,
-            'is_holiday' => false
+            'jam_pulang' => $isWeekend ? '07:00' : $default_exit,
+            'is_holiday' => $isWeekend
         ];
     }
 }

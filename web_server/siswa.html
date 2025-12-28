@@ -557,6 +557,227 @@
                 width: 260px;
             }
         }
+
+        /* Wide Modal for Preview Edit */
+        .modal-content-wide {
+            background: white;
+            border-radius: 24px;
+            padding: 32px;
+            width: 100%;
+            max-width: 900px;
+            max-height: 90vh;
+            margin: 20px;
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.25);
+            transform: scale(0.5) translateY(100px);
+            opacity: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .modal-overlay.active .modal-content-wide {
+            animation: bounce-modal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .modal-overlay.closing .modal-content-wide {
+            animation: bounce-out 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Editable Table Styles */
+        .editable-table-container {
+            flex: 1;
+            overflow: auto;
+            border: 1px solid #e5e7eb;
+            border-radius: 16px;
+            margin: 16px 0;
+        }
+
+        .editable-table {
+            width: 100%;
+            border-collapse: collapse;
+            min-width: 700px;
+        }
+
+        .editable-table thead {
+            background: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .editable-table th {
+            padding: 14px 12px;
+            text-align: left;
+            font-size: 12px;
+            font-weight: 600;
+            color: #64748b;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border-bottom: 2px solid #e5e7eb;
+        }
+
+        .editable-table td {
+            padding: 8px 10px;
+            border-bottom: 1px solid #f1f5f9;
+            vertical-align: middle;
+        }
+
+        .editable-table tbody tr {
+            transition: all 0.2s ease;
+        }
+
+        .editable-table tbody tr:hover {
+            background: #f0f9ff;
+        }
+
+        .editable-table tbody tr.row-error {
+            background: #fef2f2;
+        }
+
+        .editable-table tbody tr.row-warning {
+            background: #fffbeb;
+        }
+
+        /* Editable Input Field */
+        .editable-input {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            background: transparent;
+            transition: all 0.2s ease;
+        }
+
+        .editable-input:hover {
+            background: white;
+            border-color: #e5e7eb;
+        }
+
+        .editable-input:focus {
+            background: white;
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Editable Select */
+        .editable-select {
+            width: 100%;
+            padding: 8px 12px;
+            border: 1px solid transparent;
+            border-radius: 8px;
+            font-size: 14px;
+            background: transparent;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .editable-select:hover {
+            background: white;
+            border-color: #e5e7eb;
+        }
+
+        .editable-select:focus {
+            background: white;
+            border-color: #3b82f6;
+            outline: none;
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.15);
+        }
+
+        /* Status Badge */
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            padding: 4px 10px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 600;
+        }
+
+        .status-badge.valid {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .status-badge.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .status-badge.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        /* Delete Row Button */
+        .delete-row-btn {
+            padding: 6px 10px;
+            border-radius: 8px;
+            background: #fee2e2;
+            color: #ef4444;
+            border: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .delete-row-btn:hover {
+            background: #ef4444;
+            color: white;
+            transform: scale(1.05);
+        }
+
+        /* Preview Footer */
+        .preview-footer {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 16px;
+            border-top: 1px solid #e5e7eb;
+        }
+
+        .preview-stats {
+            display: flex;
+            gap: 16px;
+        }
+
+        .preview-stat {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 13px;
+            color: #64748b;
+        }
+
+        .preview-stat .count {
+            font-weight: 700;
+            padding: 2px 8px;
+            border-radius: 6px;
+        }
+
+        .preview-stat .count.valid {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        .preview-stat .count.error {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+
+        .preview-stat .count.warning {
+            background: #fef3c7;
+            color: #d97706;
+        }
+
+        @media (max-width: 768px) {
+            .modal-content-wide {
+                max-width: 100%;
+                margin: 10px;
+                padding: 20px;
+                max-height: 95vh;
+            }
+        }
     </style>
 </head>
 
@@ -600,12 +821,20 @@
                 <span class="nav-label">Jadwal</span>
             </a>
 
-            <a href="database.html" class="nav-item active" data-page="database" data-index="4">
+            <a href="siswa.html" class="nav-item active" data-page="siswa" data-index="4">
                 <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M4 7v10c0 2.21 3.582 4 8 4s8-1.79 8-4V7M4 7c0 2.21 3.582 4 8 4s8-1.79 8-4M4 7c0-2.21 3.582-4 8-4s8 1.79 8 4m0 5c0 2.21-3.582 4-8 4s-8-1.79-8-4" />
+                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
                 </svg>
-                <span class="nav-label">Database</span>
+                <span class="nav-label">Siswa</span>
+            </a>
+
+            <a href="kelas.html" class="nav-item" data-page="kelas" data-index="5">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4" />
+                </svg>
+                <span class="nav-label">Kelas</span>
             </a>
         </div>
 
@@ -716,14 +945,24 @@
                 </div>
             </div>
 
-            <button onclick="showAddModal()"
-                class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1">
-                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
-                </svg>
-                Tambah
-            </button>
+            <div class="flex items-center gap-3">
+                <button onclick="showDeleteAllModal()"
+                    class="bg-red-500 hover:bg-red-600 text-white px-5 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40 hover:-translate-y-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                    </svg>
+                    Hapus Semua
+                </button>
+                <button onclick="showAddModal()"
+                    class="bg-primary hover:bg-blue-600 text-white px-6 py-3 rounded-xl font-semibold flex items-center gap-2 transition-all shadow-lg shadow-primary/30 hover:shadow-xl hover:shadow-primary/40 hover:-translate-y-1">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                    Tambah
+                </button>
+            </div>
         </div>
 
         <!-- Students Table -->
@@ -813,6 +1052,84 @@
         </div>
     </div>
 
+    <!-- Excel Upload Modal -->
+    <div class="modal-overlay" id="excelUploadModal" onclick="closeExcelModal()">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-6">
+                <div>
+                    <h3 class="text-2xl font-bold text-textPrimary">Import Data Siswa</h3>
+                    <p class="text-sm text-textMuted mt-1">Upload file Excel (.xlsx) untuk proses cepat</p>
+                </div>
+                <button onclick="closeExcelModal()"
+                    class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:rotate-90">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4">
+                <div class="bg-blue-50 p-4 rounded-xl border border-blue-200">
+                    <p class="text-sm text-blue-800 font-medium mb-2">Panduan Upload:</p>
+                    <ul class="list-disc pl-5 text-xs text-blue-700 space-y-1">
+                        <li>Gunakan format file <strong>.xlsx</strong> (Excel).</li>
+                        <li>Pastikan urutan kolom: <strong>No, Nama Lengkap, Nama Panggilan, Kelas, No HP Ortu</strong>.
+                        </li>
+                        <li>Kolom "Kelas" harus sesuai dengan nama kelas yang ada (contoh: 1A, 2B).</li>
+                    </ul>
+                    <a href="assets/template_siswa.xlsx" download
+                        class="inline-flex items-center gap-2 text-xs font-bold text-blue-600 mt-3 hover:text-blue-800 transition-colors">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        Download Template Excel
+                    </a>
+                </div>
+
+                <div>
+                    <label class="block text-sm font-medium text-textSecondary mb-2">Pilih File Excel</label>
+                    <input type="file" id="excelFile" accept=".xlsx"
+                        class="w-full px-4 py-3 rounded-xl border border-borderColor focus:outline-none focus:ring-2 focus:ring-primary focus:border-transparent transition-all file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-primaryLighter file:text-primary hover:file:bg-blue-200">
+                </div>
+
+                <!-- Preview Area -->
+                <div id="previewArea" class="hidden space-y-4">
+                    <div class="max-h-60 overflow-y-auto border border-borderColor rounded-xl">
+                        <table class="w-full text-sm text-left">
+                            <thead class="bg-gray-50 text-textSecondary sticky top-0">
+                                <tr>
+                                    <th class="px-4 py-2 font-medium">Nama</th>
+                                    <th class="px-4 py-2 font-medium">Kelas</th>
+                                    <th class="px-4 py-2 font-medium">Status</th>
+                                </tr>
+                            </thead>
+                            <tbody id="previewTableBody" class="divide-y divide-borderColor bg-white">
+                                <!-- dynamic -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div
+                        class="flex items-center justify-between text-xs text-textMuted bg-gray-50 px-3 py-2 rounded-lg">
+                        <span id="previewSummary">Total: 0</span>
+                    </div>
+                </div>
+
+                <div class="flex gap-3">
+                    <button onclick="previewExcel()" id="previewBtn"
+                        class="flex-1 bg-white border-2 border-primary text-primary hover:bg-primaryLighter py-3 rounded-xl font-semibold transition-all">
+                        Cek File
+                    </button>
+                    <button onclick="saveExcelData()" id="importBtn" disabled
+                        class="flex-1 bg-gray-300 text-white py-3 rounded-xl font-semibold transition-all flex items-center justify-center cursor-not-allowed">
+                        Import Data
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Manual Form Modal (Add/Edit Student) -->
     <div class="modal-overlay" id="manualFormModal" onclick="closeManualModalOnOverlay(event)">
         <div class="modal-content" onclick="event.stopPropagation()">
@@ -891,6 +1208,119 @@
                     class="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40">
                     Hapus
                 </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Delete All Confirmation Modal -->
+    <div class="modal-overlay" id="deleteAllModal" onclick="closeDeleteAllModalOnOverlay(event)">
+        <div class="modal-content" onclick="event.stopPropagation()">
+            <div class="text-center">
+                <div class="w-20 h-20 mx-auto mb-4 bg-red-100 rounded-full flex items-center justify-center">
+                    <svg class="w-10 h-10 text-red-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                </div>
+                <h3 class="text-xl font-bold text-red-600 mb-2">⚠️ HAPUS SEMUA SISWA?</h3>
+                <p class="text-textSecondary mb-2">Anda akan menghapus <strong>SEMUA</strong> data siswa.</p>
+                <p class="text-lg font-bold text-red-500 mb-4">Total: <span id="deleteAllCount">0</span> siswa</p>
+                <p class="text-sm text-red-400 mb-6">Tindakan ini tidak dapat dibatalkan!</p>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="closeDeleteAllModal()"
+                    class="flex-1 px-6 py-3 border border-borderColor text-textSecondary rounded-xl font-semibold hover:bg-gray-50 transition-all">
+                    Batal
+                </button>
+                <button onclick="confirmDeleteAll()"
+                    class="flex-1 px-6 py-3 bg-red-500 text-white rounded-xl font-semibold hover:bg-red-600 transition-all shadow-lg shadow-red-500/30 hover:shadow-xl hover:shadow-red-500/40">
+                    Ya, Hapus Semua
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Excel Preview Edit Modal -->
+    <div class="modal-overlay" id="excelPreviewEditModal" onclick="closePreviewEditModalOnOverlay(event)">
+        <div class="modal-content-wide" onclick="event.stopPropagation()">
+            <div class="flex items-center justify-between mb-4">
+                <div>
+                    <h3 class="text-2xl font-bold text-textPrimary">Preview & Edit Data</h3>
+                    <p class="text-sm text-textMuted mt-1">Periksa dan edit data sebelum menyimpan ke database</p>
+                </div>
+                <button onclick="closePreviewEditModal()"
+                    class="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:rotate-90">
+                    <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Editable Table -->
+            <div class="editable-table-container">
+                <table class="editable-table">
+                    <thead>
+                        <tr>
+                            <th style="width: 50px;">No</th>
+                            <th style="width: 200px;">Nama Lengkap</th>
+                            <th style="width: 150px;">Nama Panggilan</th>
+                            <th style="width: 150px;">Kelas</th>
+                            <th style="width: 150px;">No HP Ortu</th>
+                            <th style="width: 120px;">Status</th>
+                            <th style="width: 60px;">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody id="editablePreviewBody">
+                        <!-- Dynamic content -->
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- Add Row Button -->
+            <button onclick="addPreviewRow()"
+                class="flex items-center gap-2 text-primary font-semibold text-sm hover:text-blue-700 transition-colors mb-4">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Tambah Baris Baru
+            </button>
+
+            <!-- Footer -->
+            <div class="preview-footer">
+                <div class="preview-stats">
+                    <div class="preview-stat">
+                        <span>Total:</span>
+                        <span class="count valid" id="previewTotalCount">0</span>
+                    </div>
+                    <div class="preview-stat">
+                        <span>Valid:</span>
+                        <span class="count valid" id="previewValidCount">0</span>
+                    </div>
+                    <div class="preview-stat">
+                        <span>Warning:</span>
+                        <span class="count warning" id="previewWarningCount">0</span>
+                    </div>
+                    <div class="preview-stat">
+                        <span>Error:</span>
+                        <span class="count error" id="previewErrorCount">0</span>
+                    </div>
+                </div>
+                <div class="flex gap-3">
+                    <button onclick="closePreviewEditModal()"
+                        class="px-6 py-3 border border-borderColor text-textSecondary rounded-xl font-semibold hover:bg-gray-50 transition-all">
+                        Batal
+                    </button>
+                    <button onclick="saveEditedExcelData()" id="savePreviewBtn"
+                        class="px-6 py-3 bg-success text-white rounded-xl font-semibold hover:bg-green-600 transition-all shadow-lg shadow-green-500/30 flex items-center gap-2">
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Simpan ke Database
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -1129,6 +1559,8 @@
                 closeAddModal();
                 closeManualModal();
                 closeDeleteModal();
+                closeExcelModal();
+                closePreviewEditModal();
             }
         });
 
@@ -1369,6 +1801,430 @@
                 confirmDeleteStudent(deletingStudentId);
             }
         }
+
+        // ===============================
+        // DELETE ALL
+        // ===============================
+
+        function showDeleteAllModal() {
+            document.getElementById('deleteAllCount').textContent = students.length;
+            const modal = document.getElementById('deleteAllModal');
+            modal.classList.remove('closing');
+            modal.classList.add('active');
+        }
+
+        function closeDeleteAllModal() {
+            const modal = document.getElementById('deleteAllModal');
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+            }, 300);
+        }
+
+        function closeDeleteAllModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closeDeleteAllModal();
+            }
+        }
+
+        function confirmDeleteAll() {
+            fetch('service/database/delete_all_siswa.php', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ confirm: true })
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        closeDeleteAllModal();
+                        loadStudents();
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Gagal menghapus data', 'error');
+                });
+        }
+
+        // ===============================
+        // EXCEL UPLOAD
+        // ===============================
+
+        let currentPreviewData = [];
+        let previewKelasList = [];
+
+        function showExcelUploadModal() {
+            closeAddModal();
+            const modal = document.getElementById('excelUploadModal');
+            modal.classList.remove('closing');
+            modal.classList.add('active');
+
+            // Reset
+            document.getElementById('excelFile').value = '';
+            document.getElementById('previewArea').classList.add('hidden');
+            document.getElementById('previewBtn').disabled = false;
+            document.getElementById('previewBtn').innerHTML = 'Cek File';
+
+            const importBtn = document.getElementById('importBtn');
+            importBtn.disabled = true;
+            importBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+            importBtn.classList.remove('bg-success', 'shadow-lg');
+            importBtn.innerHTML = 'Lihat Preview';
+
+            currentPreviewData = [];
+        }
+
+        function closeExcelModal() {
+            const modal = document.getElementById('excelUploadModal');
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+            }, 300);
+        }
+
+        function previewExcel() {
+            const fileInput = document.getElementById('excelFile');
+            const file = fileInput.files[0];
+
+            if (!file) {
+                showToast('Silakan pilih file Excel (.xlsx)', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('action', 'preview');
+
+            const btn = document.getElementById('previewBtn');
+            btn.innerHTML = 'Memproses...';
+            btn.disabled = true;
+
+            fetch('service/siswa/import_excel.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    btn.innerHTML = 'Cek File Lagi';
+                    btn.disabled = false;
+
+                    if (data.success) {
+                        currentPreviewData = data.data;
+                        previewKelasList = data.kelas_list || [];
+                        renderPreviewTable(data.data);
+                    } else {
+                        showToast(data.message, 'error');
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    btn.innerHTML = 'Cek File';
+                    btn.disabled = false;
+                    showToast('Gagal memproses file', 'error');
+                });
+        }
+
+        function renderPreviewTable(data) {
+            const tbody = document.getElementById('previewTableBody');
+            tbody.innerHTML = '';
+
+            let validCount = 0;
+
+            if (data.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="px-4 py-8 text-center text-textMuted">Tidak ada data ditemukan</td></tr>';
+            }
+
+            data.forEach(item => {
+                const tr = document.createElement('tr');
+                const statusClass = item.status === 'valid' ? 'text-green-600 bg-green-50' :
+                    item.status === 'warning' ? 'text-yellow-600 bg-yellow-50' : 'text-red-600 bg-red-50';
+                const icon = item.status === 'valid' ? '✅' : item.status === 'warning' ? '⚠️' : '❌';
+
+                if (item.status === 'valid') validCount++;
+
+                tr.innerHTML = `
+                    <td class="px-4 py-2 font-medium text-textPrimary">${item.nama}</td>
+                    <td class="px-4 py-2 text-textSecondary">${item.kelas || '-'}</td>
+                    <td class="px-4 py-2 text-xs font-semibold ${statusClass} rounded-lg">
+                        ${icon} ${item.message}
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+
+            document.getElementById('previewArea').classList.remove('hidden');
+            const warningCount = data.filter(i => i.status === 'warning').length;
+            const errorCount = data.filter(i => i.status === 'error').length;
+            document.getElementById('previewSummary').textContent =
+                `Total: ${data.length} | Valid: ${validCount} | Warning: ${warningCount} | Error: ${errorCount}`;
+
+            const importBtn = document.getElementById('importBtn');
+            if (data.length > 0) {
+                importBtn.disabled = false;
+                importBtn.classList.remove('bg-gray-300', 'cursor-not-allowed');
+                importBtn.classList.add('bg-primary', 'hover:bg-blue-600', 'cursor-pointer', 'shadow-lg', 'text-white');
+                importBtn.innerHTML = 'Lihat & Edit Preview';
+                importBtn.onclick = openPreviewEditModal;
+            } else {
+                importBtn.disabled = true;
+                importBtn.classList.add('bg-gray-300', 'cursor-not-allowed');
+                importBtn.classList.remove('bg-primary', 'hover:bg-blue-600', 'cursor-pointer');
+            }
+        }
+
+        // ===============================
+        // EDITABLE PREVIEW MODAL
+        // ===============================
+
+        function openPreviewEditModal() {
+            closeExcelModal();
+
+            const modal = document.getElementById('excelPreviewEditModal');
+            modal.classList.remove('closing');
+            modal.classList.add('active');
+
+            renderEditablePreviewTable();
+        }
+
+        function closePreviewEditModal() {
+            const modal = document.getElementById('excelPreviewEditModal');
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+            }, 300);
+        }
+
+        function closePreviewEditModalOnOverlay(event) {
+            if (event.target === event.currentTarget) {
+                closePreviewEditModal();
+            }
+        }
+
+        function renderEditablePreviewTable() {
+            const tbody = document.getElementById('editablePreviewBody');
+            tbody.innerHTML = '';
+
+            currentPreviewData.forEach((item, index) => {
+                const tr = createEditableRow(item, index);
+                tbody.appendChild(tr);
+            });
+
+            updatePreviewStats();
+        }
+
+        function createEditableRow(item, index) {
+            const tr = document.createElement('tr');
+            tr.id = `preview-row-${index}`;
+            tr.className = item.status === 'error' ? 'row-error' : item.status === 'warning' ? 'row-warning' : '';
+
+            const statusBadge = getStatusBadge(item.status, item.message);
+
+            // Build kelas dropdown options
+            let kelasOptions = '<option value="">Pilih Kelas</option>';
+            classes.forEach(kelas => {
+                const selected = kelas.nama_kelas.toUpperCase() === (item.kelas || '').toUpperCase() ? 'selected' : '';
+                kelasOptions += `<option value="${kelas.id}" data-nama="${kelas.nama_kelas}" ${selected}>${kelas.nama_kelas}</option>`;
+            });
+
+            tr.innerHTML = `
+                <td class="text-center text-sm text-textMuted font-medium">${index + 1}</td>
+                <td>
+                    <input type="text" class="editable-input" value="${escapeHtml(item.nama || '')}" 
+                           onchange="updatePreviewRow(${index}, 'nama', this.value)" placeholder="Nama Lengkap">
+                </td>
+                <td>
+                    <input type="text" class="editable-input" value="${escapeHtml(item.panggilan || '')}" 
+                           onchange="updatePreviewRow(${index}, 'panggilan', this.value)" placeholder="Nama Panggilan">
+                </td>
+                <td>
+                    <select class="editable-select" onchange="updatePreviewRowKelas(${index}, this)">
+                        ${kelasOptions}
+                    </select>
+                </td>
+                <td>
+                    <input type="text" class="editable-input" value="${escapeHtml(item.no_hp || '')}" 
+                           onchange="updatePreviewRow(${index}, 'no_hp', this.value)" placeholder="No HP">
+                </td>
+                <td>${statusBadge}</td>
+                <td class="text-center">
+                    <button class="delete-row-btn" onclick="deletePreviewRow(${index})" title="Hapus baris">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                        </svg>
+                    </button>
+                </td>
+            `;
+
+            return tr;
+        }
+
+        function getStatusBadge(status, message) {
+            const icons = {
+                valid: '✅',
+                warning: '⚠️',
+                error: '❌'
+            };
+            return `<span class="status-badge ${status}" title="${escapeHtml(message)}">${icons[status] || '❓'} ${status === 'valid' ? 'OK' : status === 'warning' ? 'Periksa' : 'Error'}</span>`;
+        }
+
+        function escapeHtml(text) {
+            if (!text) return '';
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        function updatePreviewRow(index, field, value) {
+            if (currentPreviewData[index]) {
+                currentPreviewData[index][field] = value;
+                validatePreviewRow(index);
+            }
+        }
+
+        function updatePreviewRowKelas(index, selectEl) {
+            if (currentPreviewData[index]) {
+                const selectedOption = selectEl.options[selectEl.selectedIndex];
+                currentPreviewData[index].kelas_id = selectEl.value ? parseInt(selectEl.value) : null;
+                currentPreviewData[index].kelas = selectedOption.dataset.nama || '';
+                validatePreviewRow(index);
+            }
+        }
+
+        function validatePreviewRow(index) {
+            const item = currentPreviewData[index];
+            if (!item) return;
+
+            // Check validation
+            if (!item.nama || item.nama.trim() === '') {
+                item.status = 'error';
+                item.message = 'Nama harus diisi';
+            } else if (!item.kelas_id) {
+                item.status = 'warning';
+                item.message = 'Kelas belum dipilih';
+            } else {
+                item.status = 'valid';
+                item.message = 'Siap diimport';
+            }
+
+            // Re-render just this row
+            const tbody = document.getElementById('editablePreviewBody');
+            const oldRow = document.getElementById(`preview-row-${index}`);
+            if (oldRow) {
+                const newRow = createEditableRow(item, index);
+                tbody.replaceChild(newRow, oldRow);
+            }
+
+            updatePreviewStats();
+        }
+
+        function deletePreviewRow(index) {
+            currentPreviewData.splice(index, 1);
+            renderEditablePreviewTable();
+        }
+
+        function addPreviewRow() {
+            const newItem = {
+                row: currentPreviewData.length + 1,
+                nama: '',
+                panggilan: '',
+                kelas: '',
+                kelas_id: null,
+                no_hp: '',
+                status: 'warning',
+                message: 'Data baru - belum lengkap'
+            };
+            currentPreviewData.push(newItem);
+            renderEditablePreviewTable();
+
+            // Scroll to bottom
+            const container = document.querySelector('.editable-table-container');
+            if (container) {
+                container.scrollTop = container.scrollHeight;
+            }
+        }
+
+        function updatePreviewStats() {
+            const total = currentPreviewData.length;
+            const valid = currentPreviewData.filter(i => i.status === 'valid').length;
+            const warning = currentPreviewData.filter(i => i.status === 'warning').length;
+            const error = currentPreviewData.filter(i => i.status === 'error').length;
+
+            document.getElementById('previewTotalCount').textContent = total;
+            document.getElementById('previewValidCount').textContent = valid;
+            document.getElementById('previewWarningCount').textContent = warning;
+            document.getElementById('previewErrorCount').textContent = error;
+        }
+
+        function saveEditedExcelData() {
+            // Filter only valid items
+            const validData = currentPreviewData.filter(i => i.status === 'valid');
+
+            if (validData.length === 0) {
+                showToast('Tidak ada data valid untuk disimpan. Pastikan semua data memiliki Nama dan Kelas.', 'error');
+                return;
+            }
+
+            const btn = document.getElementById('savePreviewBtn');
+            btn.innerHTML = 'Menyimpan...';
+            btn.disabled = true;
+
+            const formData = new FormData();
+            formData.append('action', 'save');
+            formData.append('data', JSON.stringify(validData));
+
+            fetch('service/siswa/import_excel.php', {
+                method: 'POST',
+                body: formData
+            })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        showToast(data.message, 'success');
+                        setTimeout(() => {
+                            closePreviewEditModal();
+                            loadStudents();
+                        }, 1500);
+                    } else {
+                        showToast(data.message, 'error');
+                        btn.innerHTML = `
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            </svg>
+                            Simpan ke Database
+                        `;
+                        btn.disabled = false;
+                    }
+                })
+                .catch(err => {
+                    console.error(err);
+                    showToast('Gagal menyimpan data', 'error');
+                    btn.innerHTML = `
+                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        </svg>
+                        Simpan ke Database
+                    `;
+                    btn.disabled = false;
+                });
+        }
+
+        function selectAddMethod(method) {
+            if (method === 'manual') {
+                closeAddModal();
+                editingStudentId = null;
+                document.getElementById('manualModalTitle').textContent = 'Tambah Siswa Baru';
+                document.getElementById('studentName').value = '';
+                document.getElementById('studentNickname').value = '';
+                document.getElementById('studentClass').value = '';
+                showManualModal();
+            } else if (method === 'excel') {
+                showExcelUploadModal();
+            }
+        }
+
 
         // ===============================
         // TOAST NOTIFICATION

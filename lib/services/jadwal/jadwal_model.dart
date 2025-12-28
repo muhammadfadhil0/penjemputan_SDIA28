@@ -90,12 +90,20 @@ class JadwalKelas {
 
   /// Membuat JadwalKelas dari JSON response API
   factory JadwalKelas.fromJson(Map<String, dynamic> json) {
-    // Urutan hari dalam seminggu
-    const dayOrder = ['senin', 'selasa', 'rabu', 'kamis', 'jumat'];
+    // Urutan hari dalam seminggu (include weekend)
+    const dayOrder = [
+      'senin',
+      'selasa',
+      'rabu',
+      'kamis',
+      'jumat',
+      'sabtu',
+      'minggu',
+    ];
 
     // Tentukan hari ini
     final now = DateTime.now();
-    final todayIndex = now.weekday - 1; // 0 = Senin, 4 = Jumat
+    final todayIndex = now.weekday - 1; // 0 = Senin, 6 = Minggu
     final todayName = todayIndex >= 0 && todayIndex < dayOrder.length
         ? dayOrder[todayIndex]
         : '';
@@ -116,11 +124,14 @@ class JadwalKelas {
         );
       } else {
         // Default jika tidak ada data
+        // Weekend (sabtu/minggu) otomatis set sebagai libur
+        final isWeekend = hari == 'sabtu' || hari == 'minggu';
         jadwalList.add(
           JadwalItem(
             hari: JadwalItem._capitalizeFirst(hari),
             jamMasuk: '07:00',
-            jamPulang: '14:00',
+            jamPulang: isWeekend ? '07:00' : '14:00',
+            isHoliday: isWeekend,
             isToday: hari == todayName,
           ),
         );

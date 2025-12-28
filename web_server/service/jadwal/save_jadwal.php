@@ -82,12 +82,12 @@ $jam_pulang = trim($data['jam_pulang']);
 $is_holiday = isset($data['is_holiday']) ? (bool)$data['is_holiday'] : false;
 
 // Validasi hari
-$valid_days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu'];
+$valid_days = ['senin', 'selasa', 'rabu', 'kamis', 'jumat', 'sabtu', 'minggu'];
 if (!in_array($hari, $valid_days)) {
     http_response_code(400);
     echo json_encode([
         "success" => false,
-        "message" => "Hari tidak valid. Pilihan: senin, selasa, rabu, kamis, jumat, sabtu"
+        "message" => "Hari tidak valid. Pilihan: senin, selasa, rabu, kamis, jumat, sabtu, minggu"
     ]);
     mysqli_close($conn);
     exit();
