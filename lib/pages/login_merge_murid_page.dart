@@ -77,6 +77,9 @@ class _LoginMergeMuridPageState extends State<LoginMergeMuridPage> {
           // Add account to MultiAccountService
           await multiAccountService.addAccount(result.user!);
 
+          // Switch to the new account so it becomes active
+          await multiAccountService.switchAccount(result.user!.id);
+
           setState(() => _isLoading = false);
 
           // Show success message

@@ -760,6 +760,43 @@
                 </div>
             </div>
 
+            <!-- Cooldown Settings -->
+            <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-purple-100 rounded-xl">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-textPrimary">Waktu Cooldown</h2>
+                        <p class="text-sm text-textMuted">Durasi menunggu sebelum bisa memanggil ulang</p>
+                    </div>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-4 items-start md:items-center">
+                    <div class="flex-1">
+                        <label class="block text-sm font-medium text-textSecondary mb-2">Durasi Cooldown (menit)</label>
+                        <div class="flex items-center gap-3">
+                            <input type="number" id="cooldownMinutes" min="1" max="60" value="10"
+                                class="w-24 px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-purple-500 outline-none transition-all text-textPrimary text-center font-semibold text-lg">
+                            <span class="text-textSecondary">menit</span>
+                        </div>
+                        <p class="text-xs text-textMuted mt-2">Setelah siswa dijemput, orang tua harus menunggu selama
+                            durasi ini sebelum bisa memanggil lagi. (1-60 menit)</p>
+                    </div>
+                    <div class="flex items-center gap-2 bg-purple-50 border border-purple-200 rounded-xl px-4 py-3">
+                        <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <span class="text-sm text-purple-700">Saat ini: <strong id="currentCooldownDisplay">10
+                                menit</strong></span>
+                    </div>
+                </div>
+            </div>
+
             <!-- 2. Bell Sound Upload -->
             <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4">
@@ -1112,7 +1149,7 @@
             });
         }
 
-        // Load settings from localStorage
+        // Load settings from localStorage and API
         function loadSettings() {
             const savedBlocks = localStorage.getItem('announcementBlocks');
             if (savedBlocks) {
@@ -1127,6 +1164,64 @@
             const savedBellUrl = localStorage.getItem('customBellUrl');
             if (savedBellUrl) {
                 customBellUrl = savedBellUrl;
+            }
+
+            // Load cooldown from API
+            loadCooldownSetting();
+        }
+
+        // Load cooldown setting from API
+        async function loadCooldownSetting() {
+            try {
+                const response = await fetch('service/config/get_settings.php?key=cooldown_minutes');
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    const cooldownValue = parseInt(data.data.value) || 10;
+                    document.getElementById('cooldownMinutes').value = cooldownValue;
+                    document.getElementById('currentCooldownDisplay').textContent = cooldownValue + ' menit';
+                }
+            } catch (error) {
+                console.error('Error loading cooldown setting:', error);
+                // Keep default value if API fails
+            }
+        }
+
+        // Save cooldown setting to API
+        async function saveCooldownSetting() {
+            const cooldownInput = document.getElementById('cooldownMinutes');
+            const cooldownValue = parseInt(cooldownInput.value);
+
+            if (isNaN(cooldownValue) || cooldownValue < 1 || cooldownValue > 60) {
+                showToast('Nilai cooldown harus antara 1-60 menit!', 'error');
+                return false;
+            }
+
+            try {
+                const response = await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        key: 'cooldown_minutes',
+                        value: cooldownValue.toString()
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    document.getElementById('currentCooldownDisplay').textContent = cooldownValue + ' menit';
+                    return true;
+                } else {
+                    showToast(data.message || 'Gagal menyimpan cooldown!', 'error');
+                    return false;
+                }
+            } catch (error) {
+                console.error('Error saving cooldown setting:', error);
+                showToast('Gagal menyimpan pengaturan cooldown!', 'error');
+                return false;
             }
         }
 
@@ -1330,7 +1425,7 @@
         }
 
         // Save settings
-        function saveSettings() {
+        async function saveSettings() {
             // Save blocks
             localStorage.setItem('announcementBlocks', JSON.stringify(currentBlocks));
 
@@ -1343,7 +1438,13 @@
                 localStorage.setItem('customBellUrl', customBellUrl);
             }
 
-            showToast('✅ Pengaturan berhasil disimpan!');
+            // Save cooldown to API
+            const cooldownSaved = await saveCooldownSetting();
+
+            if (cooldownSaved) {
+                showToast('✅ Pengaturan berhasil disimpan!');
+            }
+            // If cooldown fails, the error toast is shown by saveCooldownSetting
         }
 
         // Cancel changes

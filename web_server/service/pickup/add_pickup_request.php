@@ -20,6 +20,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
 // Include database connection
 require_once '../config/koneksi.php';
 
+// Get cooldown minutes from settings (default 10 if not set)
+$cooldown_query_setting = "SELECT value FROM pengaturan_aplikasi WHERE key_name = 'cooldown_minutes' LIMIT 1";
+$cooldown_result_setting = mysqli_query($conn, $cooldown_query_setting);
+$cooldown_minutes = 10; // default
+if ($cooldown_result_setting && mysqli_num_rows($cooldown_result_setting) > 0) {
+    $cooldown_row_setting = mysqli_fetch_assoc($cooldown_result_setting);
+    $cooldown_minutes = intval($cooldown_row_setting['value']);
+}
+$cooldown_seconds = $cooldown_minutes * 60;
+
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     echo json_encode([
@@ -64,12 +74,10 @@ if (mysqli_num_rows($siswa_result) == 0) {
 
 $siswa = mysqli_fetch_assoc($siswa_result);
 
-// Check if student already has a pending request today
-// NOTE: Allow new request if previous 'dipanggil' status is older than 10 minutes
+// NOTE: Allow new request if previous 'dipanggil' status cooldown has expired
 $today = date('Y-m-d');
-$ten_minutes_ago = date('Y-m-d H:i:s', strtotime('-10 minutes'));
 
-$existing_query = "SELECT id, status, waktu_dipanggil FROM permintaan_jemput 
+$existing_query = "SELECT id, status, waktu_dipanggil, cooldown_minutes_used FROM permintaan_jemput 
                    WHERE siswa_id = $siswa_id 
                    AND DATE(waktu_request) = '$today' 
                    AND status IN ('menunggu', 'dipanggil')
@@ -80,10 +88,16 @@ $existing_result = mysqli_query($conn, $existing_query);
 if (mysqli_num_rows($existing_result) > 0) {
     $existing = mysqli_fetch_assoc($existing_result);
     
-    // If status is 'dipanggil' and waktu_dipanggil is older than 10 minutes, allow new request
+    // If status is 'dipanggil' and cooldown has expired, allow new request
     if ($existing['status'] == 'dipanggil' && $existing['waktu_dipanggil']) {
+        // Use the cooldown stored in the request for consistency
+        $existing_cooldown_minutes = isset($existing['cooldown_minutes_used']) && $existing['cooldown_minutes_used']
+            ? intval($existing['cooldown_minutes_used'])
+            : $cooldown_minutes;
+        $existing_cooldown_seconds = $existing_cooldown_minutes * 60;
+        
         $waktu_dipanggil = strtotime($existing['waktu_dipanggil']);
-        $cooldown_ends = $waktu_dipanggil + (10 * 60); // 10 minutes
+        $cooldown_ends = $waktu_dipanggil + $existing_cooldown_seconds;
         
         if (time() >= $cooldown_ends) {
             // Cooldown expired, allow new request - update old request to 'dibatalkan' first
@@ -125,13 +139,13 @@ $user_id = $siswa_id; // Using siswa_id as a placeholder
 $waktu_estimasi_sql = $waktu_estimasi ? "'$waktu_estimasi'" : "NULL";
 $penjemput_detail_sql = $penjemput_detail ? "'$penjemput_detail'" : "NULL";
 
-// Insert pickup request
+// Insert pickup request (include cooldown_minutes_used so countdown is fixed per-request)
 $insert_query = "INSERT INTO permintaan_jemput 
                  (siswa_id, user_id, penjemput, penjemput_detail, estimasi_waktu, waktu_estimasi, 
-                  status, nomor_antrian, waktu_request) 
+                  status, nomor_antrian, waktu_request, cooldown_minutes_used) 
                  VALUES 
                  ($siswa_id, $user_id, '$penjemput', $penjemput_detail_sql, '$estimasi_waktu', 
-                  $waktu_estimasi_sql, 'menunggu', $next_queue, NOW())";
+                  $waktu_estimasi_sql, 'menunggu', $next_queue, NOW(), $cooldown_minutes)";
 
 if (mysqli_query($conn, $insert_query)) {
     $request_id = mysqli_insert_id($conn);

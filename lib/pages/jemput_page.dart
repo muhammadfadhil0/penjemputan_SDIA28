@@ -112,12 +112,20 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   // Handle account change
   void _onAccountChanged(user) {
     if (mounted) {
+      // Reset color animation to idle state when switching accounts
+      _colorController.reset();
+
+      // Cancel any existing cooldown timer
+      _cooldownTimer?.cancel();
+
       setState(() {
-        // Refresh data for new account
-        _checkPickupStatus();
+        // Reset to idle state first
         _buttonState = PickupButtonState.idle;
         _cooldownSeconds = 0;
       });
+
+      // Then check status for the new account (this will update state accordingly)
+      _checkPickupStatus();
     }
   }
 

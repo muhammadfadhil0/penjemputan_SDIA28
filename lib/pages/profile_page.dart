@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/auth/multi_account_service.dart';
+import '../services/auth/user_model.dart';
 import '../widgets/stacked_avatars.dart';
 import '../widgets/account_switcher_bottomsheet.dart';
 import 'data_siswa_page.dart';
@@ -62,6 +63,79 @@ class _ProfilePageState extends State<ProfilePage> {
   }
 
   void _showLogoutBottomSheet() {
+    // Check if there are multiple accounts
+    if (_multiAccountService.hasMultipleAccounts) {
+      // Show switch account bottom sheet
+      _showSwitchAccountLogoutBottomSheet();
+    } else {
+      // Show regular logout bottom sheet
+      _showRegularLogoutBottomSheet();
+    }
+  }
+
+  void _showSwitchAccountLogoutBottomSheet() {
+    showGeneralDialog(
+      context: context,
+      barrierDismissible: true,
+      barrierLabel: MaterialLocalizations.of(context).modalBarrierDismissLabel,
+      barrierColor: Colors.black54,
+      transitionDuration: const Duration(milliseconds: 300),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return const SizedBox.shrink();
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curvedAnimation = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutCubic,
+          reverseCurve: Curves.easeIn,
+        );
+
+        return Align(
+          alignment: Alignment.bottomCenter,
+          child: SlideTransition(
+            position: Tween<Offset>(
+              begin: const Offset(0, 1),
+              end: Offset.zero,
+            ).animate(curvedAnimation),
+            child: Material(
+              color: Colors.transparent,
+              child: _SwitchAccountLogoutBottomSheet(
+                accounts: _multiAccountService.accounts,
+                onConfirm: () async {
+                  Navigator.pop(context); // Close bottom sheet
+                  await _performSwitchAccountLogout();
+                },
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _performSwitchAccountLogout() async {
+    // Get current user ID
+    final currentUserId = _authService.currentUser?.id;
+    if (currentUserId == null) return;
+
+    // Get the other accounts (accounts to switch to)
+    final otherAccounts = _multiAccountService.otherAccounts;
+    if (otherAccounts.isEmpty) return;
+
+    // Remove current account from multi-account list
+    await _multiAccountService.removeAccount(currentUserId);
+
+    // The removeAccount already switches to the first remaining account
+    // Navigate to jemput_page (index 0 in MainNavigation)
+    if (mounted) {
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const MainNavigation()),
+        (route) => false,
+      );
+    }
+  }
+
+  void _showRegularLogoutBottomSheet() {
     showGeneralDialog(
       context: context,
       barrierDismissible: true,
@@ -588,6 +662,19 @@ class _LogoutBottomSheet extends StatelessWidget {
                 Expanded(
                   child: ElevatedButton(
                     onPressed: () async {
+                      // Get current user ID before logout
+                      final currentUserId = AuthService().currentUser?.id;
+
+                      // Remove current account from multi-account list
+                      if (currentUserId != null) {
+                        await MultiAccountService().removeAccount(
+                          currentUserId,
+                        );
+                      }
+
+                      // Clear all accounts if needed (full logout)
+                      await MultiAccountService().clearAllAccounts();
+
                       // Logout and clear session
                       await AuthService().logout();
 
@@ -612,6 +699,133 @@ class _LogoutBottomSheet extends StatelessWidget {
                     ),
                     child: const Text(
                       'Keluar',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// SWITCH ACCOUNT LOGOUT BOTTOM SHEET
+// (For multi-account logout - switches to another account)
+// ============================================
+class _SwitchAccountLogoutBottomSheet extends StatelessWidget {
+  final List<SiswaUser> accounts;
+  final VoidCallback onConfirm;
+
+  const _SwitchAccountLogoutBottomSheet({
+    required this.accounts,
+    required this.onConfirm,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        color: AppColors.card,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(24, 24, 24, 70),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Handle bar
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: AppColors.border,
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 28),
+
+            // Stacked avatars (non-clickable)
+            IgnorePointer(
+              child: StackedAvatars(
+                accounts: accounts,
+                size: 80,
+                overlapFactor: 0.35,
+              ),
+            ),
+            const SizedBox(height: 24),
+
+            // Title
+            const Text(
+              'Ingin keluar dari akun ini?',
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 12),
+
+            // Description
+            Text(
+              'Anda akan dialihkan ke akun murid yang telah Anda masuk sebelumnya.',
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textSecondary,
+                height: 1.5,
+              ),
+              textAlign: TextAlign.center,
+            ),
+            const SizedBox(height: 28),
+
+            // Buttons
+            Row(
+              children: [
+                // Cancel button
+                Expanded(
+                  child: OutlinedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: OutlinedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      side: BorderSide(color: AppColors.border),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    child: const Text(
+                      'Batal',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                // Confirm button
+                Expanded(
+                  child: ElevatedButton(
+                    onPressed: onConfirm,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      elevation: 0,
+                    ),
+                    child: const Text(
+                      'Oke',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,

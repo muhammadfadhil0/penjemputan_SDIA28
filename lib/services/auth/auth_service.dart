@@ -85,6 +85,9 @@ class AuthService {
         _currentUser = user;
         await _saveUserToStorage(user);
 
+        // Notify listeners about the account change
+        _notifyAccountChanged();
+
         return AuthResult(
           success: true,
           message: responseData['message'] ?? 'Login berhasil!',

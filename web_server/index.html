@@ -507,7 +507,7 @@
                         </svg>
                     </div>
                     <div>
-                        <h1 class="text-xl font-semibold text-textPrimary">Dashboard Penjemputan</h1>
+                        <h1 class="text-xl font-semibold text-textPrimary">Penjemputan Murid</h1>
                         <p class="text-sm text-textMuted">SDIA 28 - Lobby Sekolah</p>
                     </div>
                 </div>
@@ -1408,6 +1408,42 @@
             updateCountdownUI();
         }
 
+        // ===============================
+        // ANNOUNCEMENT TEXT BUILDER
+        // ===============================
+
+        // Default announcement structure (same as in pengaturan.html)
+        const defaultAnnouncementBlocks = [
+            { type: 'nama_siswa', label: 'Nama Siswa' },
+            { type: 'text', value: ', ' },
+            { type: 'kelas', label: 'Kelas' },
+            { type: 'text', value: ', silakan menuju lobby, ditunggu oleh ' },
+            { type: 'dijemput_oleh', label: 'Dijemput Oleh' }
+        ];
+
+        // Build announcement text based on saved settings
+        function buildAnnouncementText(student) {
+            // Load blocks from localStorage, or use default
+            const savedBlocks = localStorage.getItem('announcementBlocks');
+            const blocks = savedBlocks ? JSON.parse(savedBlocks) : defaultAnnouncementBlocks;
+
+            // Build text from blocks
+            let text = '';
+            blocks.forEach(block => {
+                if (block.type === 'text') {
+                    text += block.value || '';
+                } else if (block.type === 'nama_siswa') {
+                    text += student.name || '';
+                } else if (block.type === 'kelas') {
+                    text += student.class || '';
+                } else if (block.type === 'dijemput_oleh') {
+                    text += student.pickupBy || '';
+                }
+            });
+
+            return text || `${student.name}, ${student.class}, silakan menuju lobby, ditunggu oleh ${student.pickupBy}`;
+        }
+
         // Call student (used by auto-call)
         async function callStudent() {
             if (queue.length === 0) {
@@ -1438,8 +1474,8 @@
             updateQueueList();
             updateStats();
 
-            // TTS call - pass true to indicate this is from auto-call
-            const text = `${student.name}, ${student.class}, silakan menuju lobby, ditunggu oleh ${student.pickupBy}`;
+            // TTS call - use announcement text from settings
+            const text = buildAnnouncementText(student);
             speakText(text, true); // true = isAutoCall
 
             showToast(`Memanggil ${student.name}!`);

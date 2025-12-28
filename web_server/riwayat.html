@@ -625,13 +625,29 @@
                 <table class="w-full">
                     <thead class="bg-bgMain">
                         <tr>
-                            <th
-                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                                No
+                            <th onclick="sortHistory('no')"
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none group">
+                                <div class="flex items-center">
+                                    No
+                                    <svg id="icon-sort-no"
+                                        class="w-4 h-4 ml-1 opacity-0 transition-opacity text-primary" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
                             </th>
-                            <th
-                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                                Nama Siswa
+                            <th onclick="sortHistory('name')"
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none group">
+                                <div class="flex items-center">
+                                    Nama Siswa
+                                    <svg id="icon-sort-name"
+                                        class="w-4 h-4 ml-1 opacity-0 transition-opacity text-primary" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
@@ -641,9 +657,17 @@
                                 class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
                                 Dijemput Oleh
                             </th>
-                            <th
-                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
-                                Waktu
+                            <th onclick="sortHistory('time')"
+                                class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none group">
+                                <div class="flex items-center">
+                                    Waktu
+                                    <svg id="icon-sort-time"
+                                        class="w-4 h-4 ml-1 opacity-0 transition-opacity text-primary" fill="none"
+                                        stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M19 9l-7 7-7-7" />
+                                    </svg>
+                                </div>
                             </th>
                             <th
                                 class="px-6 py-4 text-left text-xs font-semibold text-textSecondary uppercase tracking-wider">
@@ -665,36 +689,163 @@
                         d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                 </svg>
                 <h3 class="text-lg font-medium text-textPrimary mb-2">Tidak ada data</h3>
-                <p class="text-textMuted">Tidak ada riwayat penjemputan yang ditemukan</p>
+                <p class="text-textMuted">Silahkan cek waktu atau tanggal penjemputan untuk menampilkan data lainya <br>
+                    atau
+                    reset untuk menampilkan semua data penjemputan</p>
             </div>
         </div>
     </main>
 
     <script>
-        // Sample history data
-        const historyData = [
-            { id: 1, name: "Ahmad Farhan Pratama", class: "Kelas 3A", pickupBy: "Ayah", time: "2024-12-21 14:30", status: "completed" },
-            { id: 2, name: "Siti Aisyah Putri", class: "Kelas 2B", pickupBy: "Ibu", time: "2024-12-21 14:25", status: "completed" },
-            { id: 3, name: "Muhammad Rizki", class: "Kelas 4C", pickupBy: "Kakak", time: "2024-12-21 14:20", status: "completed" },
-            { id: 4, name: "Fatimah Zahra", class: "Kelas 1A", pickupBy: "Ayah", time: "2024-12-21 14:15", status: "completed" },
-            { id: 5, name: "Umar Abdullah", class: "Kelas 5B", pickupBy: "Ibu", time: "2024-12-21 14:10", status: "completed" },
-            { id: 6, name: "Khadijah Amira", class: "Kelas 3C", pickupBy: "Kakak", time: "2024-12-21 14:05", status: "completed" },
-            { id: 7, name: "Yusuf Hakim", class: "Kelas 2A", pickupBy: "Ayah", time: "2024-12-20 14:30", status: "completed" },
-            { id: 8, name: "Zainab Salsabila", class: "Kelas 4B", pickupBy: "Ibu", time: "2024-12-20 14:25", status: "completed" },
-            { id: 9, name: "Ibrahim Maulana", class: "Kelas 1C", pickupBy: "Ayah", time: "2024-12-20 14:20", status: "completed" },
-            { id: 10, name: "Maryam Azzahra", class: "Kelas 5A", pickupBy: "Ibu", time: "2024-12-19 14:30", status: "completed" },
-            { id: 11, name: "Hasan Basri", class: "Kelas 3B", pickupBy: "Kakak", time: "2024-12-19 14:25", status: "completed" },
-            { id: 12, name: "Hafsa Nurul", class: "Kelas 2C", pickupBy: "Ayah", time: "2024-12-19 14:20", status: "completed" },
-        ];
+        // Global variables
+        let allHistoryData = [];
+        let limit = 10;
+        let offset = 0;
+        let isLoading = false;
+        let hasMore = true;
+        let currentSort = {
+            column: 'request_time', // default sort by time
+            direction: 'desc'       // default newest first
+        };
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             loadUserInfo();
             initNavIndicator();
-            updateStats();
-            renderHistory(historyData);
+
+            // Set default date to today
+            const today = new Date().toISOString().split('T')[0];
+            document.getElementById('dateFilter').value = today;
+
+            loadHistoryData(); // load first chunk
+
+            // Setup infinite scroll listener
+            window.addEventListener('scroll', () => {
+                if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight - 500) {
+                    loadHistoryData(true);
+                }
+            });
         });
+
+        // Load history data from API
+        async function loadHistoryData(isAppend = false) {
+            if (isLoading) return;
+            if (isAppend && !hasMore) return;
+
+            isLoading = true;
+            const tableBody = document.getElementById('historyTableBody');
+            const loaderRow = document.getElementById('loaderRow');
+
+            if (!isAppend) {
+                // Reset for new search/filter
+                offset = 0;
+                hasMore = true;
+                allHistoryData = [];
+                // Show initial loading if completely fresh
+                tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-textMuted">
+                        <div class="flex flex-col items-center justify-center">
+                            <svg class="animate-spin h-8 w-8 text-primary mb-4" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <p>Memuat data...</p>
+                        </div>
+                    </td>
+                </tr>
+            `;
+            } else {
+                // Show loader row at bottom
+                if (!loaderRow) {
+                    const tr = document.createElement('tr');
+                    tr.id = 'loaderRow';
+                    tr.innerHTML = `
+                        <td colspan="6" class="px-6 py-4 text-center">
+                            <div class="flex justify-center items-center gap-2 text-textMuted">
+                                <svg class="animate-spin h-5 w-5 text-primary" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                </svg>
+                                <span>Memuat lebih banyak...</span>
+                            </div>
+                        </td>
+                     `;
+                    tableBody.appendChild(tr);
+                }
+            }
+
+            const dateFilter = document.getElementById('dateFilter').value;
+            const searchInput = document.getElementById('searchInput').value;
+
+            try {
+                // Construct URL with parameters
+                let url = `service/riwayat/get_all_history.php?limit=${limit}&offset=${offset}`;
+                if (dateFilter) {
+                    url += `&tanggal=${dateFilter}`;
+                }
+                if (searchInput) {
+                    url += `&search=${encodeURIComponent(searchInput)}`;
+                }
+
+                const response = await fetch(url);
+                const result = await response.json();
+
+                // Remove append loader if exists
+                const currentLoader = document.getElementById('loaderRow');
+                if (currentLoader) currentLoader.remove();
+
+                if (result.success) {
+                    const newData = result.data.map((item, index) => ({
+                        ...item,
+                        originalIndex: offset + index // Adjust index based on offset
+                    }));
+
+                    if (newData.length < limit) {
+                        hasMore = false;
+                    }
+
+                    if (isAppend) {
+                        allHistoryData = [...allHistoryData, ...newData];
+                    } else {
+                        allHistoryData = newData;
+                    }
+
+                    offset += limit;
+
+                    // Apply current sort if any, or just render
+                    // NOTE: Sorting locally breaks infinite scroll logic unless we sort the whole cumulative list.
+                    // If sorting is active, we might need to resort purely client side on the accumulated data.
+                    applySort();
+
+                    // Update stats if provided (only need to do this once or on filter change)
+                    if (result.stats && !isAppend) {
+                        updateStats(result.stats);
+                    }
+                } else {
+                    console.error('Error fetching data:', result.message);
+                    if (!isAppend) renderError(result.message);
+                }
+            } catch (error) {
+                console.error('Network error:', error);
+                if (!isAppend) renderError('Gagal terhubung ke server');
+            } finally {
+                isLoading = false;
+            }
+        }
+
+        function renderError(message) {
+            const tableBody = document.getElementById('historyTableBody');
+            tableBody.innerHTML = `
+                <tr>
+                    <td colspan="6" class="px-6 py-8 text-center text-red-500">
+                        <p>${message}</p>
+                        <button onclick="loadHistoryData()" class="mt-4 px-4 py-2 bg-primary text-white rounded-lg text-sm hover:bg-blue-600">Coba Lagi</button>
+                    </td>
+                </tr>
+            `;
+        }
 
         // Check if user is authenticated
         function checkAuth() {
@@ -802,120 +953,228 @@
             });
         }
 
-        // Update statistics
-        function updateStats() {
-            const today = new Date().toISOString().split('T')[0];
-            const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-            const monthAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
-
-            const todayCount = historyData.filter(item => item.time.startsWith(today)).length;
-            const weekCount = historyData.filter(item => item.time.split(' ')[0] >= weekAgo).length;
-            const monthCount = historyData.filter(item => item.time.split(' ')[0] >= monthAgo).length;
-
-            document.getElementById('todayCount').textContent = todayCount;
-            document.getElementById('weekCount').textContent = weekCount;
-            document.getElementById('monthCount').textContent = monthCount;
-        }
-
         // Render history table
         function renderHistory(data) {
-            const tbody = document.getElementById('historyTableBody');
-            const emptyState = document.getElementById('emptyState');
+            const tableBody = document.getElementById('historyTableBody');
             const resultCount = document.getElementById('resultCount');
+            const emptyState = document.getElementById('emptyState');
+
+            tableBody.innerHTML = '';
+            resultCount.textContent = `${data.length} hasil`;
 
             if (data.length === 0) {
-                tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
-                resultCount.textContent = '0 hasil';
+                tableBody.parentElement.classList.add('hidden');
                 return;
             }
 
             emptyState.classList.add('hidden');
-            resultCount.textContent = `${data.length} hasil`;
+            tableBody.parentElement.classList.remove('hidden');
 
-            tbody.innerHTML = data.map((item, index) => `
-                <tr class="table-row transition-colors slide-in" style="animation-delay: ${index * 0.03}s">
-                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textMuted">
-                        ${index + 1}
+            data.forEach((item, index) => {
+                const row = document.createElement('tr');
+                row.className = 'table-row transition-colors border-b border-borderColor last:border-0';
+
+                // Status badge style
+                let statusClass = '';
+                let statusText = item.catatan || item.status;
+
+                switch (item.status) {
+                    case 'dijemput':
+                        statusClass = 'bg-green-100 text-green-700';
+                        break;
+                    case 'dipanggil':
+                        statusClass = 'bg-blue-100 text-blue-700';
+                        break;
+                    case 'menunggu':
+                        statusClass = 'bg-yellow-100 text-yellow-700';
+                        break;
+                    case 'dibatalkan':
+                        statusClass = 'bg-red-100 text-red-700';
+                        break;
+                    default:
+                        statusClass = 'bg-gray-100 text-gray-700';
+                }
+
+                // Use originalIndex + 1 for permanent number assignment
+                // Fallback to index + 1 if originalIndex is missing (e.g. before fetch update)
+                const rowNumber = (item.originalIndex !== undefined) ? (item.originalIndex + 1) : (index + 1);
+
+                row.innerHTML = `
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary font-medium">
+                        ${rowNumber}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <div class="flex items-center gap-3">
-                            <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center">
-                                <span class="text-primary font-semibold text-sm">${item.name.charAt(0)}</span>
+                        <div class="flex items-center">
+                            <div class="h-8 w-8 rounded-full bg-primaryLighter flex items-center justify-center text-primary font-bold mr-3 text-xs">
+                                ${item.nama_siswa.charAt(0)}
                             </div>
-                            <span class="font-medium text-textPrimary">${item.name}</span>
+                            <div class="text-sm font-medium text-textPrimary">${item.nama_siswa}</div>
                         </div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary">
-                        ${item.class}
-                    </td>
-                    <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="bg-green-50 text-green-700 text-sm font-medium px-3 py-1 rounded-full">
-                            ${item.pickupBy}
-                        </span>
+                        ${item.nama_kelas}
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary">
-                        ${formatDateTime(item.time)}
+                        ${item.penjemput}
+                    </td>
+                    <td class="px-6 py-4 whitespace-nowrap text-sm text-textSecondary">
+                        <div>${item.waktu}</div>
+                        <div class="text-xs text-textMuted">${item.tanggalText}</div>
                     </td>
                     <td class="px-6 py-4 whitespace-nowrap">
-                        <span class="inline-flex items-center gap-1 bg-success/10 text-success text-sm font-medium px-3 py-1 rounded-full">
-                            <svg class="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
-                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-                            </svg>
-                            Selesai
+                        <span class="px-3 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${statusClass}">
+                            ${statusText}
                         </span>
                     </td>
-                </tr>
-            `).join('');
+                `;
+
+                // Add staggered animation
+                row.style.opacity = '0';
+                row.style.transform = 'translateY(10px)';
+                row.style.transition = 'all 0.3s ease-out';
+                row.style.transitionDelay = `${index * 50}ms`;
+
+                tableBody.appendChild(row);
+
+                // Trigger animation
+                requestAnimationFrame(() => {
+                    row.style.opacity = '1';
+                    row.style.transform = 'translateY(0)';
+                });
+            });
         }
 
-        // Format datetime
-        function formatDateTime(dateTimeStr) {
-            const date = new Date(dateTimeStr);
-            const options = {
-                day: 'numeric',
-                month: 'short',
-                year: 'numeric',
-                hour: '2-digit',
-                minute: '2-digit'
-            };
-            return date.toLocaleDateString('id-ID', options);
-        }
-
-        // Filter history
+        // Filter history based on search and date
+        let debounceTimer;
         function filterHistory() {
-            const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-            const dateFilter = document.getElementById('dateFilter').value;
-
-            let filtered = historyData;
-
-            // Filter by name
-            if (searchTerm) {
-                filtered = filtered.filter(item =>
-                    item.name.toLowerCase().includes(searchTerm)
-                );
-            }
-
-            // Filter by date
-            if (dateFilter) {
-                filtered = filtered.filter(item =>
-                    item.time.startsWith(dateFilter)
-                );
-            }
-
-            renderHistory(filtered);
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(() => {
+                loadHistoryData();
+            }, 500);
         }
 
         // Clear filters
         function clearFilters() {
             document.getElementById('searchInput').value = '';
-            document.getElementById('dateFilter').value = '';
-            renderHistory(historyData);
+            document.getElementById('dateFilter').value = ''; // Or set to today
+            loadHistoryData();
+        }
+
+        // Update statistics cards
+        function updateStats(stats) {
+            // Animate number counting
+            animateValue(document.getElementById('todayCount'), 0, stats.today || 0, 1000);
+
+            // Note: Currently we only get today's stats from the API efficiently
+            // Week and Month would require heavier queries or separate endpoints
+            // For now we can keep them as placeholder or set to 0
+            // animateValue(document.getElementById('weekCount'), 0, 0, 1000);
+            // animateValue(document.getElementById('monthCount'), 0, 0, 1000);
+        }
+
+        function animateValue(obj, start, end, duration) {
+            if (!obj) return;
+            let startTimestamp = null;
+            const step = (timestamp) => {
+                if (!startTimestamp) startTimestamp = timestamp;
+                const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+                obj.innerHTML = Math.floor(progress * (end - start) + start);
+                if (progress < 1) {
+                    window.requestAnimationFrame(step);
+                }
+            };
+            window.requestAnimationFrame(step);
+        }
+
+
+
+
+
+
+        function sortHistory(column) {
+            // Toggle direction if same column, otherwise set to ascending (except for 'no' which starts desc/reverse)
+            if (currentSort.column === column) {
+                currentSort.direction = currentSort.direction === 'asc' ? 'desc' : 'asc';
+            } else {
+                currentSort.column = column;
+                // If sorting by 'no', start with 'desc' (reverse: 3, 2, 1) because 'asc' (1, 2, 3) is the default view
+                if (column === 'no') {
+                    currentSort.direction = 'desc';
+                } else {
+                    currentSort.direction = 'asc';
+                }
+            }
+
+            // Apply sorting
+            applySort();
+        }
+
+        function applySort() {
+            // Sort localized copy of data
+            allHistoryData.sort((a, b) => {
+                let valA, valB;
+
+                switch (currentSort.column) {
+                    case 'no':
+                        // Sort by original index from the fetch
+                        valA = a.originalIndex;
+                        valB = b.originalIndex;
+                        break;
+                    case 'name':
+                        valA = a.nama_siswa.toLowerCase();
+                        valB = b.nama_siswa.toLowerCase();
+                        break;
+                    case 'time':
+                        // Combine date and time for full timestamp comparison
+                        valA = new Date(a.waktu_request).getTime();
+                        valB = new Date(b.waktu_request).getTime();
+                        break;
+                    default:
+                        valA = a.originalIndex;
+                        valB = b.originalIndex;
+                }
+
+                if (valA < valB) return currentSort.direction === 'asc' ? -1 : 1;
+                if (valA > valB) return currentSort.direction === 'asc' ? 1 : -1;
+                return 0;
+            });
+
+            // Update UI headers
+            updateSortHeaders();
+
+            // Re-render
+            renderHistory(allHistoryData);
+        }
+
+        function updateSortHeaders() {
+            // Reset all icons
+            document.getElementById('icon-sort-no').className = 'w-4 h-4 ml-1 opacity-0 transition-opacity';
+            document.getElementById('icon-sort-name').className = 'w-4 h-4 ml-1 opacity-0 transition-opacity';
+            document.getElementById('icon-sort-time').className = 'w-4 h-4 ml-1 opacity-0 transition-opacity';
+
+            // Set active icon
+            let activeIconId = '';
+            if (currentSort.column === 'no') activeIconId = 'icon-sort-no';
+            else if (currentSort.column === 'name') activeIconId = 'icon-sort-name';
+            else if (currentSort.column === 'time') activeIconId = 'icon-sort-time';
+
+            const activeIcon = document.getElementById(activeIconId);
+            if (activeIcon) {
+                activeIcon.classList.remove('opacity-0');
+                // Rotate if descending
+                if (currentSort.direction === 'desc') {
+                    activeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />';
+                } else {
+                    activeIcon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 15l7-7 7 7" />';
+                }
+            }
         }
 
         // ===============================
         // PROFILE POPUP FUNCTIONS
         // ===============================
+
 
         function toggleProfilePopup() {
             const overlay = document.getElementById('profileOverlay');
