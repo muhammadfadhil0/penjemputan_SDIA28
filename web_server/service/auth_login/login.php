@@ -58,7 +58,7 @@ if (empty($username) || empty($password)) {
 
 // Query untuk mencari user
 // Catatan: Untuk produksi, gunakan password_hash() dan password_verify()
-$query = "SELECT id, username, password, role, nama, no_telepon 
+$query = "SELECT id, username, password, role, nama, no_telepon, foto 
           FROM users 
           WHERE username = ? AND role IN ('guru', 'class_viewer')";
 
@@ -92,7 +92,8 @@ if ($row = mysqli_fetch_assoc($result)) {
                 "username" => $row['username'],
                 "nama" => $row['nama'],
                 "role" => $row['role'],
-                "no_telepon" => $row['no_telepon']
+                "no_telepon" => $row['no_telepon'],
+                "foto" => $row['foto'] ?? null
             ]
         ]);
     } else {

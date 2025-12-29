@@ -34,7 +34,7 @@ require_once '../config/koneksi.php';
 
 // Query untuk mendapatkan guru aktif
 // Hanya ambil session yang heartbeat-nya dalam 1 menit terakhir (menghindari stale session)
-$query = "SELECT u.id, u.nama, u.role 
+$query = "SELECT u.id, u.nama, u.role, u.foto 
           FROM guru_session_aktif gsa
           JOIN users u ON gsa.user_id = u.id
           WHERE gsa.last_heartbeat >= DATE_SUB(NOW(), INTERVAL 5 MINUTE)
@@ -52,7 +52,8 @@ if ($result && $row = mysqli_fetch_assoc($result)) {
         "data" => [
             "id" => (int) $row['id'],
             "nama" => $row['nama'],
-            "role" => $row['role']
+            "role" => $row['role'],
+            "foto" => $row['foto'] ?? ''
         ]
     ]);
 } else {

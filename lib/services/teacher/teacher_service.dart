@@ -6,15 +6,31 @@ class ActiveTeacher {
   final int id;
   final String nama;
   final String role;
+  final String foto;
 
-  ActiveTeacher({required this.id, required this.nama, required this.role});
+  ActiveTeacher({
+    required this.id,
+    required this.nama,
+    required this.role,
+    required this.foto,
+  });
 
   factory ActiveTeacher.fromJson(Map<String, dynamic> json) {
     return ActiveTeacher(
       id: json['id'] ?? 0,
       nama: json['nama'] ?? '',
       role: json['role'] ?? '',
+      foto: json['foto'] ?? '',
     );
+  }
+
+  /// Get full foto URL if foto is not empty
+  String? get fotoUrl {
+    if (foto.isEmpty) return null;
+    // Check if foto is already full URL
+    if (foto.startsWith('http')) return foto;
+    // Append base URL
+    return 'https://soulhbc.com/penjemputan/$foto';
   }
 }
 

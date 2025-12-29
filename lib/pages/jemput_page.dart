@@ -7,6 +7,7 @@ import '../services/auth/auth_service.dart';
 import '../services/auth/multi_account_service.dart';
 import '../services/pickup/pickup_service.dart';
 import '../services/teacher/teacher_service.dart';
+import '../services/jadwal/jadwal_service.dart';
 import '../widgets/stacked_avatars.dart';
 import '../widgets/account_switcher_bottomsheet.dart';
 
@@ -35,6 +36,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   final PickupService _pickupService = PickupService();
   final TeacherService _teacherService = TeacherService();
   final MultiAccountService _multiAccountService = MultiAccountService();
+  final JadwalService _jadwalService = JadwalService();
 
   // Pickup state management
   PickupButtonState _buttonState = PickupButtonState.idle;
@@ -53,6 +55,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
 
   // Active teacher state
   String _activeTeacherName = '';
+  String? _activeTeacherFotoUrl;
   bool _isLoadingTeacher = true;
   Timer? _teacherPollingTimer;
 
@@ -159,6 +162,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     if (!mounted) return;
     setState(() {
       _activeTeacherName = teacher?.nama ?? '';
+      _activeTeacherFotoUrl = teacher?.fotoUrl;
       _isLoadingTeacher = false;
     });
   }
@@ -452,7 +456,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   void _handleButtonTap() {
     switch (_buttonState) {
       case PickupButtonState.idle:
-        _showPickupBottomSheet();
+        _checkAndShowPickupBottomSheet();
         break;
       case PickupButtonState.queued:
         _showQueuedBottomSheet();
@@ -464,6 +468,152 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
         // Do nothing - button is disabled during sending
         break;
     }
+  }
+
+  /// Mengecek apakah sekarang waktu sebelum jam pulang siswa
+  /// Jika iya, tampilkan peringatan terlebih dahulu
+  Future<void> _checkAndShowPickupBottomSheet() async {
+    final user = _authService.currentUser;
+    if (user == null) {
+      _showPickupBottomSheet();
+      return;
+    }
+
+    // Ambil jadwal siswa berdasarkan kelas_id
+    final jadwalResult = await _jadwalService.getJadwalByKelas(user.kelasId);
+
+    if (!jadwalResult.success || jadwalResult.jadwal == null) {
+      // Jika gagal ambil jadwal, langsung tampilkan pickup bottomsheet
+      _showPickupBottomSheet();
+      return;
+    }
+
+    final todaySchedule = jadwalResult.jadwal!.todaySchedule;
+
+    if (todaySchedule == null || todaySchedule.isHoliday) {
+      // Jika hari ini libur atau tidak ada jadwal, langsung tampilkan pickup bottomsheet
+      _showPickupBottomSheet();
+      return;
+    }
+
+    // Parse jam pulang
+    final now = DateTime.now();
+    final jamPulangParts = todaySchedule.jamPulang.split(':');
+    if (jamPulangParts.length < 2) {
+      _showPickupBottomSheet();
+      return;
+    }
+
+    final jamPulangHour = int.tryParse(jamPulangParts[0]) ?? 14;
+    final jamPulangMinute = int.tryParse(jamPulangParts[1]) ?? 0;
+
+    final jamPulangTime = DateTime(
+      now.year,
+      now.month,
+      now.day,
+      jamPulangHour,
+      jamPulangMinute,
+    );
+
+    // Cek apakah sekarang sebelum jam pulang (dari jam 00:00 sampai jam pulang)
+    if (now.isBefore(jamPulangTime)) {
+      // Tampilkan peringatan terlebih dahulu
+      _showBeforeDismissalWarningBottomSheet(todaySchedule.jamPulang);
+    } else {
+      // Sudah melewati jam pulang, langsung tampilkan pickup bottomsheet
+      _showPickupBottomSheet();
+    }
+  }
+
+  /// Menampilkan bottomsheet peringatan sebelum jam pulang
+  void _showBeforeDismissalWarningBottomSheet(String jamPulang) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEF3C7),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFF59E0B), width: 3),
+                ),
+                child: const Icon(
+                  Icons.schedule_rounded,
+                  color: Color(0xFFF59E0B),
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Pemanggilan Ananda akan\ndiantrekan setelah sampai\npada waktu pulang',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 16),
+              Text(
+                'Pemanggilan yang dibuat sebelum jam pulang ($jamPulang) akan ditahan sementara dan akan diantrekan langsung setelah jam pulang telah tiba, lanjutkan?',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(context);
+                    // Setelah user mengerti, tampilkan pickup bottomsheet
+                    _showPickupBottomSheet();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFF59E0B),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Saya Mengerti',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
+        ),
+      ),
+    );
   }
 
   void _showQueuedBottomSheet() {
@@ -628,6 +778,146 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     );
   }
 
+  // Show bottom sheet for Guru Piket
+  void _showGuruPiketBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Teacher profile photo
+              Container(
+                width: 100,
+                height: 100,
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.amber.shade400, width: 3),
+                ),
+                child: ClipOval(
+                  child: _activeTeacherFotoUrl != null
+                      ? Image.network(
+                          _activeTeacherFotoUrl!,
+                          width: 100,
+                          height: 100,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) => Icon(
+                            Icons.person_rounded,
+                            color: Colors.amber.shade700,
+                            size: 56,
+                          ),
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Center(
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.amber.shade700,
+                              ),
+                            );
+                          },
+                        )
+                      : Icon(
+                          Icons.person_rounded,
+                          color: Colors.amber.shade700,
+                          size: 56,
+                        ),
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Role badge
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Text(
+                  'Guru Piket',
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w500,
+                    color: Colors.amber.shade800,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Teacher name
+              Text(
+                _activeTeacherName.isEmpty
+                    ? 'Tidak ada guru piket'
+                    : _activeTeacherName,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: _activeTeacherName.isEmpty
+                      ? AppColors.textMuted
+                      : AppColors.textPrimary,
+                  fontStyle: _activeTeacherName.isEmpty
+                      ? FontStyle.italic
+                      : FontStyle.normal,
+                ),
+              ),
+              const SizedBox(height: 8),
+
+              // Description
+              Text(
+                'Halo ayah dan bunda, silahkan temui kami untuk informasi lebih lanjut',
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: Colors.amber.shade600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Mengerti',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
   void _showPickupBottomSheet() {
     showGeneralDialog(
       context: context,
@@ -771,77 +1061,97 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
               // Guru Penjaga Card
               Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: ShadcnCard(
-                  padding: const EdgeInsets.all(16),
-                  child: Row(
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(10),
-                        decoration: BoxDecoration(
-                          color: Colors.amber.shade50,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        child: Icon(
-                          Icons.person_pin_rounded,
-                          color: Colors.amber.shade700,
-                          size: 24,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'GURU PIKET',
-                              style: TextStyle(
-                                color: AppColors.textMuted,
-                                fontSize: 12,
-                              ),
-                            ),
-                            const SizedBox(height: 2),
-                            _isLoadingTeacher
-                                ? Row(
-                                    children: [
-                                      SizedBox(
-                                        width: 14,
-                                        height: 14,
-                                        child: CircularProgressIndicator(
-                                          strokeWidth: 2,
-                                          color: AppColors.textMuted,
+                child: GestureDetector(
+                  onTap: _showGuruPiketBottomSheet,
+                  child: ShadcnCard(
+                    padding: const EdgeInsets.all(16),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: Colors.amber.shade50,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(10),
+                            child: _activeTeacherFotoUrl != null
+                                ? Image.network(
+                                    _activeTeacherFotoUrl!,
+                                    width: 44,
+                                    height: 44,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) => Icon(
+                                          Icons.person_pin_rounded,
+                                          color: Colors.amber.shade700,
+                                          size: 24,
                                         ),
-                                      ),
-                                      const SizedBox(width: 8),
-                                      Text(
-                                        'Memuat...',
-                                        style: TextStyle(
-                                          color: AppColors.textMuted,
-                                          fontSize: 14,
-                                        ),
-                                      ),
-                                    ],
                                   )
-                                : Text(
-                                    _activeTeacherName.isEmpty
-                                        ? 'Tidak ada data'
-                                        : _activeTeacherName,
-                                    style: TextStyle(
-                                      color: _activeTeacherName.isEmpty
-                                          ? AppColors.textMuted
-                                          : AppColors.textPrimary,
-                                      fontSize: 15,
-                                      fontWeight: _activeTeacherName.isEmpty
-                                          ? FontWeight.normal
-                                          : FontWeight.w600,
-                                      fontStyle: _activeTeacherName.isEmpty
-                                          ? FontStyle.italic
-                                          : FontStyle.normal,
-                                    ),
+                                : Icon(
+                                    Icons.person_pin_rounded,
+                                    color: Colors.amber.shade700,
+                                    size: 24,
                                   ),
-                          ],
+                          ),
                         ),
-                      ),
-                    ],
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'GURU PIKET',
+                                style: TextStyle(
+                                  color: AppColors.textMuted,
+                                  fontSize: 12,
+                                ),
+                              ),
+                              const SizedBox(height: 2),
+                              _isLoadingTeacher
+                                  ? Row(
+                                      children: [
+                                        SizedBox(
+                                          width: 14,
+                                          height: 14,
+                                          child: CircularProgressIndicator(
+                                            strokeWidth: 2,
+                                            color: AppColors.textMuted,
+                                          ),
+                                        ),
+                                        const SizedBox(width: 8),
+                                        Text(
+                                          'Memuat...',
+                                          style: TextStyle(
+                                            color: AppColors.textMuted,
+                                            fontSize: 14,
+                                          ),
+                                        ),
+                                      ],
+                                    )
+                                  : Text(
+                                      _activeTeacherName.isEmpty
+                                          ? 'Tidak ada data'
+                                          : _activeTeacherName,
+                                      style: TextStyle(
+                                        color: _activeTeacherName.isEmpty
+                                            ? AppColors.textMuted
+                                            : AppColors.textPrimary,
+                                        fontSize: 15,
+                                        fontWeight: _activeTeacherName.isEmpty
+                                            ? FontWeight.normal
+                                            : FontWeight.w600,
+                                        fontStyle: _activeTeacherName.isEmpty
+                                            ? FontStyle.italic
+                                            : FontStyle.normal,
+                                      ),
+                                    ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               ),
