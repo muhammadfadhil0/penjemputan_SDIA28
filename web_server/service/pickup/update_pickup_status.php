@@ -86,8 +86,9 @@ $update_query = "UPDATE permintaan_jemput
                  WHERE id = $request_id";
 
 if (mysqli_query($conn, $update_query)) {
-    // If status changed to 'dijemput', also update status_penjemputan_harian
-    if ($new_status === 'dijemput') {
+    // If status changed to 'dipanggil', also update status_penjemputan_harian
+    if ($new_status === 'dipanggil') {
+        date_default_timezone_set('Asia/Jakarta');
         $today = date('Y-m-d');
         
         // Check if record exists

@@ -56,6 +56,48 @@ if (empty($username) || empty($password)) {
     exit();
 }
 
+// PERTAMA: Cek di tabel login_kelas
+$queryKelas = "SELECT lk.id, lk.kelas_id, lk.username, lk.password, 
+                      k.nama_kelas, k.tingkat, k.tahun_ajaran
+               FROM login_kelas lk
+               JOIN kelas k ON lk.kelas_id = k.id
+               WHERE lk.username = ?";
+
+$stmtKelas = mysqli_prepare($conn, $queryKelas);
+
+if ($stmtKelas) {
+    mysqli_stmt_bind_param($stmtKelas, "s", $username);
+    mysqli_stmt_execute($stmtKelas);
+    $resultKelas = mysqli_stmt_get_result($stmtKelas);
+
+    if ($rowKelas = mysqli_fetch_assoc($resultKelas)) {
+        // User ditemukan di login_kelas, verifikasi password
+        if ($password === $rowKelas['password']) {
+            // Login berhasil sebagai kelas
+            http_response_code(200);
+            echo json_encode([
+                "success" => true,
+                "message" => "Login berhasil!",
+                "user_type" => "kelas",
+                "data" => [
+                    "id" => (int) $rowKelas['id'],
+                    "username" => $rowKelas['username'],
+                    "kelas_id" => (int) $rowKelas['kelas_id'],
+                    "nama_kelas" => $rowKelas['nama_kelas'],
+                    "tingkat" => (int) $rowKelas['tingkat'],
+                    "tahun_ajaran" => $rowKelas['tahun_ajaran'],
+                    "role" => "kelas"
+                ]
+            ]);
+            mysqli_stmt_close($stmtKelas);
+            mysqli_close($conn);
+            exit();
+        }
+    }
+    mysqli_stmt_close($stmtKelas);
+}
+
+// KEDUA: Jika tidak ditemukan di login_kelas, cek di tabel users
 // Query untuk mencari user
 // Catatan: Untuk produksi, gunakan password_hash() dan password_verify()
 $query = "SELECT id, username, password, role, nama, no_telepon, foto 
@@ -87,6 +129,7 @@ if ($row = mysqli_fetch_assoc($result)) {
         echo json_encode([
             "success" => true,
             "message" => "Login berhasil!",
+            "user_type" => "guru",
             "data" => [
                 "id" => (int) $row['id'],
                 "username" => $row['username'],
@@ -105,7 +148,7 @@ if ($row = mysqli_fetch_assoc($result)) {
         ]);
     }
 } else {
-    // User tidak ditemukan
+    // User tidak ditemukan di kedua tabel
     http_response_code(401);
     echo json_encode([
         "success" => false,

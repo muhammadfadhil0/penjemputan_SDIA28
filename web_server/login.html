@@ -486,9 +486,16 @@
                     // Simpan data user ke localStorage
                     localStorage.setItem('user', JSON.stringify(result.data));
                     localStorage.setItem('isLoggedIn', 'true');
+                    localStorage.setItem('user_type', result.user_type);
 
-                    // Redirect ke halaman utama
-                    window.location.href = 'index.html';
+                    // Redirect berdasarkan tipe user
+                    if (result.user_type === 'kelas') {
+                        // User login dari tabel login_kelas -> ke halaman kelas
+                        window.location.href = 'class_view/kelas.html';
+                    } else {
+                        // User login dari tabel users (guru/class_viewer) -> ke halaman utama
+                        window.location.href = 'index.html';
+                    }
                 } else {
                     // Tampilkan pesan error
                     errorText.textContent = result.message || 'Username atau password salah.';

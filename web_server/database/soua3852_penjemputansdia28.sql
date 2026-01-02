@@ -302,7 +302,28 @@ CREATE TABLE `login_kelas` (
 
 INSERT INTO `login_kelas` (`id`, `kelas_id`, `username`, `password`, `created_at`) VALUES
 (1, 1, 'kelas1abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(2, 5, 'kelas2abubakar', 'kelas123', '2025-12-28 17:41:10');
+(2, 2, 'kelas1umar', 'kelas123', '2025-12-28 17:41:10'),
+(3, 3, 'kelas1utsman', 'kelas123', '2025-12-28 17:41:10'),
+(4, 4, 'kelas1ali', 'kelas123', '2025-12-28 17:41:10'),
+(5, 5, 'kelas2abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(6, 6, 'kelas2umar', 'kelas123', '2025-12-28 17:41:10'),
+(7, 7, 'kelas2utsman', 'kelas123', '2025-12-28 17:41:10'),
+(8, 8, 'kelas2ali', 'kelas123', '2025-12-28 17:41:10'),
+(9, 9, 'kelas3abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(10, 10, 'kelas3umar', 'kelas123', '2025-12-28 17:41:10'),
+(11, 11, 'kelas3utsman', 'kelas123', '2025-12-28 17:41:10'),
+(12, 12, 'kelas3ali', 'kelas123', '2025-12-28 17:41:10'),
+(13, 13, 'kelas4abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(14, 14, 'kelas4umar', 'kelas123', '2025-12-28 17:41:10'),
+(15, 15, 'kelas4utsman', 'kelas123', '2025-12-28 17:41:10'),
+(16, 16, 'kelas4ali', 'kelas123', '2025-12-28 17:41:10'),
+(17, 17, 'kelas5abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(18, 18, 'kelas5umar', 'kelas123', '2025-12-28 17:41:10'),
+(19, 19, 'kelas5utsman', 'kelas123', '2025-12-28 17:41:10'),
+(20, 20, 'kelas5ali', 'kelas123', '2025-12-28 17:41:10'),
+(21, 21, 'kelas6abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(22, 22, 'kelas6umar', 'kelas123', '2025-12-28 17:41:10'),
+(23, 23, 'kelas6utsman', 'kelas123', '2025-12-28 17:41:10');
 
 -- --------------------------------------------------------
 

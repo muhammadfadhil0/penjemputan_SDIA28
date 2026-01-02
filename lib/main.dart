@@ -20,8 +20,14 @@ export 'pages/riwayat_penjemputan_page.dart';
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
-  // Initialize notification service
-  await NotificationService().initialize();
+  // Initialize notification service with error handling
+  // This prevents the app from getting stuck on splash in release mode
+  try {
+    await NotificationService().initialize();
+  } catch (e) {
+    // Log error but continue app execution
+    debugPrint('NotificationService init failed: $e');
+  }
 
   runApp(const MyApp());
 }
@@ -65,36 +71,54 @@ class _SplashPageState extends State<SplashPage> {
   }
 
   Future<void> _checkSession() async {
-    final authService = AuthService();
-    final multiAccountService = MultiAccountService();
+    try {
+      final authService = AuthService();
+      final multiAccountService = MultiAccountService();
 
-    // Initialize multi-account service
-    await multiAccountService.init();
+      // Initialize multi-account service with timeout
+      await multiAccountService.init().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('MultiAccountService init timeout');
+        },
+      );
 
-    // Coba load session yang tersimpan
-    final hasSession = await authService.loadStoredUser();
+      // Coba load session yang tersimpan
+      final hasSession = await authService.loadStoredUser().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () => false,
+      );
 
-    if (!mounted) return;
+      if (!mounted) return;
 
-    // Navigate berdasarkan status session
-    if (hasSession) {
-      // Sync first account to multi-account if not exists
-      if (authService.currentUser != null &&
-          !multiAccountService.isAccountRegistered(
-            authService.currentUser!.id,
-          )) {
-        await multiAccountService.addAccount(authService.currentUser!);
+      // Navigate berdasarkan status session
+      if (hasSession) {
+        // Sync first account to multi-account if not exists
+        if (authService.currentUser != null &&
+            !multiAccountService.isAccountRegistered(
+              authService.currentUser!.id,
+            )) {
+          await multiAccountService.addAccount(authService.currentUser!);
+        }
+
+        // Ada session tersimpan, langsung ke halaman utama
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+        );
+      } else {
+        // Tidak ada session, ke halaman login
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
       }
-
-      // Ada session tersimpan, langsung ke halaman utama
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
-      );
-    } else {
-      // Tidak ada session, ke halaman login
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const LoginPage()),
-      );
+    } catch (e) {
+      // If anything fails, navigate to login page
+      debugPrint('Session check failed: $e');
+      if (mounted) {
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+        );
+      }
     }
   }
 

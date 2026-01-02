@@ -177,21 +177,190 @@
             flex-direction: column;
         }
 
-        .grid-wrapper {
+        /* Content wrapper - 3/4 grid + 1/4 sidebar */
+        .content-wrapper {
             flex: 1;
+            display: flex;
+            min-height: 0;
+            overflow: hidden;
+        }
+
+        .grid-wrapper {
+            flex: 3;
             padding: 16px;
             display: flex;
             flex-direction: column;
             min-height: 0;
+            overflow: hidden;
         }
 
         .grid-container {
             flex: 1;
             display: grid;
-            grid-template-columns: repeat(10, 1fr);
-            grid-template-rows: repeat(4, 1fr);
             gap: 12px;
+            /* Grid columns will be set dynamically by JavaScript */
+            grid-template-columns: repeat(var(--grid-cols, 5), 1fr);
+            grid-template-rows: repeat(var(--grid-rows, 4), 1fr);
+        }
+
+        /* History Sidebar */
+        .history-sidebar {
+            width: var(--sidebar-width, 300px);
+            min-width: 200px;
+            max-width: 50%;
+            background: #ffffff;
+            border-left: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
             min-height: 0;
+            position: relative;
+            flex-shrink: 0;
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 6px;
+            cursor: ew-resize;
+            background: transparent;
+            border-left: 3px solid transparent;
+            transition: all 0.2s ease;
+            z-index: 10;
+        }
+
+        .resize-handle:hover {
+            border-left-color: #3b82f6;
+            box-shadow: -2px 0 8px rgba(59, 130, 246, 0.4);
+        }
+
+        .resize-handle.active {
+            border-left-color: #3b82f6;
+            box-shadow: -2px 0 12px rgba(59, 130, 246, 0.6);
+        }
+
+        /* Prevent text selection while resizing */
+        .resizing {
+            user-select: none;
+            cursor: ew-resize !important;
+        }
+
+        .resizing * {
+            cursor: ew-resize !important;
+        }
+
+        .sidebar-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #e5e7eb;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            background: linear-gradient(135deg, #f8fafc 0%, #ffffff 100%);
+        }
+
+        .sidebar-header h3 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #111827;
+            margin: 0;
+        }
+
+        .sidebar-content {
+            flex: 1;
+            overflow-y: auto;
+            padding: 12px;
+        }
+
+        .history-loading {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #6b7280;
+            gap: 12px;
+        }
+
+        .history-empty {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px 20px;
+            color: #9ca3af;
+            text-align: center;
+        }
+
+        .history-empty svg {
+            width: 48px;
+            height: 48px;
+            margin-bottom: 12px;
+            opacity: 0.5;
+        }
+
+        .history-item {
+            padding: 12px;
+            background: #f9fafb;
+            border-radius: 12px;
+            margin-bottom: 8px;
+            border: 1px solid #e5e7eb;
+            transition: all 0.2s ease;
+        }
+
+        .history-item:hover {
+            background: #f3f4f6;
+            border-color: #d1d5db;
+        }
+
+        .history-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .history-item-name {
+            font-size: 14px;
+            font-weight: 600;
+            color: #111827;
+            margin-bottom: 4px;
+        }
+
+        .history-item-details {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #6b7280;
+        }
+
+        .history-item-penjemput {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .history-item-time {
+            font-weight: 500;
+            color: #3b82f6;
+        }
+
+        /* Custom scrollbar for sidebar */
+        .sidebar-content::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb {
+            background: #c1c1c1;
+            border-radius: 10px;
+        }
+
+        .sidebar-content::-webkit-scrollbar-thumb:hover {
+            background: #a1a1a1;
         }
 
         .student-card {
@@ -199,26 +368,27 @@
             flex-direction: column;
             align-items: center;
             justify-content: center;
-            border-radius: 12px;
-            border-width: 2px;
-            padding: 8px;
+            border-radius: 16px;
+            border-width: 3px;
+            padding: 12px 8px;
+            min-height: 0;
         }
 
         .avatar {
-            width: 40px;
-            height: 40px;
+            width: clamp(32px, 5vw, 64px);
+            height: clamp(32px, 5vw, 64px);
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            font-size: 12px;
+            font-size: clamp(12px, 2vw, 20px);
             font-weight: 700;
-            margin-bottom: 4px;
+            margin-bottom: 8px;
         }
 
         .student-name {
-            font-size: 10px;
-            font-weight: 500;
+            font-size: clamp(10px, 1.5vw, 16px);
+            font-weight: 600;
             text-align: center;
             white-space: nowrap;
             overflow: hidden;
@@ -227,14 +397,22 @@
         }
 
         .student-status {
-            font-size: 9px;
-            margin-top: 2px;
+            font-size: clamp(8px, 1vw, 12px);
+            margin-top: 4px;
         }
 
-        @media (max-width: 1200px) {
-            .grid-container {
-                grid-template-columns: repeat(8, 1fr);
-                grid-template-rows: repeat(5, 1fr);
+        /* Responsive - hide sidebar on small screens */
+        @media (max-width: 900px) {
+            .content-wrapper {
+                flex-direction: column;
+            }
+
+            .history-sidebar {
+                display: none;
+            }
+
+            .grid-wrapper {
+                flex: 1;
             }
         }
     </style>
@@ -301,76 +479,234 @@
                                 <span>Simpan</span>
                             </button>
                         </div>
+
+                        <!-- Logout Button -->
+                        <button onclick="logout()"
+                            class="header-btn bg-red-500 hover:bg-red-600 text-white px-4 py-2.5 rounded-xl font-semibold flex items-center gap-2 shadow-lg shadow-red-500/30">
+                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                            </svg>
+                            <span>Keluar</span>
+                        </button>
                     </div>
                 </div>
             </div>
         </header>
 
-        <!-- Student Cards Grid -->
-        <div class="grid-wrapper">
-            <div class="grid-container" id="studentsGrid">
-                <!-- Student cards will be generated here -->
+        <!-- Main Content Area - 3/4 Grid + 1/4 Sidebar -->
+        <div class="content-wrapper">
+            <!-- Student Cards Grid (3/4) -->
+            <div class="grid-wrapper">
+                <div class="grid-container" id="studentsGrid">
+                    <!-- Student cards will be generated here -->
+                </div>
+            </div>
+
+            <!-- History Sidebar (1/4) -->
+            <div class="history-sidebar" id="historySidebar">
+                <!-- Resize Handle -->
+                <div class="resize-handle" id="resizeHandle"></div>
+
+                <div class="sidebar-header">
+                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <h3>Riwayat Hari Ini</h3>
+                </div>
+                <div class="sidebar-content" id="historyList">
+                    <!-- History items will be generated here -->
+                    <div class="history-loading">
+                        <svg class="animate-spin h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
+                            </circle>
+                            <path class="opacity-75" fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                            </path>
+                        </svg>
+                        <span>Memuat riwayat...</span>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
 
     <script>
-        // Dummy data - 40 students
-        const students = [
-            { id: 1, name: "Ahmad Farhan", picked: false },
-            { id: 2, name: "Aisyah Putri", picked: false },
-            { id: 3, name: "Budi Santoso", picked: false },
-            { id: 4, name: "Citra Dewi", picked: false },
-            { id: 5, name: "Dimas Prasetya", picked: false },
-            { id: 6, name: "Eka Safitri", picked: false },
-            { id: 7, name: "Fajar Nugroho", picked: false },
-            { id: 8, name: "Gita Nirmala", picked: false },
-            { id: 9, name: "Hadi Wijaya", picked: false },
-            { id: 10, name: "Indah Permata", picked: false },
-            { id: 11, name: "Joko Susilo", picked: false },
-            { id: 12, name: "Kartika Sari", picked: false },
-            { id: 13, name: "Lukman Hakim", picked: false },
-            { id: 14, name: "Maya Anggraini", picked: false },
-            { id: 15, name: "Naufal Rizky", picked: false },
-            { id: 16, name: "Olivia Rahma", picked: false },
-            { id: 17, name: "Putra Mahardika", picked: false },
-            { id: 18, name: "Qori Amelia", picked: false },
-            { id: 19, name: "Rafi Pratama", picked: false },
-            { id: 20, name: "Siti Nurhaliza", picked: false },
-            { id: 21, name: "Taufik Hidayat", picked: false },
-            { id: 22, name: "Umi Kalsum", picked: false },
-            { id: 23, name: "Vino Bastian", picked: false },
-            { id: 24, name: "Wulan Sari", picked: false },
-            { id: 25, name: "Xavier Putra", picked: false },
-            { id: 26, name: "Yuni Shara", picked: false },
-            { id: 27, name: "Zaki Rahman", picked: false },
-            { id: 28, name: "Anisa Rahma", picked: false },
-            { id: 29, name: "Bayu Segara", picked: false },
-            { id: 30, name: "Cindy Claudia", picked: false },
-            { id: 31, name: "Deni Sumargo", picked: false },
-            { id: 32, name: "Elsa Frozen", picked: false },
-            { id: 33, name: "Farel Prayoga", picked: false },
-            { id: 34, name: "Gisella Kiki", picked: false },
-            { id: 35, name: "Hafiz Quran", picked: false },
-            { id: 36, name: "Irene Kim", picked: false },
-            { id: 37, name: "Jihan Audy", picked: false },
-            { id: 38, name: "Kevin Julio", picked: false },
-            { id: 39, name: "Lala Karmela", picked: false },
-            { id: 40, name: "Muhammad Ali", picked: false }
-        ];
+        // API Base URL
+        const API_BASE = '../service/class_view';
 
+        // Data from localStorage (set during login)
+        let userData = null;
+        let kelasId = null;
+        let kelasInfo = null;
+
+        // Students data from API
+        let students = [];
         let isEditMode = false;
         let originalState = [];
+        let pendingChanges = [];
 
         // Initialize
         document.addEventListener('DOMContentLoaded', () => {
-            renderStudents();
+            checkAuth();
         });
+
+        // Check authentication
+        function checkAuth() {
+            const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userType = localStorage.getItem('user_type');
+            const userDataStr = localStorage.getItem('user');
+
+            if (!isLoggedIn || userType !== 'kelas' || !userDataStr) {
+                // Redirect to login
+                window.location.href = '../login.html';
+                return;
+            }
+
+            userData = JSON.parse(userDataStr);
+            kelasId = userData.kelas_id;
+
+            // Update header with class info
+            updateHeader();
+
+            // Load students data
+            loadStudents();
+        }
+
+        // Update header with class info
+        function updateHeader() {
+            if (userData) {
+                document.querySelector('header h1').textContent = 'Status Penjemputan';
+                document.querySelector('header p').textContent = `${userData.nama_kelas} - Memuat...`;
+            }
+        }
+
+        // Load students from API
+        async function loadStudents() {
+            try {
+                const response = await fetch(`${API_BASE}/get_students.php?kelas_id=${kelasId}`);
+                const result = await response.json();
+
+                if (result.success) {
+                    kelasInfo = result.data.kelas;
+                    const stats = result.data.statistik;
+
+                    // Map API data to local format
+                    students = result.data.students.map(s => ({
+                        id: s.id,
+                        name: s.nama_panggilan || s.nama,
+                        fullName: s.nama,
+                        picked: s.sudah_dijemput,
+                        foto_url: s.foto_url,
+                        waktu_dijemput: s.waktu_dijemput,
+                        penjemput: s.penjemput
+                    }));
+
+                    // Update header with stats
+                    document.querySelector('header p').textContent =
+                        `${kelasInfo.nama_kelas} - ${stats.total} Siswa (${stats.sudah_dijemput} sudah dijemput)`;
+
+                    // Render students
+                    renderStudents();
+
+                    // Load history sidebar
+                    loadHistory();
+                } else {
+                    console.error('Failed to load students:', result.message);
+                    showError('Gagal memuat data siswa: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error loading students:', error);
+                showError('Terjadi kesalahan saat memuat data siswa.');
+            }
+        }
+
+        // Show error message
+        function showError(message) {
+            const grid = document.getElementById('studentsGrid');
+            grid.innerHTML = `
+                <div class="col-span-full flex flex-col items-center justify-center py-12">
+                    <svg class="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                    <p class="text-red-600 text-lg font-medium">${message}</p>
+                    <button onclick="loadStudents()" 
+                        class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition">
+                        Coba Lagi
+                    </button>
+                </div>
+            `;
+        }
+
+        // Calculate optimal grid layout based on student count and screen size
+        function calculateGridLayout(studentCount) {
+            const grid = document.getElementById('studentsGrid');
+            const wrapper = document.querySelector('.grid-wrapper');
+
+            if (studentCount === 0) return;
+
+            // Get available space
+            const availableWidth = wrapper.clientWidth - 32; // minus padding
+            const availableHeight = wrapper.clientHeight - 32;
+
+            // Try different row counts to find optimal layout
+            let bestCols = 1;
+            let bestRows = studentCount;
+            let bestRatio = Infinity;
+
+            // Target aspect ratio for cards (width/height)
+            const targetCardRatio = 0.9; // slightly taller than wide
+
+            for (let rows = 1; rows <= studentCount; rows++) {
+                const cols = Math.ceil(studentCount / rows);
+
+                // Calculate card size with this layout
+                const cardWidth = (availableWidth - (cols - 1) * 12) / cols;
+                const cardHeight = (availableHeight - (rows - 1) * 12) / rows;
+
+                // Skip if cards would be too small
+                if (cardWidth < 60 || cardHeight < 60) continue;
+
+                // Calculate how close this is to our target ratio
+                const actualRatio = cardWidth / cardHeight;
+                const ratioDiff = Math.abs(actualRatio - targetCardRatio);
+
+                // Check if all students fit
+                const totalSlots = cols * rows;
+                if (totalSlots >= studentCount && ratioDiff < bestRatio) {
+                    bestRatio = ratioDiff;
+                    bestCols = cols;
+                    bestRows = rows;
+                }
+            }
+
+            // Apply the calculated layout
+            grid.style.setProperty('--grid-cols', bestCols);
+            grid.style.setProperty('--grid-rows', bestRows);
+        }
 
         // Render student cards
         function renderStudents() {
             const grid = document.getElementById('studentsGrid');
             grid.innerHTML = '';
+
+            if (students.length === 0) {
+                grid.innerHTML = `
+                    <div class="col-span-full flex flex-col items-center justify-center py-12" style="grid-column: 1 / -1; grid-row: 1 / -1;">
+                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                        <p class="text-gray-500 text-lg">Tidak ada siswa di kelas ini</p>
+                    </div>
+                `;
+                return;
+            }
+
+            // Calculate optimal grid layout
+            calculateGridLayout(students.length);
 
             students.forEach((student, index) => {
                 const card = document.createElement('div');
@@ -383,17 +719,17 @@
                     card.onclick = () => toggleStudentStatus(student.id);
                 }
 
-                const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+                const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
                 card.innerHTML = `
                     <div class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
                         ${student.picked ? `
-                            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                             </svg>
                         ` : initials}
                     </div>
-                    <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.name}" style="font-size: 14px">
+                    <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.fullName}">
                         ${student.name}
                     </p>
                     ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
@@ -403,10 +739,18 @@
             });
         }
 
+        // Recalculate grid on window resize
+        window.addEventListener('resize', () => {
+            if (students.length > 0) {
+                calculateGridLayout(students.length);
+            }
+        });
+
         // Toggle edit mode
         function toggleEditMode() {
             isEditMode = true;
             originalState = students.map(s => ({ ...s }));
+            pendingChanges = [];
 
             document.getElementById('editBtn').classList.add('hidden');
             document.getElementById('saveButtons').classList.remove('hidden');
@@ -422,22 +766,30 @@
 
             const student = students.find(s => s.id === id);
             if (student) {
-                const wasPicked = student.picked;
                 student.picked = !student.picked;
+
+                // Track change
+                const existingChangeIndex = pendingChanges.findIndex(c => c.siswa_id === id);
+                if (existingChangeIndex >= 0) {
+                    pendingChanges[existingChangeIndex].sudah_dijemput = student.picked;
+                } else {
+                    pendingChanges.push({
+                        siswa_id: id,
+                        sudah_dijemput: student.picked,
+                        penjemput: 'Manual Entry'
+                    });
+                }
 
                 // Find and update the card with flip animation
                 const card = document.querySelector(`[data-id="${id}"]`);
                 if (card) {
-                    // Add flip animation class based on new status
                     const flipClass = student.picked ? 'flip-to-picked' : 'flip-to-unpicked';
                     card.classList.add(flipClass);
 
-                    // Update card content at the midpoint of animation (when card is sideways)
                     setTimeout(() => {
                         updateCardContent(card, student);
                     }, 300);
 
-                    // Remove flip class after animation completes
                     setTimeout(() => {
                         card.classList.remove(flipClass);
                     }, 600);
@@ -447,47 +799,88 @@
 
         // Update card content without re-rendering
         function updateCardContent(card, student) {
-            const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2);
+            const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
 
-            // Update card classes
             card.classList.remove('picked-up', 'not-picked-up');
             card.classList.add(student.picked ? 'picked-up' : 'not-picked-up');
 
-            // Update card content
             card.innerHTML = `
                 <div class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
                     ${student.picked ? `
-                        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7" />
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
                         </svg>
                     ` : initials}
                 </div>
-                <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.name}" style="font-size: 14px">
+                <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.fullName}">
                     ${student.name}
                 </p>
                 ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
             `;
 
-            // Re-attach click handler
             card.onclick = () => toggleStudentStatus(student.id);
         }
 
         // Cancel edit
         function cancelEdit() {
-            // Restore original state
             students.forEach((student, index) => {
                 student.picked = originalState[index].picked;
             });
+            pendingChanges = [];
 
             exitEditMode();
             renderStudents();
         }
 
-        // Save changes
-        function saveChanges() {
-            // In a real app, you would save to backend here
-            exitEditMode();
-            renderStudents();
+        // Save changes to backend
+        async function saveChanges() {
+            if (pendingChanges.length === 0) {
+                exitEditMode();
+                renderStudents();
+                return;
+            }
+
+            // Show loading state
+            const saveBtn = document.querySelector('#saveButtons button:last-child');
+            const originalContent = saveBtn.innerHTML;
+            saveBtn.innerHTML = `
+                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Menyimpan...</span>
+            `;
+            saveBtn.disabled = true;
+
+            try {
+                const response = await fetch(`${API_BASE}/batch_update_pickup.php`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ students: pendingChanges })
+                });
+
+                const result = await response.json();
+
+                if (result.success) {
+                    console.log('Save successful:', result);
+                    pendingChanges = [];
+
+                    // Reload data to get fresh state
+                    await loadStudents();
+                } else {
+                    console.error('Save failed:', result.message);
+                    alert('Gagal menyimpan perubahan: ' + result.message);
+                }
+            } catch (error) {
+                console.error('Error saving changes:', error);
+                alert('Terjadi kesalahan saat menyimpan perubahan.');
+            } finally {
+                saveBtn.innerHTML = originalContent;
+                saveBtn.disabled = false;
+                exitEditMode();
+            }
         }
 
         // Exit edit mode
@@ -504,14 +897,12 @@
 
             if (!document.fullscreenElement) {
                 document.documentElement.requestFullscreen().then(() => {
-                    // Change to exit fullscreen icon
                     icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />`;
                 }).catch(err => {
                     console.log('Fullscreen error:', err);
                 });
             } else {
                 document.exitFullscreen().then(() => {
-                    // Change to enter fullscreen icon
                     icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />`;
                 });
             }
@@ -525,6 +916,206 @@
             } else {
                 icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />`;
             }
+        });
+
+        // Logout function
+        function logout() {
+            localStorage.removeItem('user');
+            localStorage.removeItem('isLoggedIn');
+            localStorage.removeItem('user_type');
+            window.location.href = '../login.html';
+        }
+
+        // Auto-refresh every 30 seconds (to keep status updated)
+        setInterval(() => {
+            if (!isEditMode) {
+                loadStudents();
+            }
+        }, 10000);
+
+        // Load history from API
+        async function loadHistory() {
+            const historyList = document.getElementById('historyList');
+
+            try {
+                const response = await fetch(`${API_BASE}/get_class_history.php?kelas_id=${kelasId}&limit=30`);
+                const result = await response.json();
+
+                if (result.success) {
+                    renderHistory(result.data);
+                } else {
+                    historyList.innerHTML = `
+                        <div class="history-empty">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p>Gagal memuat riwayat</p>
+                        </div>
+                    `;
+                }
+            } catch (error) {
+                console.error('Error loading history:', error);
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                        </svg>
+                        <p>Error memuat riwayat</p>
+                    </div>
+                `;
+            }
+        }
+
+        // Render history items
+        function renderHistory(historyData) {
+            const historyList = document.getElementById('historyList');
+
+            if (!historyData || historyData.length === 0) {
+                historyList.innerHTML = `
+                    <div class="history-empty">
+                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <p>Belum ada riwayat penjemputan hari ini</p>
+                    </div>
+                `;
+                return;
+            }
+
+            historyList.innerHTML = historyData.map(item => `
+                <div class="history-item">
+                    <div class="history-item-name">${item.nama_siswa}</div>
+                    <div class="history-item-details">
+                        <div class="history-item-penjemput">
+                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                            </svg>
+                            <span>${item.penjemput}</span>
+                        </div>
+                        <span class="history-item-time">${item.waktu}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // ============================================
+        // Sidebar Resize Functionality
+        // ============================================
+
+        let isResizing = false;
+        let startX = 0;
+        let startWidth = 0;
+
+        function initSidebarResize() {
+            const sidebar = document.getElementById('historySidebar');
+            const resizeHandle = document.getElementById('resizeHandle');
+            const contentWrapper = document.querySelector('.content-wrapper');
+
+            if (!sidebar || !resizeHandle) return;
+
+            // Load saved width from localStorage
+            const savedWidth = localStorage.getItem('sidebarWidth');
+            if (savedWidth) {
+                sidebar.style.setProperty('--sidebar-width', savedWidth + 'px');
+                sidebar.style.width = savedWidth + 'px';
+            }
+
+            // Mouse down - start resizing
+            resizeHandle.addEventListener('mousedown', (e) => {
+                isResizing = true;
+                startX = e.clientX;
+                startWidth = sidebar.offsetWidth;
+
+                resizeHandle.classList.add('active');
+                document.body.classList.add('resizing');
+
+                e.preventDefault();
+            });
+
+            // Mouse move - resize
+            document.addEventListener('mousemove', (e) => {
+                if (!isResizing) return;
+
+                const diff = startX - e.clientX;
+                let newWidth = startWidth + diff;
+
+                // Constraints
+                const minWidth = 200;
+                const maxWidth = window.innerWidth * 0.5;
+
+                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+                sidebar.style.width = newWidth + 'px';
+                sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
+
+                // Recalculate grid layout
+                if (students.length > 0) {
+                    calculateGridLayout(students.length);
+                }
+            });
+
+            // Mouse up - stop resizing
+            document.addEventListener('mouseup', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizeHandle.classList.remove('active');
+                    document.body.classList.remove('resizing');
+
+                    // Save width to localStorage
+                    const currentWidth = sidebar.offsetWidth;
+                    localStorage.setItem('sidebarWidth', currentWidth);
+
+                    // Final grid recalculation
+                    if (students.length > 0) {
+                        calculateGridLayout(students.length);
+                    }
+                }
+            });
+
+            // Touch support for mobile
+            resizeHandle.addEventListener('touchstart', (e) => {
+                isResizing = true;
+                startX = e.touches[0].clientX;
+                startWidth = sidebar.offsetWidth;
+                resizeHandle.classList.add('active');
+                document.body.classList.add('resizing');
+            });
+
+            document.addEventListener('touchmove', (e) => {
+                if (!isResizing) return;
+
+                const diff = startX - e.touches[0].clientX;
+                let newWidth = startWidth + diff;
+
+                const minWidth = 200;
+                const maxWidth = window.innerWidth * 0.5;
+
+                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+                sidebar.style.width = newWidth + 'px';
+                sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
+            });
+
+            document.addEventListener('touchend', () => {
+                if (isResizing) {
+                    isResizing = false;
+                    resizeHandle.classList.remove('active');
+                    document.body.classList.remove('resizing');
+                    localStorage.setItem('sidebarWidth', sidebar.offsetWidth);
+
+                    if (students.length > 0) {
+                        calculateGridLayout(students.length);
+                    }
+                }
+            });
+        }
+
+        // Initialize sidebar resize after DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            initSidebarResize();
         });
     </script>
 </body>
