@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Dec 29, 2025 at 12:45 AM
+-- Generation Time: Jan 02, 2026 at 10:03 AM
 -- Server version: 10.11.15-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -48,6 +48,13 @@ CREATE TABLE `guru_session_aktif` (
   `last_heartbeat` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `guru_session_aktif`
+--
+
+INSERT INTO `guru_session_aktif` (`id`, `user_id`, `login_time`, `last_heartbeat`) VALUES
+(32, 4, '2026-01-02 02:50:33', '2026-01-02 02:50:33');
+
 -- --------------------------------------------------------
 
 --
@@ -57,7 +64,7 @@ CREATE TABLE `guru_session_aktif` (
 CREATE TABLE `jadwal_kelas` (
   `id` int(11) NOT NULL,
   `kelas_id` int(11) NOT NULL,
-  `hari` enum('senin','selasa','rabu','kamis','jumat','sabtu') NOT NULL,
+  `hari` enum('senin','selasa','rabu','kamis','jumat','sabtu','minggu') NOT NULL,
   `jam_masuk` time NOT NULL,
   `jam_pulang` time NOT NULL,
   `created_at` timestamp NULL DEFAULT current_timestamp(),
@@ -70,10 +77,10 @@ CREATE TABLE `jadwal_kelas` (
 --
 
 INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`, `created_at`, `updated_at`, `is_holiday`) VALUES
-(1, 1, 'senin', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(1, 1, 'senin', '07:00:00', '21:30:00', '2025-12-28 17:21:38', '2025-12-29 13:26:47', 0),
 (2, 1, 'selasa', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (3, 1, 'rabu', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(4, 1, 'kamis', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(4, 1, 'kamis', '07:00:00', '10:00:00', '2025-12-28 17:21:38', '2026-01-02 02:48:42', 0),
 (5, 1, 'jumat', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (6, 2, 'senin', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (7, 2, 'selasa', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
@@ -184,7 +191,53 @@ INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`,
 (112, 23, 'selasa', '07:00:00', '14:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (113, 23, 'rabu', '07:00:00', '14:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (114, 23, 'kamis', '07:00:00', '14:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(115, 23, 'jumat', '07:00:00', '14:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0);
+(115, 23, 'jumat', '07:00:00', '14:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(116, 1, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:30:01', 1),
+(117, 2, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(118, 3, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(119, 4, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(120, 5, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(121, 6, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(122, 7, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(123, 8, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(124, 9, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(125, 10, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(126, 11, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(127, 12, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(128, 13, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(129, 14, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(130, 15, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(131, 16, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(132, 17, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(133, 18, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(134, 19, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(135, 20, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(136, 21, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(137, 22, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(138, 23, 'sabtu', '07:00:00', '07:00:00', '2025-12-28 20:24:22', '2025-12-28 20:24:22', 1),
+(139, 1, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:30:04', 1),
+(140, 2, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(141, 3, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(142, 4, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(143, 5, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(144, 6, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(145, 7, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(146, 8, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(147, 9, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(148, 10, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(149, 11, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(150, 12, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(151, 13, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(152, 14, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(153, 15, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(154, 16, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(155, 17, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(156, 18, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(157, 19, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(158, 20, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(159, 21, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(160, 22, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1),
+(161, 23, 'minggu', '07:00:00', '07:00:00', '2025-12-28 20:24:35', '2025-12-28 20:24:35', 1);
 
 -- --------------------------------------------------------
 
@@ -284,7 +337,7 @@ CREATE TABLE `pengaturan_aplikasi` (
 --
 
 INSERT INTO `pengaturan_aplikasi` (`id`, `key_name`, `value`, `description`, `updated_at`) VALUES
-(1, 'cooldown_minutes', '20', 'Durasi cooldown dalam menit sebelum bisa memanggil kembali', '2025-12-26 10:14:24');
+(1, 'cooldown_minutes', '1', 'Durasi cooldown dalam menit sebelum bisa memanggil kembali', '2026-01-02 02:48:20');
 
 -- --------------------------------------------------------
 
@@ -307,6 +360,14 @@ CREATE TABLE `permintaan_jemput` (
   `waktu_dijemput` timestamp NULL DEFAULT NULL,
   `cooldown_minutes_used` int(11) DEFAULT 10
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `permintaan_jemput`
+--
+
+INSERT INTO `permintaan_jemput` (`id`, `siswa_id`, `user_id`, `penjemput`, `penjemput_detail`, `estimasi_waktu`, `waktu_estimasi`, `status`, `nomor_antrian`, `waktu_request`, `waktu_dipanggil`, `waktu_dijemput`, `cooldown_minutes_used`) VALUES
+(1, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 1, '2026-01-02 02:39:54', '2026-01-02 02:40:21', NULL, 20),
+(2, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 2, '2026-01-02 02:49:14', '2026-01-02 02:49:24', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -332,8 +393,8 @@ CREATE TABLE `siswa` (
 --
 
 INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `last_pickup_request`, `created_at`) VALUES
-(1, 'Muhammad Rizki', 'Rizki', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Muhammad Rizki&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf', 'rizki', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
-(2, 'Siti Aisyah', 'Aisyah', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Aisyah&size=200&backgroundColor=c0aede', 'aisyah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
+(1, 'Muhammad Rizki', 'Rizki', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Muhammad Rizki&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf', 'rizki', 'siswa123', NULL, '2026-01-02 02:39:54', '2025-12-28 17:40:41'),
+(2, 'Siti Aisyah', 'Aisyah', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Aisyah&size=200&backgroundColor=c0aede', 'aisyah', 'siswa123', NULL, '2026-01-02 02:49:14', '2025-12-28 17:40:41'),
 (3, 'Ahmad Fauzi', 'Fauzi', 5, 'https://api.dicebear.com/9.x/thumbs/png?seed=Fauzi&size=200&backgroundColor=d1d4f9', 'fauzi', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (4, 'Fatimah Zahra', 'Fatimah', 5, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Fatimah&size=200&backgroundColor=ffd5dc', 'fatimah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (5, 'Ali Rahman', 'Ali', 9, 'https://api.dicebear.com/9.x/fun-emoji/png?seed=Ali&size=200&backgroundColor=ffdfbf', 'ali', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
@@ -360,6 +421,14 @@ CREATE TABLE `status_penjemputan_harian` (
   `penjemput` varchar(50) DEFAULT NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+--
+-- Dumping data for table `status_penjemputan_harian`
+--
+
+INSERT INTO `status_penjemputan_harian` (`id`, `siswa_id`, `tanggal`, `sudah_dijemput`, `waktu_dijemput`, `penjemput`) VALUES
+(1, 1, '2026-01-02', 1, NULL, NULL),
+(3, 2, '2026-01-02', 1, '2026-01-02 02:49:24', 'ayah');
+
 -- --------------------------------------------------------
 
 --
@@ -375,17 +444,19 @@ CREATE TABLE `users` (
   `no_telepon` varchar(20) DEFAULT NULL,
   `last_pickup_request` timestamp NULL DEFAULT NULL COMMENT 'Untuk fitur cooldown 10 menit',
   `created_at` timestamp NULL DEFAULT current_timestamp(),
-  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+  `updated_at` timestamp NULL DEFAULT current_timestamp() ON UPDATE current_timestamp(),
+  `foto` varchar(255) DEFAULT NULL COMMENT 'Path foto profil'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 --
 -- Dumping data for table `users`
 --
 
-INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `last_pickup_request`, `created_at`, `updated_at`) VALUES
-(1, 'guru1', 'guru123', 'guru', 'Ibu Siti Nurhaliza S.Pd', '081234567800', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28'),
-(2, 'guru2', 'guru123', 'guru', 'Pak Ahmad Dhani S.Pd', '081234567801', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28'),
-(3, 'kelas1abubakar', 'a', 'class_viewer', '', NULL, NULL, '2025-12-28 17:42:54', '2025-12-28 17:42:54');
+INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `last_pickup_request`, `created_at`, `updated_at`, `foto`) VALUES
+(1, 'guru1', 'guru123', 'guru', 'Ibu Siti Nurhaliza S.Pd', '081234567800', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28', NULL),
+(2, 'guru2', 'guru123', 'guru', 'Pak Ahmad Dhani S.Pd', '081234567801', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28', NULL),
+(3, 'kelas1abubakar', 'a', 'class_viewer', '', NULL, NULL, '2025-12-28 17:42:54', '2025-12-28 17:42:54', NULL),
+(4, 'fadhil.manfa', 'a', 'guru', 'Muhammad Fadhil Manfa', '', NULL, '2025-12-29 14:21:00', '2025-12-29 15:00:56', 'uploads/guru_piket/guru_4_1767020456.png');
 
 -- --------------------------------------------------------
 
@@ -534,13 +605,13 @@ ALTER TABLE `guru_piket`
 -- AUTO_INCREMENT for table `guru_session_aktif`
 --
 ALTER TABLE `guru_session_aktif`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
 
 --
 -- AUTO_INCREMENT for table `jadwal_kelas`
 --
 ALTER TABLE `jadwal_kelas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=116;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=162;
 
 --
 -- AUTO_INCREMENT for table `kelas`
@@ -570,7 +641,7 @@ ALTER TABLE `pengaturan_aplikasi`
 -- AUTO_INCREMENT for table `permintaan_jemput`
 --
 ALTER TABLE `permintaan_jemput`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
 
 --
 -- AUTO_INCREMENT for table `siswa`
@@ -582,13 +653,13 @@ ALTER TABLE `siswa`
 -- AUTO_INCREMENT for table `status_penjemputan_harian`
 --
 ALTER TABLE `status_penjemputan_harian`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
 
 --
 -- AUTO_INCREMENT for table `users`
 --
 ALTER TABLE `users`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=5;
 
 -- --------------------------------------------------------
 
