@@ -520,8 +520,14 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
       return;
     }
 
+    // Guru tidak memiliki kelas, langsung tampilkan pickup bottomsheet
+    if (user.kelasId == null) {
+      _showPickupBottomSheet();
+      return;
+    }
+
     // Ambil jadwal siswa berdasarkan kelas_id
-    final jadwalResult = await _jadwalService.getJadwalByKelas(user.kelasId);
+    final jadwalResult = await _jadwalService.getJadwalByKelas(user.kelasId!);
 
     if (!jadwalResult.success || jadwalResult.jadwal == null) {
       // Jika gagal ambil jadwal, langsung tampilkan pickup bottomsheet

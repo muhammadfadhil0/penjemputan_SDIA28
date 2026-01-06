@@ -66,11 +66,73 @@ class AuthService {
     _notifyAccountChanged();
   }
 
-  /// Login dengan username dan password siswa
+  /// Login dengan username dan password
+  /// Mencoba login sebagai siswa terlebih dahulu, jika gagal coba login sebagai guru
   Future<AuthResult> login(String username, String password) async {
+    // Pertama, coba login sebagai siswa
+    final siswaResult = await _loginAsSiswa(username, password);
+    if (siswaResult.success) {
+      return siswaResult;
+    }
+
+    // Jika gagal sebagai siswa, coba login sebagai guru/user
+    final guruResult = await _loginAsGuru(username, password);
+    if (guruResult.success) {
+      return guruResult;
+    }
+
+    // Jika kedua-duanya gagal, kembalikan error dari siswa login
+    // (biasanya "Username atau password salah")
+    return siswaResult;
+  }
+
+  /// Login khusus untuk siswa (menggunakan login_siswa.php)
+  Future<AuthResult> _loginAsSiswa(String username, String password) async {
     try {
       final response = await http.post(
         Uri.parse('$_baseUrl/login_siswa.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'username': username, 'password': password}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        // Parse user data
+        final user = SiswaUser.fromJson(responseData['data']);
+
+        // Simpan ke memory dan local storage
+        _currentUser = user;
+        await _saveUserToStorage(user);
+
+        // Notify listeners about the account change
+        _notifyAccountChanged();
+
+        return AuthResult(
+          success: true,
+          message: responseData['message'] ?? 'Login berhasil!',
+          user: user,
+        );
+      } else {
+        return AuthResult(
+          success: false,
+          message: responseData['message'] ?? 'Login gagal.',
+        );
+      }
+    } catch (e) {
+      return AuthResult(
+        success: false,
+        message:
+            'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      );
+    }
+  }
+
+  /// Login khusus untuk guru (menggunakan login.php)
+  Future<AuthResult> _loginAsGuru(String username, String password) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/login.php'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({'username': username, 'password': password}),
       );

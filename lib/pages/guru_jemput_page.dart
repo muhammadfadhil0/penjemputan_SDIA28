@@ -4,6 +4,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/guru/guru_pickup_service.dart';
+import '../widgets/guru_profile_bottomsheet.dart';
 
 // ============================================
 // GURU PICKUP DASHBOARD PAGE
@@ -35,6 +36,12 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   bool _isSearching = false;
   bool _isCallingStudent = false;
 
+  // Picker selection state
+  String _selectedPicker = 'ayah';
+  String _selectedOjek = 'gojek';
+  final TextEditingController _otherPersonController = TextEditingController();
+  final TextEditingController _ojekLainnyaController = TextEditingController();
+
   // Debounce timer for search
   Timer? _debounceTimer;
 
@@ -55,6 +62,8 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   @override
   void dispose() {
     _searchController.dispose();
+    _otherPersonController.dispose();
+    _ojekLainnyaController.dispose();
     _connectivitySubscription?.cancel();
     _debounceTimer?.cancel();
     super.dispose();
@@ -135,7 +144,29 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   void _clearSelectedStudent() {
     setState(() {
       _selectedStudent = null;
+      // Reset picker selection
+      _selectedPicker = 'ayah';
+      _selectedOjek = 'gojek';
+      _otherPersonController.clear();
+      _ojekLainnyaController.clear();
     });
+  }
+
+  // Get penjemput detail based on selection
+  String? _getPenjemputDetail() {
+    if (_selectedPicker == 'ojek') {
+      if (_selectedOjek == 'lainnya') {
+        return _ojekLainnyaController.text.isNotEmpty
+            ? _ojekLainnyaController.text
+            : null;
+      }
+      return _selectedOjek; // gojek, grab, maxim
+    } else if (_selectedPicker == 'lainnya') {
+      return _otherPersonController.text.isNotEmpty
+          ? _otherPersonController.text
+          : null;
+    }
+    return null;
   }
 
   // Call selected student for pickup
@@ -144,9 +175,18 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
 
     setState(() => _isCallingStudent = true);
 
+    // Format penjemput string for display
+    String penjemputDisplay = _selectedPicker;
+    final detail = _getPenjemputDetail();
+    if (detail != null) {
+      penjemputDisplay = '$_selectedPicker ($detail)';
+    }
+
     final result = await _guruPickupService.callStudentForPickup(
       siswaId: _selectedStudent!.id,
       calledByGuruName: guruName,
+      penjemput: _selectedPicker,
+      catatan: detail,
     );
 
     if (mounted) {
@@ -166,7 +206,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
               Expanded(
                 child: Text(
                   result.success
-                      ? '${_selectedStudent!.displayName} berhasil dipanggil! Nomor antrian: ${result.nomorAntrian}'
+                      ? '${_selectedStudent!.displayName} berhasil dipanggil! (Penjemput: $penjemputDisplay)'
                       : result.message,
                 ),
               ),
@@ -183,7 +223,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       );
 
       if (result.success) {
-        // Clear selection and refresh search
+        // Clear selection and refresh search results
         _clearSelectedStudent();
         _performSearch();
       }
@@ -440,76 +480,89 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
               padding: const EdgeInsets.symmetric(horizontal: 20),
               child: Row(
                 children: [
-                  // Guru avatar
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.amber.shade400,
-                        width: 2,
+                  // Guru avatar - tap to show profile bottom sheet
+                  Expanded(
+                    child: GestureDetector(
+                      onTap: () => showGuruProfileBottomSheet(context),
+                      child: Row(
+                        children: [
+                          Container(
+                            width: 56,
+                            height: 56,
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade50,
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: Colors.amber.shade400,
+                                width: 2,
+                              ),
+                            ),
+                            child: ClipOval(
+                              child: _authService.currentUser?.fotoUrl != null
+                                  ? Image.network(
+                                      _authService.currentUser!.fotoUrl!,
+                                      width: 56,
+                                      height: 56,
+                                      fit: BoxFit.cover,
+                                      errorBuilder:
+                                          (context, error, stackTrace) => Icon(
+                                            Icons.person_rounded,
+                                            color: Colors.amber.shade700,
+                                            size: 32,
+                                          ),
+                                    )
+                                  : Icon(
+                                      Icons.person_rounded,
+                                      color: Colors.amber.shade700,
+                                      size: 32,
+                                    ),
+                            ),
+                          ),
+                          const SizedBox(width: 14),
+                          Flexible(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                const SizedBox(height: 2),
+                                Text(
+                                  guruName,
+                                  style: const TextStyle(
+                                    color: AppColors.textPrimary,
+                                    fontSize: 20,
+                                    fontWeight: FontWeight.w600,
+                                  ),
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                                Container(
+                                  margin: const EdgeInsets.only(top: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 8,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: Colors.amber.shade50,
+                                    borderRadius: BorderRadius.circular(6),
+                                    border: Border.all(
+                                      color: Colors.amber.shade200,
+                                    ),
+                                  ),
+                                  child: Text(
+                                    'Guru Piket',
+                                    style: TextStyle(
+                                      color: Colors.amber.shade800,
+                                      fontSize: 11,
+                                      fontWeight: FontWeight.w500,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    child: ClipOval(
-                      child: _authService.currentUser?.fotoUrl != null
-                          ? Image.network(
-                              _authService.currentUser!.fotoUrl!,
-                              width: 56,
-                              height: 56,
-                              fit: BoxFit.cover,
-                              errorBuilder: (context, error, stackTrace) =>
-                                  Icon(
-                                    Icons.person_rounded,
-                                    color: Colors.amber.shade700,
-                                    size: 32,
-                                  ),
-                            )
-                          : Icon(
-                              Icons.person_rounded,
-                              color: Colors.amber.shade700,
-                              size: 32,
-                            ),
-                    ),
                   ),
-                  const SizedBox(width: 14),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const SizedBox(height: 2),
-                        Text(
-                          guruName,
-                          style: const TextStyle(
-                            color: AppColors.textPrimary,
-                            fontSize: 20,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                        Container(
-                          margin: const EdgeInsets.only(top: 4),
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade50,
-                            borderRadius: BorderRadius.circular(6),
-                            border: Border.all(color: Colors.amber.shade200),
-                          ),
-                          child: Text(
-                            'Guru Piket',
-                            style: TextStyle(
-                              color: Colors.amber.shade800,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  const SizedBox(width: 12),
                   GestureDetector(
                     onTap: _handleConnectionStatusTap,
                     child: AnimatedContainer(
@@ -680,44 +733,48 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     if (_searchResults.isEmpty) {
       if (_searchController.text.isEmpty && _selectedKelas == null) {
         return Center(
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              Icon(
-                Icons.search_rounded,
-                size: 64,
-                color: AppColors.textMuted.withOpacity(0.5),
-              ),
-              const SizedBox(height: 16),
-              const Text(
-                'Cari siswa untuk memulai',
-                style: TextStyle(fontSize: 16, color: AppColors.textMuted),
-              ),
-              const SizedBox(height: 8),
-              const Text(
-                'Ketik nama atau pilih kelas',
-                style: TextStyle(fontSize: 13, color: AppColors.textMuted),
-              ),
-            ],
+          child: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(
+                  Icons.search_rounded,
+                  size: 64,
+                  color: AppColors.textMuted.withOpacity(0.5),
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'Cari siswa untuk memulai',
+                  style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Ketik nama atau pilih kelas',
+                  style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                ),
+              ],
+            ),
           ),
         );
       }
 
       return Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Icon(
-              Icons.person_off_rounded,
-              size: 64,
-              color: AppColors.textMuted.withOpacity(0.5),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Tidak ada siswa ditemukan',
-              style: TextStyle(fontSize: 16, color: AppColors.textMuted),
-            ),
-          ],
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                Icons.person_off_rounded,
+                size: 64,
+                color: AppColors.textMuted.withOpacity(0.5),
+              ),
+              const SizedBox(height: 16),
+              const Text(
+                'Tidak ada siswa ditemukan',
+                style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+              ),
+            ],
+          ),
         ),
       );
     }
@@ -858,113 +915,291 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
           ),
         ],
       ),
-      child: Row(
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
-          // Selected student info
-          Expanded(
-            child: Row(
-              children: [
-                Container(
-                  width: 44,
-                  height: 44,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLighter,
-                    borderRadius: BorderRadius.circular(10),
-                  ),
-                  child: ClipRRect(
-                    borderRadius: BorderRadius.circular(10),
-                    child: _selectedStudent!.fotoUrl != null
-                        ? Image.network(
-                            _selectedStudent!.fotoUrl!,
-                            width: 44,
-                            height: 44,
-                            fit: BoxFit.cover,
-                            errorBuilder: (context, error, stackTrace) =>
-                                const Icon(
-                                  Icons.person_rounded,
-                                  color: AppColors.primary,
-                                  size: 24,
-                                ),
-                          )
-                        : const Icon(
-                            Icons.person_rounded,
-                            color: AppColors.primary,
-                            size: 24,
-                          ),
-                  ),
+          // Selected student info row
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLighter,
+                  borderRadius: BorderRadius.circular(10),
                 ),
-                const SizedBox(width: 12),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        _selectedStudent!.displayName,
-                        style: const TextStyle(
-                          fontSize: 14,
-                          fontWeight: FontWeight.w600,
-                          color: AppColors.textPrimary,
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: _selectedStudent!.fotoUrl != null
+                      ? Image.network(
+                          _selectedStudent!.fotoUrl!,
+                          width: 44,
+                          height: 44,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) =>
+                              const Icon(
+                                Icons.person_rounded,
+                                color: AppColors.primary,
+                                size: 24,
+                              ),
+                        )
+                      : const Icon(
+                          Icons.person_rounded,
+                          color: AppColors.primary,
+                          size: 24,
                         ),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      Text(
-                        _selectedStudent!.namaKelas,
-                        style: const TextStyle(
-                          fontSize: 12,
-                          color: AppColors.textMuted,
-                        ),
-                      ),
-                    ],
-                  ),
                 ),
-                IconButton(
-                  onPressed: _clearSelectedStudent,
-                  icon: const Icon(
-                    Icons.close_rounded,
-                    color: AppColors.textMuted,
-                    size: 20,
-                  ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      _selectedStudent!.displayName,
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: AppColors.textPrimary,
+                      ),
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    Text(
+                      _selectedStudent!.namaKelas,
+                      style: const TextStyle(
+                        fontSize: 12,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  ],
                 ),
-              ],
-            ),
+              ),
+              IconButton(
+                onPressed: _clearSelectedStudent,
+                icon: const Icon(
+                  Icons.close_rounded,
+                  color: AppColors.textMuted,
+                  size: 20,
+                ),
+              ),
+            ],
           ),
-          const SizedBox(width: 12),
-          // Call button
-          ElevatedButton(
-            onPressed: _selectedStudent!.hasActiveRequest
-                ? null
-                : (_isCallingStudent ? null : _showCallConfirmationBottomSheet),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: _selectedStudent!.hasActiveRequest
-                  ? Colors.grey
-                  : AppColors.primary,
-              foregroundColor: Colors.white,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
+
+          const SizedBox(height: 12),
+
+          // Picker selection
+          const Align(
+            alignment: Alignment.centerLeft,
+            child: Text(
+              'Dijemput oleh:',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textMuted,
               ),
             ),
-            child: _isCallingStudent
-                ? const SizedBox(
-                    width: 20,
-                    height: 20,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+          ),
+          const SizedBox(height: 8),
+          _buildPickerSegments(),
+
+          // Ojek sub-selector
+          if (_selectedPicker == 'ojek') ...[
+            const SizedBox(height: 8),
+            _buildOjekSubSelector(),
+          ],
+
+          // Ojek lainnya input
+          if (_selectedPicker == 'ojek' && _selectedOjek == 'lainnya') ...[
+            const SizedBox(height: 8),
+            _buildPickerTextField(
+              controller: _ojekLainnyaController,
+              hint: 'Nama ojek lainnya',
+              icon: Icons.two_wheeler,
+            ),
+          ],
+
+          // Other person input
+          if (_selectedPicker == 'lainnya') ...[
+            const SizedBox(height: 8),
+            _buildPickerTextField(
+              controller: _otherPersonController,
+              hint: 'Nama penjemput',
+              icon: Icons.person_outline,
+            ),
+          ],
+
+          const SizedBox(height: 12),
+
+          // Call button
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: _isCallingStudent
+                  ? null
+                  : _showCallConfirmationBottomSheet,
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              child: _isCallingStudent
+                  ? const SizedBox(
+                      width: 20,
+                      height: 20,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                      ),
+                    )
+                  : const Text(
+                      'Panggil Siswa',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                      ),
                     ),
-                  )
-                : Text(
-                    _selectedStudent!.hasActiveRequest
-                        ? 'Sudah Dipanggil'
-                        : 'Panggil',
-                    style: const TextStyle(
-                      fontSize: 14,
-                      fontWeight: FontWeight.w600,
-                    ),
-                  ),
+            ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildPickerSegments() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          _buildPickerSegmentItem('ayah', 'Ayah', Icons.man),
+          _buildPickerSegmentItem('ibu', 'Ibu', Icons.woman),
+          _buildPickerSegmentItem('ojek', 'Ojek', Icons.two_wheeler),
+          _buildPickerSegmentItem('lainnya', 'Lainnya', Icons.people),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPickerSegmentItem(String value, String label, IconData icon) {
+    final isSelected = _selectedPicker == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedPicker = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildOjekSubSelector() {
+    return Container(
+      padding: const EdgeInsets.all(3),
+      decoration: BoxDecoration(
+        color: AppColors.primaryLighter.withOpacity(0.5),
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.primaryLight.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          _buildOjekItem('gojek', 'Gojek'),
+          _buildOjekItem('grab', 'Grab'),
+          _buildOjekItem('maxim', 'Maxim'),
+          _buildOjekItem('lainnya', 'Lainnya'),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildOjekItem(String value, String label) {
+    final isSelected = _selectedOjek == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _selectedOjek = value),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          margin: const EdgeInsets.all(2),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : AppColors.card,
+            borderRadius: BorderRadius.circular(6),
+            border: Border.all(
+              color: isSelected ? AppColors.primary : AppColors.border,
+            ),
+          ),
+          child: Center(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 10,
+                fontWeight: FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPickerTextField({
+    required TextEditingController controller,
+    required String hint,
+    required IconData icon,
+  }) {
+    return Container(
+      height: 40,
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(8),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: TextField(
+        controller: controller,
+        style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
+        decoration: InputDecoration(
+          hintText: hint,
+          hintStyle: const TextStyle(color: AppColors.textMuted, fontSize: 13),
+          border: InputBorder.none,
+          contentPadding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 10,
+          ),
+          prefixIcon: Icon(icon, color: AppColors.textMuted, size: 18),
+          prefixIconConstraints: const BoxConstraints(minWidth: 40),
+        ),
       ),
     );
   }

@@ -63,8 +63,17 @@ class _JadwalPageState extends State<JadwalPage> {
 
     _currentKelasId = user.kelasId;
 
+    // Guru tidak memiliki kelas, skip jadwal
+    if (_currentKelasId == null) {
+      setState(() {
+        _isLoading = false;
+        _errorMessage = 'Fitur ini khusus untuk siswa';
+      });
+      return;
+    }
+
     // Cek apakah ada data di cache
-    final cachedJadwal = _jadwalService.getCachedJadwal(user.kelasId);
+    final cachedJadwal = _jadwalService.getCachedJadwal(_currentKelasId!);
     if (cachedJadwal != null) {
       // Gunakan data dari cache
       setState(() {

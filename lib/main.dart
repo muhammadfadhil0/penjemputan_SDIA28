@@ -5,6 +5,8 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'pages/jadwal_page.dart';
 import 'pages/jemput_page.dart';
 import 'pages/guru_jemput_page.dart';
+import 'pages/guru_riwayat_page.dart';
+import 'pages/guru_antrean_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'pages/onboarding_page.dart';
@@ -215,7 +217,7 @@ class AppColors {
 
 // ============================================
 // TEACHER MAIN NAVIGATION
-// For guru/teacher role - simplified navigation
+// For guru/teacher role - 3 tabs: Riwayat, Panggil, Antrean
 // ============================================
 class TeacherMainNavigation extends StatefulWidget {
   const TeacherMainNavigation({super.key});
@@ -226,12 +228,16 @@ class TeacherMainNavigation extends StatefulWidget {
 
 class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0;
+  int _currentIndex = 1; // Start at Panggil (center)
   late AnimationController _indicatorController;
   late Animation<double> _indicatorAnimation;
-  double _indicatorPosition = 0.0;
+  double _indicatorPosition = 1.0;
 
-  final List<Widget> _pages = const [GuruPickupDashboardPage(), ProfilePage()];
+  final List<Widget> _pages = const [
+    GuruRiwayatPage(),
+    GuruPickupDashboardPage(),
+    GuruAntreanPage(),
+  ];
 
   @override
   void initState() {
@@ -240,7 +246,7 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _indicatorAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
+    _indicatorAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
       CurvedAnimation(parent: _indicatorController, curve: Curves.easeOutBack),
     );
   }
@@ -270,6 +276,33 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     setState(() => _currentIndex = newIndex);
   }
 
+  // Handle swipe gestures on the nav bar
+  void _handleNavBarSwipe(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+
+    if (velocity.abs() > 200) {
+      if (velocity > 0 && _currentIndex > 0) {
+        _animateToIndex(_currentIndex - 1);
+      } else if (velocity < 0 && _currentIndex < 2) {
+        _animateToIndex(_currentIndex + 1);
+      }
+    }
+  }
+
+  // Handle drag update for direct selection
+  void _handleNavBarDragUpdate(
+    DragUpdateDetails details,
+    double containerWidth,
+  ) {
+    final itemWidth = containerWidth / 3;
+    final dragPosition = details.localPosition.dx;
+    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 2);
+
+    if (newIndex != _currentIndex) {
+      _animateToIndex(newIndex);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -296,49 +329,78 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final itemWidth = constraints.maxWidth / 2;
-              return Stack(
-                children: [
-                  // Animated indicator
-                  AnimatedBuilder(
-                    animation: _indicatorAnimation,
-                    builder: (context, child) {
-                      final position = _indicatorAnimation.value;
-                      return Positioned(
-                        left: position * itemWidth + (itemWidth - 80) / 2,
-                        top: 0,
-                        bottom: 0,
-                        child: Container(
-                          width: 80,
-                          decoration: BoxDecoration(
-                            color: _currentIndex == 0
-                                ? Colors.amber.shade100
-                                : AppColors.primaryLighter,
-                            borderRadius: BorderRadius.circular(12),
+              final itemWidth = constraints.maxWidth / 3;
+              return GestureDetector(
+                onHorizontalDragUpdate: (details) =>
+                    _handleNavBarDragUpdate(details, constraints.maxWidth),
+                onHorizontalDragEnd: _handleNavBarSwipe,
+                child: Stack(
+                  children: [
+                    // Animated indicator with bounce effect
+                    AnimatedBuilder(
+                      animation: _indicatorAnimation,
+                      builder: (context, child) {
+                        final position = _indicatorAnimation.value;
+                        final isCenter = position.round() == 1;
+                        return Positioned(
+                          left:
+                              position * itemWidth +
+                              (itemWidth - (isCenter ? 90 : 70)) / 2,
+                          top: 0,
+                          bottom: 0,
+                          child: AnimatedContainer(
+                            duration: const Duration(milliseconds: 150),
+                            width: isCenter ? 90 : 70,
+                            decoration: BoxDecoration(
+                              color: isCenter
+                                  ? AppColors.primary
+                                  : AppColors.primaryLighter,
+                              borderRadius: BorderRadius.circular(
+                                isCenter ? 20 : 12,
+                              ),
+                              boxShadow: isCenter
+                                  ? [
+                                      BoxShadow(
+                                        color: AppColors.primary.withValues(
+                                          alpha: 0.3,
+                                        ),
+                                        blurRadius: 12,
+                                        offset: const Offset(0, 4),
+                                      ),
+                                    ]
+                                  : null,
+                            ),
                           ),
+                        );
+                      },
+                    ),
+                    // Nav items
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceAround,
+                      children: [
+                        _buildNavItem(
+                          index: 0,
+                          icon: Icons.history_outlined,
+                          activeIcon: Icons.history,
+                          label: 'Riwayat',
                         ),
-                      );
-                    },
-                  ),
-                  // Nav items
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceAround,
-                    children: [
-                      _buildNavItem(
-                        index: 0,
-                        icon: Icons.campaign_outlined,
-                        activeIcon: Icons.campaign,
-                        label: 'Panggil',
-                      ),
-                      _buildNavItem(
-                        index: 1,
-                        icon: Icons.person_outline,
-                        activeIcon: Icons.person,
-                        label: 'Profile',
-                      ),
-                    ],
-                  ),
-                ],
+                        _buildNavItem(
+                          index: 1,
+                          icon: Icons.campaign_outlined,
+                          activeIcon: Icons.campaign,
+                          label: 'Panggil',
+                          isCenter: true,
+                        ),
+                        _buildNavItem(
+                          index: 2,
+                          icon: Icons.queue_outlined,
+                          activeIcon: Icons.queue,
+                          label: 'Antrean',
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               );
             },
           ),
@@ -352,9 +414,9 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     required IconData icon,
     required IconData activeIcon,
     required String label,
+    bool isCenter = false,
   }) {
     final isSelected = _currentIndex == index;
-    final color = index == 0 ? Colors.amber.shade700 : AppColors.primary;
 
     return GestureDetector(
       onTap: () {
@@ -364,14 +426,19 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
       },
       behavior: HitTestBehavior.opaque,
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        padding: EdgeInsets.symmetric(
+          horizontal: isCenter ? 24 : 16,
+          vertical: 8,
+        ),
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               isSelected ? activeIcon : icon,
-              color: isSelected ? color : AppColors.textMuted,
-              size: 24,
+              color: isSelected
+                  ? (isCenter ? Colors.white : AppColors.primary)
+                  : AppColors.textMuted,
+              size: isCenter ? 26 : 24,
             ),
             const SizedBox(height: 4),
             Text(
@@ -379,7 +446,9 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
               style: TextStyle(
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
-                color: isSelected ? color : AppColors.textMuted,
+                color: isSelected
+                    ? (isCenter ? Colors.white : AppColors.primary)
+                    : AppColors.textMuted,
               ),
             ),
           ],

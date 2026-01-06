@@ -1,15 +1,16 @@
-/// Model untuk data siswa yang login
+/// Model untuk data user yang login (siswa atau guru)
 class SiswaUser {
   final int id;
   final String username;
   final String nama;
   final String? namaPanggilan;
-  final String role;
-  final int kelasId;
-  final String namaKelas;
-  final int tingkat;
+  final String role; // 'siswa', 'guru', 'class_viewer'
+  final int? kelasId; // Nullable untuk guru
+  final String? namaKelas; // Nullable untuk guru
+  final int? tingkat; // Nullable untuk guru
   final String? fotoUrl;
   final String? noTeleponOrtu;
+  final String? noTelepon; // Untuk guru
 
   SiswaUser({
     required this.id,
@@ -17,26 +18,28 @@ class SiswaUser {
     required this.nama,
     this.namaPanggilan,
     required this.role,
-    required this.kelasId,
-    required this.namaKelas,
-    required this.tingkat,
+    this.kelasId,
+    this.namaKelas,
+    this.tingkat,
     this.fotoUrl,
     this.noTeleponOrtu,
+    this.noTelepon,
   });
 
-  /// Membuat SiswaUser dari JSON response API
+  /// Membuat SiswaUser dari JSON response API (siswa)
   factory SiswaUser.fromJson(Map<String, dynamic> json) {
     return SiswaUser(
       id: json['id'] as int,
       username: json['username'] as String,
       nama: json['nama'] as String,
       namaPanggilan: json['nama_panggilan'] as String?,
-      role: json['role'] as String,
-      kelasId: json['kelas_id'] as int,
-      namaKelas: json['nama_kelas'] as String,
-      tingkat: json['tingkat'] as int,
-      fotoUrl: json['foto_url'] as String?,
+      role: json['role'] as String? ?? 'siswa',
+      kelasId: json['kelas_id'] as int?,
+      namaKelas: json['nama_kelas'] as String?,
+      tingkat: json['tingkat'] as int?,
+      fotoUrl: json['foto_url'] as String? ?? json['foto'] as String?,
       noTeleponOrtu: json['no_telepon_ortu'] as String?,
+      noTelepon: json['no_telepon'] as String?,
     );
   }
 
@@ -53,8 +56,15 @@ class SiswaUser {
       'tingkat': tingkat,
       'foto_url': fotoUrl,
       'no_telepon_ortu': noTeleponOrtu,
+      'no_telepon': noTelepon,
     };
   }
+
+  /// Cek apakah user adalah guru
+  bool get isGuru => role == 'guru';
+
+  /// Cek apakah user adalah siswa
+  bool get isSiswa => role == 'siswa';
 
   /// Mendapatkan nama tampilan (nama panggilan atau nama lengkap)
   String get displayName => namaPanggilan ?? nama.split(' ').first;

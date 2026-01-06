@@ -118,12 +118,18 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       return;
     }
 
+    // Guru tidak memiliki kelas, skip
+    if (currentUser.kelasId == null) {
+      _showDebugSnackbar('Info: Fitur ini khusus untuk siswa');
+      return;
+    }
+
     // Clear cache dan ambil jadwal fresh dari server
     _jadwalService.clearCache();
 
     // Ambil jadwal berdasarkan kelas siswa
     final jadwalResult = await _jadwalService.getJadwalByKelas(
-      currentUser.kelasId,
+      currentUser.kelasId!,
     );
     if (!jadwalResult.success || jadwalResult.jadwal == null) {
       _showDebugSnackbar(

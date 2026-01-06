@@ -214,4 +214,260 @@ class GuruPickupService {
       return [];
     }
   }
+
+  /// Tambah siswa baru ke database
+  Future<GuruPickupResult> addStudent({
+    required String nama,
+    String? namaPanggilan,
+    required int kelasId,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse(
+          'https://soulhbc.com/penjemputan/service/database/add_siswa.php',
+        ),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'nama': nama,
+          'nama_panggilan': namaPanggilan ?? '',
+          'kelas_id': kelasId,
+        }),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if ((response.statusCode == 200 || response.statusCode == 201) &&
+          responseData['success'] == true) {
+        return GuruPickupResult(
+          success: true,
+          message: responseData['message'] ?? 'Siswa berhasil ditambahkan!',
+        );
+      } else {
+        return GuruPickupResult(
+          success: false,
+          message: responseData['message'] ?? 'Gagal menambahkan siswa.',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error adding student: $e');
+      return GuruPickupResult(
+        success: false,
+        message:
+            'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      );
+    }
+  }
+
+  /// Ambil riwayat panggilan yang sudah dilakukan
+  Future<PickupHistoryResult> getPickupHistory({DateTime? tanggal}) async {
+    try {
+      final queryParams = <String, String>{};
+      if (tanggal != null) {
+        queryParams['tanggal'] =
+            '${tanggal.year}-${tanggal.month.toString().padLeft(2, '0')}-${tanggal.day.toString().padLeft(2, '0')}';
+      }
+
+      // Use the correct endpoint from web_server/service/riwayat/
+      final uri = Uri.parse(
+        'https://soulhbc.com/penjemputan/service/riwayat/get_all_history.php',
+      ).replace(queryParameters: queryParams.isNotEmpty ? queryParams : null);
+
+      final response = await http.get(uri);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true && data['data'] != null) {
+          final items = (data['data'] as List)
+              .map((json) => PickupHistoryItemData.fromJson(json))
+              .toList();
+          return PickupHistoryResult(success: true, data: items, message: '');
+        }
+      }
+      return PickupHistoryResult(
+        success: false,
+        data: [],
+        message: 'Gagal memuat riwayat',
+      );
+    } catch (e) {
+      debugPrint('Error fetching pickup history: $e');
+      return PickupHistoryResult(
+        success: false,
+        data: [],
+        message: 'Tidak dapat terhubung ke server',
+      );
+    }
+  }
+
+  /// Ambil antrean penjemputan saat ini
+  Future<PickupQueueResult> getPickupQueue() async {
+    try {
+      // Use the correct endpoint from web_server/service/pickup/
+      final response = await http.get(
+        Uri.parse(
+          'https://soulhbc.com/penjemputan/service/pickup/get_pickup_queue.php',
+        ),
+      );
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        // Response has 'queue' array, not 'data'
+        if (data['success'] == true && data['queue'] != null) {
+          final items = (data['queue'] as List)
+              .map((json) => QueueItemData.fromJson(json))
+              .toList();
+          return PickupQueueResult(success: true, data: items, message: '');
+        }
+      }
+      return PickupQueueResult(
+        success: false,
+        data: [],
+        message: 'Gagal memuat antrean',
+      );
+    } catch (e) {
+      debugPrint('Error fetching pickup queue: $e');
+      return PickupQueueResult(
+        success: false,
+        data: [],
+        message: 'Tidak dapat terhubung ke server',
+      );
+    }
+  }
+
+  /// Tandai siswa sudah dijemput
+  Future<GuruPickupResult> markAsPickedUp({required int siswaId}) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$_baseUrl/mark_picked_up.php'),
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({'siswa_id': siswaId}),
+      );
+
+      final responseData = jsonDecode(response.body);
+
+      if (response.statusCode == 200 && responseData['success'] == true) {
+        return GuruPickupResult(
+          success: true,
+          message:
+              responseData['message'] ??
+              'Siswa berhasil ditandai sudah dijemput!',
+        );
+      } else {
+        return GuruPickupResult(
+          success: false,
+          message: responseData['message'] ?? 'Gagal menandai siswa.',
+        );
+      }
+    } catch (e) {
+      return GuruPickupResult(
+        success: false,
+        message:
+            'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+      );
+    }
+  }
+}
+
+/// Model untuk item riwayat pickup
+class PickupHistoryItemData {
+  final int id;
+  final String namaSiswa;
+  final String namaKelas;
+  final String waktu;
+  final String penjemput;
+  final String status;
+  final String? fotoUrl;
+  final DateTime tanggal;
+
+  PickupHistoryItemData({
+    required this.id,
+    required this.namaSiswa,
+    required this.namaKelas,
+    required this.waktu,
+    required this.penjemput,
+    required this.status,
+    this.fotoUrl,
+    required this.tanggal,
+  });
+
+  factory PickupHistoryItemData.fromJson(Map<String, dynamic> json) {
+    return PickupHistoryItemData(
+      id: json['id'] ?? 0,
+      namaSiswa: json['nama_siswa'] ?? '',
+      namaKelas: json['nama_kelas'] ?? '',
+      waktu: json['waktu'] ?? '', // API returns 'waktu' as HH:mm
+      penjemput: json['penjemput'] ?? '',
+      status: json['status'] ?? '',
+      fotoUrl: json['foto_url'],
+      tanggal: DateTime.tryParse(json['tanggal'] ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
+/// Result wrapper untuk riwayat pickup
+class PickupHistoryResult {
+  final bool success;
+  final List<PickupHistoryItemData> data;
+  final String message;
+
+  PickupHistoryResult({
+    required this.success,
+    required this.data,
+    required this.message,
+  });
+}
+
+/// Model untuk item antrean
+class QueueItemData {
+  final int id;
+  final int siswaId;
+  final String namaSiswa;
+  final String namaKelas;
+  final String penjemput;
+  final String status;
+  final String? fotoUrl;
+  final int nomorAntrian;
+  final DateTime timestamp;
+
+  QueueItemData({
+    required this.id,
+    required this.siswaId,
+    required this.namaSiswa,
+    required this.namaKelas,
+    required this.penjemput,
+    required this.status,
+    this.fotoUrl,
+    required this.nomorAntrian,
+    required this.timestamp,
+  });
+
+  factory QueueItemData.fromJson(Map<String, dynamic> json) {
+    return QueueItemData(
+      id: json['id'] ?? 0,
+      siswaId:
+          json['siswa_id'] ??
+          json['id'] ??
+          0, // fallback to id if siswa_id not present
+      namaSiswa: json['nama_siswa'] ?? '',
+      namaKelas: json['nama_kelas'] ?? '',
+      penjemput: json['penjemput'] ?? '',
+      status: json['status'] ?? '',
+      fotoUrl: json['foto_url'],
+      nomorAntrian: json['nomor_antrian'] ?? 0,
+      timestamp:
+          DateTime.tryParse(json['waktu_request'] ?? '') ?? DateTime.now(),
+    );
+  }
+}
+
+/// Result wrapper untuk antrean pickup
+class PickupQueueResult {
+  final bool success;
+  final List<QueueItemData> data;
+  final String message;
+
+  PickupQueueResult({
+    required this.success,
+    required this.data,
+    required this.message,
+  });
 }

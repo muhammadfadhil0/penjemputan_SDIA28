@@ -80,12 +80,28 @@ class _LoginPageState extends State<LoginPage>
         final multiAccountService = MultiAccountService();
         await multiAccountService.init();
         await multiAccountService.addAccount(result.user!);
+
+        // Debug: Print user role
+        debugPrint('=== LOGIN SUCCESS ===');
+        debugPrint('User: ${result.user!.nama}');
+        debugPrint('Role: ${result.user!.role}');
+        debugPrint('=====================');
       }
 
-      // Login berhasil - navigasi ke halaman utama
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(builder: (context) => const MainNavigation()),
-      );
+      // Cek role untuk menentukan halaman tujuan
+      if (result.user != null && result.user!.role == 'guru') {
+        // Guru: navigate ke TeacherMainNavigation
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(
+            builder: (context) => const TeacherMainNavigation(),
+          ),
+        );
+      } else {
+        // Siswa/Ortu: navigate ke MainNavigation biasa
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const MainNavigation()),
+        );
+      }
     } else if (mounted) {
       // Login gagal - tampilkan pesan error
       _showErrorSnackBar(result.message);

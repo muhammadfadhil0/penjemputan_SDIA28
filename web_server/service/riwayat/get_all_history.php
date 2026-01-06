@@ -58,6 +58,7 @@ try {
                 pj.waktu_dipanggil,
                 pj.waktu_dijemput,
                 s.nama AS nama_siswa,
+                s.foto_url,
                 k.nama_kelas
             FROM permintaan_jemput pj
             JOIN siswa s ON pj.siswa_id = s.id
@@ -162,7 +163,8 @@ try {
             'waktu_dipanggil' => $row['waktu_dipanggil'],
             'waktu_dijemput' => $row['waktu_dijemput'],
             'nama_siswa' => $row['nama_siswa'],
-            'nama_kelas' => $row['nama_kelas']
+            'nama_kelas' => $row['nama_kelas'],
+            'foto_url' => $row['foto_url']
         ];
     }
     
