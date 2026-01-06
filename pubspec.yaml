@@ -59,6 +59,7 @@ dependencies:
 
   # Geolocation for pickup location verification
   geolocator: ^13.0.2
+  firebase_analytics: ^12.1.0
 
 dev_dependencies:
   flutter_test:

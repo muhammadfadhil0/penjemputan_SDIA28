@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:firebase_analytics/firebase_analytics.dart';
 
 // Import pages
 import 'pages/jadwal_page.dart';
@@ -45,6 +46,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Penjemputan',
       debugShowCheckedModeBanner: false,
+      // navigatorObservers: [observer],
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(
           seedColor: const Color(0xFF60A5FA),

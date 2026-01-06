@@ -499,17 +499,29 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                             ),
                             child: ClipOval(
                               child: _authService.currentUser?.fotoUrl != null
-                                  ? Image.network(
-                                      _authService.currentUser!.fotoUrl!,
-                                      width: 56,
-                                      height: 56,
-                                      fit: BoxFit.cover,
-                                      errorBuilder:
-                                          (context, error, stackTrace) => Icon(
-                                            Icons.person_rounded,
-                                            color: Colors.amber.shade700,
-                                            size: 32,
-                                          ),
+                                  ? Builder(
+                                      builder: (context) {
+                                        final url =
+                                            _authService.currentUser!.fotoUrl!;
+                                        final fullUrl = url.startsWith('http')
+                                            ? url
+                                            : 'https://soulhbc.com/penjemputan/$url';
+
+                                        return Image.network(
+                                          fullUrl,
+                                          width: 56,
+                                          height: 56,
+                                          fit: BoxFit.cover,
+                                          errorBuilder:
+                                              (context, error, stackTrace) =>
+                                                  Icon(
+                                                    Icons.person_rounded,
+                                                    color:
+                                                        Colors.amber.shade700,
+                                                    size: 32,
+                                                  ),
+                                        );
+                                      },
                                     )
                                   : Icon(
                                       Icons.person_rounded,

@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import '../services/auth/auth_service.dart';
 import '../main.dart';
 
+import '../pages/guru/guru_profile_page.dart';
+
 /// Bottom sheet untuk menampilkan profil guru dengan tombol logout
 class GuruProfileBottomSheet extends StatelessWidget {
   final VoidCallback? onLogout;
@@ -60,70 +62,82 @@ class GuruProfileBottomSheet extends StatelessWidget {
           // Profile Card
           Padding(
             padding: const EdgeInsets.symmetric(horizontal: 16),
-            child: Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.amber.shade50,
-                borderRadius: BorderRadius.circular(12),
-                border: Border.all(color: Colors.amber.shade200),
-              ),
-              child: Row(
-                children: [
-                  // Avatar
-                  Container(
-                    width: 56,
-                    height: 56,
-                    decoration: BoxDecoration(
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.amber.shade400,
-                        width: 2,
+            child: GestureDetector(
+              onTap: () {
+                Navigator.pop(context); // Close bottom sheet
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => const GuruProfilePage(),
+                  ),
+                );
+              },
+              child: Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade50,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.amber.shade200),
+                ),
+                child: Row(
+                  children: [
+                    // Avatar
+                    Container(
+                      width: 56,
+                      height: 56,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: Colors.amber.shade400,
+                          width: 2,
+                        ),
+                      ),
+                      child: ClipOval(
+                        child: _buildAvatar(currentUser?.fotoUrl),
                       ),
                     ),
-                    child: ClipOval(child: _buildAvatar(currentUser?.fotoUrl)),
-                  ),
-                  const SizedBox(width: 14),
+                    const SizedBox(width: 14),
 
-                  // Name and role
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          currentUser?.nama ?? 'Guru',
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w600,
-                            color: AppColors.textPrimary,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 8,
-                            vertical: 2,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.amber.shade100,
-                            borderRadius: BorderRadius.circular(6),
-                          ),
-                          child: Text(
-                            'Guru Piket',
-                            style: TextStyle(
-                              color: Colors.amber.shade800,
-                              fontSize: 11,
-                              fontWeight: FontWeight.w500,
+                    // Name and role
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            currentUser?.nama ?? 'Guru',
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: Colors.amber.shade100,
+                              borderRadius: BorderRadius.circular(6),
+                            ),
+                            child: Text(
+                              'Guru Piket',
+                              style: TextStyle(
+                                color: Colors.amber.shade800,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
-
           const SizedBox(height: 16),
 
           // Divider
@@ -152,8 +166,12 @@ class GuruProfileBottomSheet extends StatelessWidget {
 
   Widget _buildAvatar(String? fotoUrl) {
     if (fotoUrl != null && fotoUrl.isNotEmpty) {
+      final fullUrl = fotoUrl.startsWith('http')
+          ? fotoUrl
+          : 'https://soulhbc.com/penjemputan/$fotoUrl';
+
       return Image.network(
-        fotoUrl,
+        fullUrl,
         fit: BoxFit.cover,
         errorBuilder: (context, error, stackTrace) {
           return Container(

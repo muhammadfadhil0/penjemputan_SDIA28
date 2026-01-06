@@ -255,8 +255,14 @@ class AuthService {
         noTeleponOrtu: _currentUser!.noTeleponOrtu,
       );
 
-      // Simpan ke storage
       await _saveUserToStorage(_currentUser!);
     }
+  }
+
+  /// Update data user secara menyeluruh
+  Future<void> updateUser(SiswaUser updatedUser) async {
+    _currentUser = updatedUser;
+    await _saveUserToStorage(updatedUser);
+    _notifyAccountChanged();
   }
 }

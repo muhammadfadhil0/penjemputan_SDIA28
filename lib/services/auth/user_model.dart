@@ -68,4 +68,33 @@ class SiswaUser {
 
   /// Mendapatkan nama tampilan (nama panggilan atau nama lengkap)
   String get displayName => namaPanggilan ?? nama.split(' ').first;
+
+  /// Copy with method
+  SiswaUser copyWith({
+    int? id,
+    String? username,
+    String? nama,
+    String? namaPanggilan,
+    String? role,
+    int? kelasId,
+    String? namaKelas,
+    int? tingkat,
+    String? fotoUrl,
+    String? noTeleponOrtu,
+    String? noTelepon,
+  }) {
+    return SiswaUser(
+      id: id ?? this.id,
+      username: username ?? this.username,
+      nama: nama ?? this.nama,
+      namaPanggilan: namaPanggilan ?? this.namaPanggilan,
+      role: role ?? this.role,
+      kelasId: kelasId ?? this.kelasId,
+      namaKelas: namaKelas ?? this.namaKelas,
+      tingkat: tingkat ?? this.tingkat,
+      fotoUrl: fotoUrl ?? this.fotoUrl,
+      noTeleponOrtu: noTeleponOrtu ?? this.noTeleponOrtu,
+      noTelepon: noTelepon ?? this.noTelepon,
+    );
+  }
 }
