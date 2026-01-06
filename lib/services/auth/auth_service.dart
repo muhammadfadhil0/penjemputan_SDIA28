@@ -141,6 +141,8 @@ class AuthService {
     final prefs = await SharedPreferences.getInstance();
     await prefs.remove(_userKey);
     await prefs.setBool(_isLoggedInKey, false);
+    // Reset onboarding flag so it shows again on next login
+    await prefs.remove('has_seen_jemput_onboarding');
   }
 
   /// Cek apakah ada session tersimpan

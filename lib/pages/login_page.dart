@@ -187,7 +187,7 @@ class _LoginPageState extends State<LoginPage>
           child: Column(
             children: [
               const Text(
-                'Selamat Datang',
+                'Assalamualaikum',
                 style: TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 28,
@@ -197,7 +197,7 @@ class _LoginPageState extends State<LoginPage>
               ),
               const SizedBox(height: 8),
               Text(
-                'Masuk ke akun Anda untuk melanjutkan',
+                'Masuk ke akun Ananda untuk melanjutkan',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 15),
               ),
             ],

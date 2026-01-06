@@ -57,6 +57,9 @@ dependencies:
 
   permission_handler: ^11.3.1
 
+  # Geolocation for pickup location verification
+  geolocator: ^13.0.2
+
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -84,6 +87,7 @@ flutter:
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/assets/logo.png
+    - lib/assets/page-1-onboarding.png
 
   # An image asset can refer to one or more resolution-specific "variants", see
   # https://flutter.dev/to/resolution-aware-images

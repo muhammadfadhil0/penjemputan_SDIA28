@@ -43,7 +43,7 @@ class NotificationService {
 
     // Android initialization settings
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/ic_launcher',
+      '@mipmap/launcher_icon',
     );
 
     // iOS initialization settings
@@ -149,7 +149,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Pengingat Penjemputan',
-      icon: '@mipmap/ic_launcher',
+      icon: '@mipmap/launcher_icon',
     );
 
     // iOS notification details
@@ -263,6 +263,15 @@ class NotificationService {
   Future<void> showScheduleChangeNotification() async {
     await initialize();
 
+    // Request permission untuk Android 13+
+    final hasPermission = await requestPermission();
+    if (!hasPermission) {
+      debugPrint(
+        'NotificationService: Permission denied for schedule change notification',
+      );
+      return;
+    }
+
     const androidDetails = AndroidNotificationDetails(
       'schedule_change_channel',
       'Perubahan Jadwal',
@@ -298,6 +307,15 @@ class NotificationService {
   /// Menampilkan notifikasi test (untuk debugging)
   Future<void> showTestNotification() async {
     await initialize();
+
+    // Request permission untuk Android 13+
+    final hasPermission = await requestPermission();
+    if (!hasPermission) {
+      debugPrint(
+        'NotificationService: Permission denied for test notification',
+      );
+      return;
+    }
 
     const androidDetails = AndroidNotificationDetails(
       'test_channel',

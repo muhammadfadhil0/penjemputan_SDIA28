@@ -50,6 +50,7 @@ if ($kelas_id <= 0) {
 $today = date('Y-m-d');
 
 // Query riwayat penjemputan hari ini berdasarkan kelas
+// ORDER BY waktu_dipanggil ASC untuk menghitung urutan panggilan per siswa
 $query = "SELECT 
             pj.id,
             pj.siswa_id,
@@ -66,16 +67,26 @@ $query = "SELECT
           WHERE s.kelas_id = ? 
             AND DATE(pj.waktu_request) = ?
             AND pj.status IN ('dipanggil', 'dijemput')
-          ORDER BY pj.waktu_dipanggil DESC, pj.waktu_request DESC
-          LIMIT ?";
+          ORDER BY pj.waktu_dipanggil ASC, pj.waktu_request ASC";
 
 $stmt = mysqli_prepare($conn, $query);
-mysqli_stmt_bind_param($stmt, "isi", $kelas_id, $today, $limit);
+mysqli_stmt_bind_param($stmt, "is", $kelas_id, $today);
 mysqli_stmt_execute($stmt);
 $result = mysqli_stmt_get_result($stmt);
 
-$history = [];
+// Hitung berapa kali setiap siswa sudah dipanggil
+$siswaPickupCount = [];
+$allHistory = [];
+
 while ($row = mysqli_fetch_assoc($result)) {
+    $siswaId = (int)$row['siswa_id'];
+    
+    // Increment counter untuk siswa ini
+    if (!isset($siswaPickupCount[$siswaId])) {
+        $siswaPickupCount[$siswaId] = 0;
+    }
+    $siswaPickupCount[$siswaId]++;
+    
     // Format penjemput display
     $penjemputDisplay = ucfirst($row['penjemput']);
     if ($row['penjemput_detail']) {
@@ -86,20 +97,50 @@ while ($row = mysqli_fetch_assoc($result)) {
     $waktu = $row['waktu_dipanggil'] ?? $row['waktu_request'];
     $waktuFormatted = date('H:i', strtotime($waktu));
     
-    $history[] = [
+    // Format nama dengan urutan panggilan jika lebih dari 1
+    $namaSiswa = $row['nama_panggilan'] ?? $row['nama_siswa'];
+    $panggilanKe = $siswaPickupCount[$siswaId];
+    
+    // Mapping angka ke teks
+    $ordinalLabels = [
+        2 => 'Panggilan kedua',
+        3 => 'Panggilan ketiga',
+        4 => 'Panggilan keempat',
+        5 => 'Panggilan kelima',
+        6 => 'Panggilan keenam',
+        7 => 'Panggilan ketujuh',
+        8 => 'Panggilan kedelapan',
+        9 => 'Panggilan kesembilan',
+        10 => 'Panggilan kesepuluh'
+    ];
+    
+    if ($panggilanKe > 1) {
+        $label = isset($ordinalLabels[$panggilanKe]) ? $ordinalLabels[$panggilanKe] : "Panggilan ke-$panggilanKe";
+        $namaSiswaDisplay = $namaSiswa . ' (' . $label . ')';
+    } else {
+        $namaSiswaDisplay = $namaSiswa;
+    }
+    
+    $allHistory[] = [
         "id" => (int)$row['id'],
-        "siswa_id" => (int)$row['siswa_id'],
-        "nama_siswa" => $row['nama_panggilan'] ?? $row['nama_siswa'],
+        "siswa_id" => $siswaId,
+        "nama_siswa" => $namaSiswaDisplay,
+        "nama_asli" => $namaSiswa,
         "nama_lengkap" => $row['nama_siswa'],
         "penjemput" => $penjemputDisplay,
         "penjemput_raw" => $row['penjemput'],
         "status" => $row['status'],
+        "panggilan_ke" => $panggilanKe,
         "waktu" => $waktuFormatted,
         "waktu_full" => $waktu
     ];
 }
 
 mysqli_stmt_close($stmt);
+
+// Reverse untuk menampilkan terbaru di atas, lalu limit
+$history = array_reverse($allHistory);
+$history = array_slice($history, 0, $limit);
 
 // Response
 http_response_code(200);

@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // Import pages
 import 'pages/jadwal_page.dart';
 import 'pages/jemput_page.dart';
+import 'pages/guru_jemput_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
+import 'pages/onboarding_page.dart';
 import 'services/auth/auth_service.dart';
 import 'services/auth/multi_account_service.dart';
 import 'services/notifications/notification_service.dart';
@@ -64,6 +67,9 @@ class SplashPage extends StatefulWidget {
 }
 
 class _SplashPageState extends State<SplashPage> {
+  static const String _initialOnboardingKey =
+      'has_completed_initial_onboarding';
+
   @override
   void initState() {
     super.initState();
@@ -72,6 +78,23 @@ class _SplashPageState extends State<SplashPage> {
 
   Future<void> _checkSession() async {
     try {
+      final prefs = await SharedPreferences.getInstance();
+
+      // FIRST: Check if initial onboarding was completed
+      final hasCompletedOnboarding =
+          prefs.getBool(_initialOnboardingKey) ?? false;
+
+      if (!hasCompletedOnboarding) {
+        // First install - show onboarding BEFORE login
+        if (mounted) {
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingPage()),
+          );
+        }
+        return;
+      }
+
+      // Onboarding completed, proceed with session check
       final authService = AuthService();
       final multiAccountService = MultiAccountService();
 
@@ -101,10 +124,21 @@ class _SplashPageState extends State<SplashPage> {
           await multiAccountService.addAccount(authService.currentUser!);
         }
 
-        // Ada session tersimpan, langsung ke halaman utama
-        Navigator.of(context).pushReplacement(
-          MaterialPageRoute(builder: (context) => const MainNavigation()),
-        );
+        // Cek role untuk menentukan halaman tujuan
+        final user = authService.currentUser;
+        if (user != null && user.role == 'guru') {
+          // Guru: navigate ke TeacherMainNavigation
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const TeacherMainNavigation(),
+            ),
+          );
+        } else {
+          // Siswa/Ortu: navigate ke MainNavigation biasa
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const MainNavigation()),
+          );
+        }
       } else {
         // Tidak ada session, ke halaman login
         Navigator.of(context).pushReplacement(
@@ -177,6 +211,182 @@ class AppColors {
   static const Color textPrimary = Color(0xFF111827);
   static const Color textSecondary = Color(0xFF6B7280);
   static const Color textMuted = Color(0xFF9CA3AF);
+}
+
+// ============================================
+// TEACHER MAIN NAVIGATION
+// For guru/teacher role - simplified navigation
+// ============================================
+class TeacherMainNavigation extends StatefulWidget {
+  const TeacherMainNavigation({super.key});
+
+  @override
+  State<TeacherMainNavigation> createState() => _TeacherMainNavigationState();
+}
+
+class _TeacherMainNavigationState extends State<TeacherMainNavigation>
+    with SingleTickerProviderStateMixin {
+  int _currentIndex = 0;
+  late AnimationController _indicatorController;
+  late Animation<double> _indicatorAnimation;
+  double _indicatorPosition = 0.0;
+
+  final List<Widget> _pages = const [GuruPickupDashboardPage(), ProfilePage()];
+
+  @override
+  void initState() {
+    super.initState();
+    _indicatorController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _indicatorAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
+      CurvedAnimation(parent: _indicatorController, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    _indicatorController.dispose();
+    super.dispose();
+  }
+
+  void _animateToIndex(int newIndex) {
+    _indicatorAnimation =
+        Tween<double>(
+          begin: _indicatorPosition,
+          end: newIndex.toDouble(),
+        ).animate(
+          CurvedAnimation(
+            parent: _indicatorController,
+            curve: Curves.easeOutBack,
+          ),
+        );
+
+    _indicatorController.forward(from: 0).then((_) {
+      _indicatorPosition = newIndex.toDouble();
+    });
+
+    setState(() => _currentIndex = newIndex);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: AccountSwitchAnimatedPage(child: _pages[_currentIndex]),
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final itemWidth = constraints.maxWidth / 2;
+              return Stack(
+                children: [
+                  // Animated indicator
+                  AnimatedBuilder(
+                    animation: _indicatorAnimation,
+                    builder: (context, child) {
+                      final position = _indicatorAnimation.value;
+                      return Positioned(
+                        left: position * itemWidth + (itemWidth - 80) / 2,
+                        top: 0,
+                        bottom: 0,
+                        child: Container(
+                          width: 80,
+                          decoration: BoxDecoration(
+                            color: _currentIndex == 0
+                                ? Colors.amber.shade100
+                                : AppColors.primaryLighter,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  // Nav items
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceAround,
+                    children: [
+                      _buildNavItem(
+                        index: 0,
+                        icon: Icons.campaign_outlined,
+                        activeIcon: Icons.campaign,
+                        label: 'Panggil',
+                      ),
+                      _buildNavItem(
+                        index: 1,
+                        icon: Icons.person_outline,
+                        activeIcon: Icons.person,
+                        label: 'Profile',
+                      ),
+                    ],
+                  ),
+                ],
+              );
+            },
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+  }) {
+    final isSelected = _currentIndex == index;
+    final color = index == 0 ? Colors.amber.shade700 : AppColors.primary;
+
+    return GestureDetector(
+      onTap: () {
+        if (_currentIndex != index) {
+          _animateToIndex(index);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? color : AppColors.textMuted,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? color : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 // Main Navigation with Bottom Nav Bar
@@ -272,9 +482,14 @@ class _MainNavigationState extends State<MainNavigation>
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      body: AccountSwitchAnimatedPage(child: _pages[_currentIndex]),
-      bottomNavigationBar: _buildBottomNavBar(),
+    return Stack(
+      children: [
+        // Main content with bottom navigation
+        Scaffold(
+          body: AccountSwitchAnimatedPage(child: _pages[_currentIndex]),
+          bottomNavigationBar: _buildBottomNavBar(),
+        ),
+      ],
     );
   }
 

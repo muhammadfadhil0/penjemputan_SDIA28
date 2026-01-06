@@ -68,8 +68,6 @@ class PickupService {
     required int siswaId,
     required String penjemput,
     String? penjemputDetail,
-    required String estimasiWaktu,
-    String? waktuEstimasi,
   }) async {
     try {
       final response = await http.post(
@@ -79,8 +77,6 @@ class PickupService {
           'siswa_id': siswaId,
           'penjemput': penjemput,
           'penjemput_detail': penjemputDetail,
-          'estimasi_waktu': estimasiWaktu,
-          'waktu_estimasi': waktuEstimasi,
         }),
       );
 

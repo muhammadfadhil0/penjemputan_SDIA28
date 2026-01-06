@@ -2,17 +2,27 @@ import 'dart:async';
 import 'dart:math' as math;
 import 'package:flutter/material.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
+import 'package:geolocator/geolocator.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/auth/multi_account_service.dart';
 import '../services/pickup/pickup_service.dart';
 import '../services/teacher/teacher_service.dart';
 import '../services/jadwal/jadwal_service.dart';
+import '../services/config/config_service.dart';
 import '../widgets/stacked_avatars.dart';
 import '../widgets/account_switcher_bottomsheet.dart';
 
 // Pickup button states
 enum PickupButtonState { idle, queued, called, sending }
+
+// ============================================
+// CAMPUS LOCATION CONFIGURATION (Default values)
+// Koordinat akan diambil dari API saat runtime
+// ============================================
+const double kDefaultCampusLatitude = -7.607453;
+const double kDefaultCampusLongitude = 110.792933;
+const double kDefaultAllowedRadiusInMeters = 100.0;
 
 // ============================================
 // PICKUP DASHBOARD PAGE
@@ -37,6 +47,15 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   final TeacherService _teacherService = TeacherService();
   final MultiAccountService _multiAccountService = MultiAccountService();
   final JadwalService _jadwalService = JadwalService();
+  final ConfigService _configService = ConfigService();
+
+  // Campus location (loaded from API)
+  CampusLocation _campusLocation = const CampusLocation(
+    latitude: kDefaultCampusLatitude,
+    longitude: kDefaultCampusLongitude,
+    radiusInMeters: kDefaultAllowedRadiusInMeters,
+    name: 'SD Islam Al Azhar 28 Solo Baru',
+  );
 
   // Pickup state management
   PickupButtonState _buttonState = PickupButtonState.idle;
@@ -107,6 +126,9 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     // Fetch active teacher and start polling
     _fetchActiveTeacher();
     _startTeacherPolling();
+
+    // Load campus location from API
+    _loadCampusLocation();
 
     // Listen for account changes
     _authService.addAccountChangedListener(_onAccountChanged);
@@ -181,6 +203,22 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
       _updateConnectionStatus(result);
     } catch (e) {
       debugPrint('Connectivity check failed: $e');
+    }
+  }
+
+  // Load campus location from API
+  Future<void> _loadCampusLocation() async {
+    try {
+      final location = await _configService.getCampusLocation();
+      if (mounted) {
+        setState(() {
+          _campusLocation = location;
+        });
+        debugPrint('Loaded campus location: $_campusLocation');
+      }
+    } catch (e) {
+      debugPrint('Error loading campus location: $e');
+      // Keep default values if failed
     }
   }
 
@@ -473,6 +511,9 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   /// Mengecek apakah sekarang waktu sebelum jam pulang siswa
   /// Jika iya, tampilkan peringatan terlebih dahulu
   Future<void> _checkAndShowPickupBottomSheet() async {
+    // Langsung tampilkan bottomsheet tanpa cek lokasi dulu
+    // Pengecekan lokasi akan dilakukan saat user swipe untuk konfirmasi
+
     final user = _authService.currentUser;
     if (user == null) {
       _showPickupBottomSheet();
@@ -523,6 +564,528 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
       // Sudah melewati jam pulang, langsung tampilkan pickup bottomsheet
       _showPickupBottomSheet();
     }
+  }
+
+  /// Mengecek lokasi pengguna sebelum menampilkan bottomsheet penjemputan
+  /// Menampilkan backdrop loading saat mengambil lokasi
+  /// Return true jika lokasi valid, false jika tidak
+  Future<bool> _checkLocationBeforePickup() async {
+    // Selalu ambil data lokasi terbaru dari server sebelum cek lokasi
+    // Ini memastikan perubahan pengaturan di web langsung diterapkan
+    try {
+      final latestLocation = await _configService.getCampusLocation(
+        forceRefresh: true,
+      );
+      if (mounted) {
+        setState(() {
+          _campusLocation = latestLocation;
+        });
+        debugPrint(
+          'Refreshed campus location before pickup check: $_campusLocation',
+        );
+      }
+    } catch (e) {
+      debugPrint('Error refreshing campus location: $e');
+      // Lanjutkan dengan data yang sudah ada jika gagal refresh
+    }
+
+    // Cek permission lokasi terlebih dahulu SEBELUM menampilkan loading
+    LocationPermission permission = await Geolocator.checkPermission();
+
+    // Jika permission belum diberikan, tampilkan bottomsheet permintaan izin
+    if (permission == LocationPermission.denied) {
+      final shouldRequest = await _showLocationPermissionRequestBottomSheet();
+      if (!shouldRequest) return false;
+
+      // Request permission dari sistem
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showLocationErrorBottomSheet(
+          'Izin Lokasi Ditolak',
+          'Anda belum memberikan izin kami mengakses lokasi Anda. Izin lokasi diperlukan untuk memverifikasi posisi Anda berada di area kampus.',
+          Icons.location_disabled_rounded,
+        );
+        return false;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showLocationErrorBottomSheet(
+        'Izin Lokasi Ditolak Permanen',
+        'Izin lokasi ditolak secara permanen. Silakan aktifkan izin lokasi melalui pengaturan aplikasi.',
+        Icons.location_disabled_rounded,
+      );
+      return false;
+    }
+
+    // Permission sudah diberikan, tampilkan loading dan ambil lokasi
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierColor: Colors.black54,
+      builder: (context) => PopScope(
+        canPop: false,
+        child: Center(
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            margin: const EdgeInsets.symmetric(horizontal: 40),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(16),
+            ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const SizedBox(
+                  width: 48,
+                  height: 48,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 3,
+                    color: AppColors.primary,
+                  ),
+                ),
+                const SizedBox(height: 20),
+                const Text(
+                  'Mengambil lokasi Anda',
+                  style: TextStyle(
+                    fontSize: 16,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Text(
+                  'Ini tidak akan lama, tunggu sebentar',
+                  style: TextStyle(fontSize: 14, color: Colors.grey[600]),
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
+
+    try {
+      // Cek apakah location service aktif
+      bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+      if (!serviceEnabled) {
+        if (mounted) Navigator.of(context).pop(); // Tutup loading
+        _showLocationErrorBottomSheet(
+          'Layanan Lokasi Tidak Aktif',
+          'Aktifkan layanan lokasi (GPS) di perangkat Anda untuk melanjutkan penjemputan.',
+          Icons.location_off_rounded,
+        );
+        return false;
+      }
+
+      // Ambil posisi saat ini dengan timeout 10 detik
+      final position = await Geolocator.getCurrentPosition(
+        locationSettings: const LocationSettings(
+          accuracy: LocationAccuracy.high,
+          timeLimit: Duration(seconds: 10),
+        ),
+      );
+
+      if (mounted) Navigator.of(context).pop(); // Tutup loading
+
+      // Hitung jarak ke kampus
+      final distanceInMeters = Geolocator.distanceBetween(
+        position.latitude,
+        position.longitude,
+        _campusLocation.latitude,
+        _campusLocation.longitude,
+      );
+
+      // Cek apakah dalam radius yang diizinkan
+      if (distanceInMeters > _campusLocation.radiusInMeters) {
+        _showLocationOutOfRangeBottomSheet(distanceInMeters);
+        return false;
+      }
+
+      // Lokasi valid - tampilkan popup konfirmasi kehadiran
+      final shouldProceed = await _showCampusPresenceConfirmationBottomSheet();
+      return shouldProceed;
+    } on TimeoutException {
+      // Timeout - lokasi tidak bisa diambil dalam 10 detik
+      if (mounted) Navigator.of(context).pop(); // Tutup loading
+      _showLocationErrorBottomSheet(
+        'Kami kesulitan mengambil lokasi Anda',
+        'Silahkan datang menuju guru piket kami untuk pemanggilan manual.',
+        Icons.hourglass_disabled_rounded,
+      );
+      return false;
+    } catch (e) {
+      if (mounted) Navigator.of(context).pop(); // Tutup loading
+      // Cek apakah error karena timeout (LocationServiceTimeoutException)
+      if (e.toString().contains('timeout') ||
+          e.toString().contains('Timeout')) {
+        _showLocationErrorBottomSheet(
+          'Kami kesulitan mengambil lokasi Anda',
+          'Silahkan datang menuju guru piket kami untuk pemanggilan manual.',
+          Icons.hourglass_disabled_rounded,
+        );
+      } else {
+        _showLocationErrorBottomSheet(
+          'Gagal Mengambil Lokasi',
+          'Terjadi kesalahan saat mengambil lokasi. Pastikan GPS aktif dan coba lagi.',
+          Icons.error_outline_rounded,
+        );
+      }
+      return false;
+    }
+  }
+
+  /// Menampilkan bottomsheet permintaan izin lokasi
+  /// Return true jika user menekan tombol izinkan, false jika tidak
+  Future<bool> _showLocationPermissionRequestBottomSheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: AppColors.primaryLighter,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 3),
+                ),
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: AppColors.primary,
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Anda belum memberikan izin\nkami mengakses lokasi Anda',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                  height: 1.3,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Untuk memastikan Anda berada di lokasi Kampus Al Azhar Solo Baru saat melakukan penjemputan, kami memerlukan akses lokasi Anda.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Izinkan Akses Lokasi',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Menampilkan bottomsheet konfirmasi kehadiran di kampus (sukses)
+  /// Return true jika user menekan tombol lanjutkan, false jika tidak
+  Future<bool> _showCampusPresenceConfirmationBottomSheet() async {
+    final result = await showModalBottomSheet<bool>(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isDismissible: true,
+      enableDrag: true,
+      isScrollControlled: true,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: 80,
+                height: 80,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFDCFCE7),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFF22C55E), width: 3),
+                ),
+                child: const Icon(
+                  Icons.location_on_rounded,
+                  color: Color(0xFF22C55E),
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Lokasi Terverifikasi',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 22,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Anda berada di lingkungan Kampus Al Azhar Solo Baru. Silakan lanjutkan untuk memanggil Ananda.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 15,
+                  color: AppColors.textMuted,
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(context, true),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFF22C55E),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Panggil sekarang',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(context).padding.bottom + 16),
+            ],
+          ),
+        ),
+      ),
+    );
+    return result ?? false;
+  }
+
+  /// Menampilkan bottomsheet error lokasi
+  void _showLocationErrorBottomSheet(
+    String title,
+    String message,
+    IconData icon,
+  ) {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFEF4444), width: 3),
+              ),
+              child: Icon(icon, color: const Color(0xFFEF4444), size: 40),
+            ),
+            const SizedBox(height: 20),
+            Text(
+              title,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 22,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              message,
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 70),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Menampilkan bottomsheet lokasi di luar jangkauan
+  void _showLocationOutOfRangeBottomSheet(double distanceInMeters) {
+    final distanceText = distanceInMeters >= 1000
+        ? '${(distanceInMeters / 1000).toStringAsFixed(1)} km'
+        : '${distanceInMeters.toInt()} meter';
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      builder: (context) => Container(
+        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Container(
+              width: 40,
+              height: 4,
+              decoration: BoxDecoration(
+                color: Colors.grey[300],
+                borderRadius: BorderRadius.circular(2),
+              ),
+            ),
+            const SizedBox(height: 24),
+            Container(
+              width: 80,
+              height: 80,
+              decoration: BoxDecoration(
+                color: const Color(0xFFFEE2E2),
+                shape: BoxShape.circle,
+                border: Border.all(color: const Color(0xFFEF4444), width: 3),
+              ),
+              child: const Icon(
+                Icons.wrong_location_rounded,
+                color: Color(0xFFEF4444),
+                size: 40,
+              ),
+            ),
+            const SizedBox(height: 20),
+            const Text(
+              'Anda tidak berada di lokasi\nKampus Al Azhar Solo Baru',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 20,
+                fontWeight: FontWeight.bold,
+                color: AppColors.textPrimary,
+                height: 1.3,
+              ),
+            ),
+            const SizedBox(height: 12),
+            Text(
+              'Jarak Anda dari kampus: $distanceText.\nSilakan mendekat ke area kampus untuk melakukan penjemputan.',
+              textAlign: TextAlign.center,
+              style: const TextStyle(
+                fontSize: 15,
+                color: AppColors.textMuted,
+                height: 1.5,
+              ),
+            ),
+            const SizedBox(height: 24),
+            SizedBox(
+              width: double.infinity,
+              child: ElevatedButton(
+                onPressed: () => Navigator.pop(context),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: const Color(0xFFEF4444),
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(vertical: 16),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                ),
+                child: const Text(
+                  'Mengerti',
+                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                ),
+              ),
+            ),
+            const SizedBox(height: 70),
+          ],
+        ),
+      ),
+    );
   }
 
   /// Menampilkan bottomsheet peringatan sebelum jam pulang
@@ -577,7 +1140,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
               ),
               const SizedBox(height: 16),
               Text(
-                'Pemanggilan yang dibuat sebelum jam pulang ($jamPulang) akan ditahan sementara dan akan diantrekan langsung setelah jam pulang telah tiba, lanjutkan?',
+                'Pemanggilan yang dibuat sebelum jam pulang ($jamPulang) akan ditahan sementara dan akan diantrekan langsung setelah jam pulang telah tiba atau guru piket mengaktifkan pemanggilan, lanjutkan?',
                 textAlign: TextAlign.center,
                 style: const TextStyle(
                   fontSize: 14,
@@ -958,6 +1521,7 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
                     }
                   });
                 },
+                onCheckLocation: _checkLocationBeforePickup,
               ),
             ),
           ),
@@ -1435,8 +1999,13 @@ class DashedCirclePainter extends CustomPainter {
 // ============================================
 class PickupBottomSheet extends StatefulWidget {
   final Function(bool isSending, {bool? success})? onSendingStateChange;
+  final Future<bool> Function()? onCheckLocation;
 
-  const PickupBottomSheet({super.key, this.onSendingStateChange});
+  const PickupBottomSheet({
+    super.key,
+    this.onSendingStateChange,
+    this.onCheckLocation,
+  });
 
   @override
   State<PickupBottomSheet> createState() => _PickupBottomSheetState();
@@ -1445,8 +2014,6 @@ class PickupBottomSheet extends StatefulWidget {
 class _PickupBottomSheetState extends State<PickupBottomSheet> {
   String _selectedPicker = 'ayah';
   String _selectedOjek = 'gojek';
-  String _selectedArrival = 'tiba'; // 'tiba' or 'akan_tiba'
-  TimeOfDay? _estimatedTime;
   final TextEditingController _otherPersonController = TextEditingController();
   final TextEditingController _ojekLainnyaController = TextEditingController();
   final TextEditingController _notesController = TextEditingController();
@@ -1461,31 +2028,6 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     _ojekLainnyaController.dispose();
     _notesController.dispose();
     super.dispose();
-  }
-
-  Future<void> _selectTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _estimatedTime ?? TimeOfDay.now(),
-      builder: (context, child) {
-        return Theme(
-          data: Theme.of(context).copyWith(
-            colorScheme: const ColorScheme.light(
-              primary: AppColors.primary,
-              onPrimary: Colors.white,
-              surface: Colors.white,
-              onSurface: AppColors.textPrimary,
-            ),
-          ),
-          child: child!,
-        );
-      },
-    );
-    if (picked != null) {
-      setState(() {
-        _estimatedTime = picked;
-      });
-    }
   }
 
   // Helper to get penjemput detail based on selection
@@ -1505,18 +2047,30 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     return null;
   }
 
-  // Helper to format TimeOfDay to HH:mm format
-  String? _formatTimeOfDay(TimeOfDay? time) {
-    if (time == null) return null;
-    final hour = time.hour.toString().padLeft(2, '0');
-    final minute = time.minute.toString().padLeft(2, '0');
-    return '$hour:$minute';
-  }
-
   Future<void> _submitRequest() async {
+    // Step 1: Cek lokasi terlebih dahulu (jika callback tersedia)
+    // KECUALI jika penjemput adalah ojek online (tidak perlu hadir di kampus)
+    if (widget.onCheckLocation != null && _selectedPicker != 'ojek') {
+      // Tutup bottomsheet dulu agar loading bisa tampil
+      Navigator.pop(context);
+
+      final locationOk = await widget.onCheckLocation!();
+      if (!locationOk) {
+        // Lokasi tidak valid, tidak lanjutkan submit
+        return;
+      }
+
+      // Lokasi valid, lanjutkan proses submit
+      // Note: Karena context sudah pop, kita perlu handle state dari parent
+    }
+
     // Check if user is logged in
     if (_authService.currentUser == null) {
-      Navigator.pop(context);
+      // Jika bottomsheet belum di-pop (karena tidak ada onCheckLocation atau penjemput ojek), pop sekarang
+      if ((widget.onCheckLocation == null || _selectedPicker == 'ojek') &&
+          mounted) {
+        Navigator.pop(context);
+      }
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
           content: const Row(
@@ -1541,17 +2095,17 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     widget.onSendingStateChange?.call(true, success: null);
 
     // Close bottom sheet first so user can see the 'MENGIRIM' state on main button
-    Navigator.pop(context);
+    // Jika sudah di-pop saat pengecekan lokasi (bukan ojek), tidak perlu pop lagi
+    if ((widget.onCheckLocation == null || _selectedPicker == 'ojek') &&
+        mounted) {
+      Navigator.pop(context);
+    }
 
     // Call API to submit pickup request
     final result = await _pickupService.requestPickup(
       siswaId: _authService.currentUser!.id,
       penjemput: _selectedPicker,
       penjemputDetail: _getPenjemputDetail(),
-      estimasiWaktu: _selectedArrival,
-      waktuEstimasi: _selectedArrival == 'akan_tiba'
-          ? _formatTimeOfDay(_estimatedTime)
-          : null,
     );
 
     // Notify parent that sending is complete with success status
@@ -1679,25 +2233,6 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
                           hint: 'Nama orang yang menjemput',
                           icon: Icons.person_outline,
                         ),
-                      )
-                    : const SizedBox.shrink(),
-              ),
-
-              const SizedBox(height: 24),
-
-              // Section 2: Estimasi waktu
-              _buildLabel('Estimasi Anda sampai sekolah?'),
-              const SizedBox(height: 10),
-              _buildArrivalSegmentedButton(),
-
-              // Time input for "akan tiba"
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                child: _selectedArrival == 'akan_tiba'
-                    ? Padding(
-                        padding: const EdgeInsets.only(top: 12),
-                        child: _buildTimeSelector(),
                       )
                     : const SizedBox.shrink(),
               ),
@@ -1941,146 +2476,6 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
     );
   }
 
-  int get _arrivalIndex {
-    return _selectedArrival == 'tiba' ? 0 : 1;
-  }
-
-  final List<String> _arrivalOptions = ['tiba', 'akan_tiba'];
-
-  void _handleArrivalSwipe(DragEndDetails details, double containerWidth) {
-    final velocity = details.primaryVelocity ?? 0;
-
-    if (velocity.abs() > 200) {
-      // Swipe detected
-      if (velocity > 0 && _arrivalIndex > 0) {
-        // Swipe right - go to previous
-        setState(() => _selectedArrival = _arrivalOptions[_arrivalIndex - 1]);
-      } else if (velocity < 0 && _arrivalIndex < 1) {
-        // Swipe left - go to next
-        setState(() => _selectedArrival = _arrivalOptions[_arrivalIndex + 1]);
-      }
-    }
-  }
-
-  void _handleArrivalDragUpdate(
-    DragUpdateDetails details,
-    double containerWidth,
-  ) {
-    final itemWidth = containerWidth / 2;
-    final dragPosition = details.localPosition.dx;
-    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 1);
-
-    if (newIndex != _arrivalIndex) {
-      setState(() => _selectedArrival = _arrivalOptions[newIndex]);
-    }
-  }
-
-  Widget _buildArrivalSegmentedButton() {
-    return Container(
-      padding: const EdgeInsets.all(4),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: AppColors.border),
-      ),
-      child: LayoutBuilder(
-        builder: (context, constraints) {
-          final itemWidth = (constraints.maxWidth) / 2;
-          return GestureDetector(
-            onHorizontalDragUpdate: (details) =>
-                _handleArrivalDragUpdate(details, constraints.maxWidth),
-            onHorizontalDragEnd: (details) =>
-                _handleArrivalSwipe(details, constraints.maxWidth),
-            child: Stack(
-              children: [
-                // Sliding indicator with bounce
-                AnimatedPositioned(
-                  duration: const Duration(milliseconds: 400),
-                  curve: Curves.easeOutBack,
-                  left: _arrivalIndex * itemWidth,
-                  top: 0,
-                  bottom: 0,
-                  width: itemWidth,
-                  child: Container(
-                    decoration: BoxDecoration(
-                      color: AppColors.primary,
-                      borderRadius: BorderRadius.circular(8),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withValues(alpha: 0.3),
-                          blurRadius: 8,
-                          offset: const Offset(0, 2),
-                        ),
-                      ],
-                    ),
-                  ),
-                ),
-                // Items
-                Row(
-                  children: [
-                    _buildArrivalItem(
-                      'tiba',
-                      'Tiba di sekolah',
-                      Icons.check_circle_outline,
-                    ),
-                    _buildArrivalItem(
-                      'akan_tiba',
-                      'Akan tiba...',
-                      Icons.schedule,
-                    ),
-                  ],
-                ),
-              ],
-            ),
-          );
-        },
-      ),
-    );
-  }
-
-  Widget _buildArrivalItem(String value, String label, IconData icon) {
-    final isSelected = _selectedArrival == value;
-    return Expanded(
-      child: GestureDetector(
-        onTap: () => setState(() => _selectedArrival = value),
-        child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 12),
-          decoration: BoxDecoration(
-            color: Colors.transparent,
-            borderRadius: BorderRadius.circular(8),
-          ),
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontSize: 18,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                ),
-                child: Icon(
-                  icon,
-                  size: 18,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                ),
-              ),
-              const SizedBox(width: 6),
-              AnimatedDefaultTextStyle(
-                duration: const Duration(milliseconds: 200),
-                style: TextStyle(
-                  fontSize: 12,
-                  fontWeight: FontWeight.w500,
-                  color: isSelected ? Colors.white : AppColors.textSecondary,
-                ),
-                child: Text(label),
-              ),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
   Widget _buildTextField({
     required TextEditingController controller,
     required String hint,
@@ -2105,62 +2500,6 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
           prefixIcon: icon != null
               ? Icon(icon, color: AppColors.textMuted, size: 20)
               : null,
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTimeSelector() {
-    return GestureDetector(
-      onTap: _selectTime,
-      child: Container(
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: AppColors.background,
-          borderRadius: BorderRadius.circular(10),
-          border: Border.all(
-            color: _estimatedTime != null
-                ? AppColors.primary
-                : AppColors.border,
-            width: _estimatedTime != null ? 1.5 : 1,
-          ),
-        ),
-        child: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: AppColors.primaryLighter,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: const Icon(
-                Icons.schedule_rounded,
-                color: AppColors.primary,
-                size: 20,
-              ),
-            ),
-            const SizedBox(width: 12),
-            Text(
-              _estimatedTime != null
-                  ? _estimatedTime!.format(context)
-                  : 'Pilih waktu estimasi',
-              style: TextStyle(
-                fontSize: 14,
-                color: _estimatedTime != null
-                    ? AppColors.textPrimary
-                    : AppColors.textMuted,
-                fontWeight: _estimatedTime != null
-                    ? FontWeight.w500
-                    : FontWeight.normal,
-              ),
-            ),
-            const Spacer(),
-            const Icon(
-              Icons.chevron_right_rounded,
-              size: 20,
-              color: AppColors.textMuted,
-            ),
-          ],
         ),
       ),
     );

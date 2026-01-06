@@ -43,10 +43,10 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 
 // Validate required fields
-if (!isset($input['siswa_id']) || !isset($input['penjemput']) || !isset($input['estimasi_waktu'])) {
+if (!isset($input['siswa_id']) || !isset($input['penjemput'])) {
     echo json_encode([
         'success' => false,
-        'message' => 'Data tidak lengkap. Diperlukan: siswa_id, penjemput, estimasi_waktu'
+        'message' => 'Data tidak lengkap. Diperlukan: siswa_id, penjemput'
     ]);
     exit();
 }
@@ -54,7 +54,8 @@ if (!isset($input['siswa_id']) || !isset($input['penjemput']) || !isset($input['
 $siswa_id = intval($input['siswa_id']);
 $penjemput = mysqli_real_escape_string($conn, $input['penjemput']);
 $penjemput_detail = isset($input['penjemput_detail']) ? mysqli_real_escape_string($conn, $input['penjemput_detail']) : null;
-$estimasi_waktu = mysqli_real_escape_string($conn, $input['estimasi_waktu']);
+// estimasi_waktu is now optional, defaults to 'tiba' (already at school)
+$estimasi_waktu = isset($input['estimasi_waktu']) ? mysqli_real_escape_string($conn, $input['estimasi_waktu']) : 'tiba';
 $waktu_estimasi = isset($input['waktu_estimasi']) ? mysqli_real_escape_string($conn, $input['waktu_estimasi']) : null;
 
 // Validate siswa exists and get info
@@ -100,8 +101,9 @@ if (mysqli_num_rows($existing_result) > 0) {
         $cooldown_ends = $waktu_dipanggil + $existing_cooldown_seconds;
         
         if (time() >= $cooldown_ends) {
-            // Cooldown expired, allow new request - update old request to 'dibatalkan' first
-            $update_old = "UPDATE permintaan_jemput SET status = 'dibatalkan' WHERE id = " . $existing['id'];
+            // Cooldown expired, allow new request - update old request to 'dijemput' so it stays in history
+            // and set waktu_dijemput if not already set
+            $update_old = "UPDATE permintaan_jemput SET status = 'dijemput', waktu_dijemput = COALESCE(waktu_dijemput, NOW()) WHERE id = " . $existing['id'];
             mysqli_query($conn, $update_old);
         } else {
             // Still in cooldown

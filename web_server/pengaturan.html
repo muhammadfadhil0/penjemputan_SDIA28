@@ -7,6 +7,9 @@
     <title>Pengaturan Pemanggilan - SDIA 28</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Leaflet CSS for interactive map -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
     <script>
         tailwind.config = {
             theme: {
@@ -813,6 +816,93 @@
                 </div>
             </div>
 
+            <!-- Location Configuration Section -->
+            <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-red-100 rounded-xl">
+                        <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-textPrimary">Lokasi Penjemputan</h2>
+                        <p class="text-sm text-textMuted">Atur lokasi yang dibolehkan untuk pemanggilan siswa</p>
+                    </div>
+                </div>
+
+                <!-- Search Bar -->
+                <div class="mb-4 relative">
+                    <label class="block text-sm font-medium text-textSecondary mb-2">Cari Lokasi</label>
+                    <div class="relative">
+                        <input type="text" id="locationSearchInput"
+                            class="w-full px-4 py-3 pl-11 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-textPrimary"
+                            placeholder="Ketik nama tempat, alamat, atau landmark...">
+                        <svg class="w-5 h-5 text-textMuted absolute left-4 top-1/2 transform -translate-y-1/2"
+                            fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                        </svg>
+                        <div id="searchSpinner" class="hidden absolute right-4 top-1/2 transform -translate-y-1/2">
+                            <svg class="animate-spin h-5 w-5 text-red-500" xmlns="http://www.w3.org/2000/svg"
+                                fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                        </div>
+                    </div>
+                    <!-- Search Results Dropdown -->
+                    <div id="searchResultsDropdown"
+                        class="absolute z-[1000] w-full mt-2 bg-white border border-borderColor rounded-xl shadow-lg max-h-64 overflow-y-auto hidden">
+                        <!-- Results will be populated here -->
+                    </div>
+                </div>
+
+                <!-- Map Container -->
+                <div class="mb-4">
+                    <div id="locationMap" class="w-full h-72 rounded-xl border border-borderColor overflow-hidden">
+                    </div>
+                </div>
+
+                <!-- Coordinate Display -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                    <div>
+                        <label class="block text-sm font-medium text-textSecondary mb-2">Latitude</label>
+                        <input type="text" id="campusLatitude"
+                            class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-textPrimary font-mono text-sm"
+                            value="-7.607453" placeholder="Contoh: -7.607453">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-textSecondary mb-2">Longitude</label>
+                        <input type="text" id="campusLongitude"
+                            class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-textPrimary font-mono text-sm"
+                            value="110.792933" placeholder="Contoh: 110.792933">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-textSecondary mb-2">Radius (meter)</label>
+                        <input type="number" id="campusRadius" min="10" max="500" value="100"
+                            class="w-full px-4 py-3 bg-bgMain border border-borderColor rounded-xl focus:ring-2 focus:ring-red-500 focus:border-red-500 outline-none transition-all text-textPrimary">
+                    </div>
+                </div>
+
+                <!-- Current Location Name -->
+                <div class="flex items-center gap-2 bg-red-50 border border-red-200 rounded-xl px-4 py-3">
+                    <svg class="w-5 h-5 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-sm text-red-700">Lokasi: <strong id="currentLocationName">SD Islam Al Azhar 28
+                            Solo Baru</strong></span>
+                </div>
+            </div>
+
             <!-- 2. Bell Sound Upload -->
             <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4">
@@ -1472,10 +1562,13 @@
             // Save cooldown to API
             const cooldownSaved = await saveCooldownSetting();
 
-            if (cooldownSaved) {
+            // Save location to API
+            const locationSaved = await saveLocationSettings();
+
+            if (cooldownSaved && locationSaved) {
                 showToast('✅ Pengaturan berhasil disimpan!');
             }
-            // If cooldown fails, the error toast is shown by saveCooldownSetting
+            // If any fails, the error toast is shown by the respective function
         }
 
         // Cancel changes
@@ -1590,6 +1683,433 @@
             setTimeout(() => {
                 toast.classList.add('hidden');
             }, 3000);
+        }
+    </script>
+
+    <!-- Leaflet JS for interactive map -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+
+    <script>
+        // ===============================
+        // LOCATION MAP FUNCTIONALITY
+        // ===============================
+
+        let locationMap = null;
+        let locationMarker = null;
+        let radiusCircle = null;
+        let searchTimeout = null;
+
+        // Default campus location (Al Azhar Solo Baru)
+        let campusLocation = {
+            lat: -7.607453,
+            lng: 110.792933,
+            radius: 100,
+            name: 'SD Islam Al Azhar 28 Solo Baru'
+        };
+
+        // Initialize map after DOM is ready
+        document.addEventListener('DOMContentLoaded', () => {
+            initLocationMap();
+            loadLocationSettings();
+            setupLocationSearch();
+        });
+
+        // Initialize Leaflet map
+        function initLocationMap() {
+            // Create map centered on default location
+            locationMap = L.map('locationMap').setView([campusLocation.lat, campusLocation.lng], 17);
+
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+            }).addTo(locationMap);
+
+            // Create custom red marker icon
+            const redIcon = L.icon({
+                iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-2x-red.png',
+                shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                iconSize: [25, 41],
+                iconAnchor: [12, 41],
+                popupAnchor: [1, -34],
+                shadowSize: [41, 41]
+            });
+
+            // Add marker
+            locationMarker = L.marker([campusLocation.lat, campusLocation.lng], {
+                icon: redIcon,
+                draggable: true
+            }).addTo(locationMap);
+
+            // Add radius circle
+            radiusCircle = L.circle([campusLocation.lat, campusLocation.lng], {
+                color: '#ef4444',
+                fillColor: '#fca5a5',
+                fillOpacity: 0.3,
+                radius: campusLocation.radius
+            }).addTo(locationMap);
+
+            // Handle marker drag
+            locationMarker.on('dragend', function (e) {
+                const pos = e.target.getLatLng();
+                updateLocationDisplay(pos.lat, pos.lng);
+                updateRadiusCircle(pos.lat, pos.lng);
+                reverseGeocode(pos.lat, pos.lng);
+            });
+
+            // Handle map click
+            locationMap.on('click', function (e) {
+                updateLocationDisplay(e.latlng.lat, e.latlng.lng);
+                locationMarker.setLatLng(e.latlng);
+                updateRadiusCircle(e.latlng.lat, e.latlng.lng);
+                reverseGeocode(e.latlng.lat, e.latlng.lng);
+            });
+
+            // Handle radius input change
+            document.getElementById('campusRadius').addEventListener('change', function () {
+                const radius = parseInt(this.value) || 100;
+                if (radius >= 10 && radius <= 500) {
+                    campusLocation.radius = radius;
+                    radiusCircle.setRadius(radius);
+                }
+            });
+
+            // Handle latitude input change
+            document.getElementById('campusLatitude').addEventListener('change', function () {
+                const lat = parseFloat(this.value);
+                if (!isNaN(lat) && lat >= -90 && lat <= 90) {
+                    campusLocation.lat = lat;
+                    const lng = campusLocation.lng;
+                    locationMap.setView([lat, lng], 17);
+                    locationMarker.setLatLng([lat, lng]);
+                    updateRadiusCircle(lat, lng);
+                    reverseGeocode(lat, lng);
+                } else {
+                    showToast('Latitude harus antara -90 dan 90!', 'error');
+                    this.value = campusLocation.lat.toFixed(6);
+                }
+            });
+
+            // Handle longitude input change
+            document.getElementById('campusLongitude').addEventListener('change', function () {
+                const lng = parseFloat(this.value);
+                if (!isNaN(lng) && lng >= -180 && lng <= 180) {
+                    campusLocation.lng = lng;
+                    const lat = campusLocation.lat;
+                    locationMap.setView([lat, lng], 17);
+                    locationMarker.setLatLng([lat, lng]);
+                    updateRadiusCircle(lat, lng);
+                    reverseGeocode(lat, lng);
+                } else {
+                    showToast('Longitude harus antara -180 dan 180!', 'error');
+                    this.value = campusLocation.lng.toFixed(6);
+                }
+            });
+        }
+
+        // Update coordinate display
+        function updateLocationDisplay(lat, lng) {
+            document.getElementById('campusLatitude').value = lat.toFixed(6);
+            document.getElementById('campusLongitude').value = lng.toFixed(6);
+            campusLocation.lat = lat;
+            campusLocation.lng = lng;
+        }
+
+        // Update radius circle position
+        function updateRadiusCircle(lat, lng) {
+            radiusCircle.setLatLng([lat, lng]);
+        }
+
+        // Setup location search
+        function setupLocationSearch() {
+            const searchInput = document.getElementById('locationSearchInput');
+            const resultsDropdown = document.getElementById('searchResultsDropdown');
+            const spinner = document.getElementById('searchSpinner');
+
+            searchInput.addEventListener('input', function () {
+                const query = this.value.trim();
+
+                // Clear previous timeout
+                if (searchTimeout) {
+                    clearTimeout(searchTimeout);
+                }
+
+                // Hide results if query is too short
+                if (query.length < 3) {
+                    resultsDropdown.classList.add('hidden');
+                    resultsDropdown.innerHTML = '';
+                    return;
+                }
+
+                // Show spinner
+                spinner.classList.remove('hidden');
+
+                // Debounce search (wait 500ms after user stops typing)
+                searchTimeout = setTimeout(() => {
+                    searchLocation(query);
+                }, 500);
+            });
+
+            // Close dropdown when clicking outside
+            document.addEventListener('click', function (e) {
+                if (!searchInput.contains(e.target) && !resultsDropdown.contains(e.target)) {
+                    resultsDropdown.classList.add('hidden');
+                }
+            });
+        }
+
+        // Search location using Nominatim API
+        async function searchLocation(query) {
+            const resultsDropdown = document.getElementById('searchResultsDropdown');
+            const spinner = document.getElementById('searchSpinner');
+
+            try {
+                // Add Indonesia bias to search
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/search?format=json&q=${encodeURIComponent(query)}&countrycodes=id&limit=5&addressdetails=1`,
+                    {
+                        headers: {
+                            'Accept-Language': 'id'
+                        }
+                    }
+                );
+
+                const results = await response.json();
+
+                // Hide spinner
+                spinner.classList.add('hidden');
+
+                if (results.length === 0) {
+                    resultsDropdown.innerHTML = `
+                        <div class="px-4 py-3 text-sm text-textMuted text-center">
+                            Lokasi tidak ditemukan
+                        </div>
+                    `;
+                    resultsDropdown.classList.remove('hidden');
+                    return;
+                }
+
+                // Render results
+                resultsDropdown.innerHTML = results.map(result => `
+                    <div class="search-result-item px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-borderColor last:border-0 transition-colors"
+                         data-lat="${result.lat}" 
+                         data-lng="${result.lon}" 
+                         data-name="${escapeHtml(result.display_name)}">
+                        <div class="flex items-start gap-3">
+                            <svg class="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                            </svg>
+                            <div class="flex-1 min-w-0">
+                                <p class="text-sm font-medium text-textPrimary truncate">${getShortName(result)}</p>
+                                <p class="text-xs text-textMuted truncate">${result.display_name}</p>
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+
+                resultsDropdown.classList.remove('hidden');
+
+                // Add click handlers to results
+                resultsDropdown.querySelectorAll('.search-result-item').forEach(item => {
+                    item.addEventListener('click', function () {
+                        const lat = parseFloat(this.dataset.lat);
+                        const lng = parseFloat(this.dataset.lng);
+                        const name = this.dataset.name;
+
+                        selectLocation(lat, lng, name);
+                        resultsDropdown.classList.add('hidden');
+                        document.getElementById('locationSearchInput').value = '';
+                    });
+                });
+
+            } catch (error) {
+                console.error('Search error:', error);
+                spinner.classList.add('hidden');
+                resultsDropdown.innerHTML = `
+                    <div class="px-4 py-3 text-sm text-red-500 text-center">
+                        Gagal mencari lokasi. Coba lagi.
+                    </div>
+                `;
+                resultsDropdown.classList.remove('hidden');
+            }
+        }
+
+        // Get short name from result
+        function getShortName(result) {
+            if (result.name) return result.name;
+            if (result.address) {
+                return result.address.amenity ||
+                    result.address.building ||
+                    result.address.road ||
+                    result.address.suburb ||
+                    result.address.city ||
+                    'Lokasi';
+            }
+            return 'Lokasi';
+        }
+
+        // Escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+
+        // Select location from search results
+        function selectLocation(lat, lng, name) {
+            // Update map view
+            locationMap.setView([lat, lng], 17);
+
+            // Update marker
+            locationMarker.setLatLng([lat, lng]);
+
+            // Update circle
+            updateRadiusCircle(lat, lng);
+
+            // Update display
+            updateLocationDisplay(lat, lng);
+
+            // Update location name
+            const shortName = name.split(',')[0];
+            document.getElementById('currentLocationName').textContent = shortName;
+            campusLocation.name = shortName;
+
+            showToast(`📍 Lokasi dipilih: ${shortName}`);
+        }
+
+        // Reverse geocode to get location name
+        async function reverseGeocode(lat, lng) {
+            try {
+                const response = await fetch(
+                    `https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`,
+                    {
+                        headers: {
+                            'Accept-Language': 'id'
+                        }
+                    }
+                );
+
+                const result = await response.json();
+
+                if (result && result.display_name) {
+                    const shortName = getShortName(result);
+                    document.getElementById('currentLocationName').textContent = shortName;
+                    campusLocation.name = shortName;
+                }
+            } catch (error) {
+                console.error('Reverse geocode error:', error);
+            }
+        }
+
+        // Load location settings from API
+        async function loadLocationSettings() {
+            try {
+                const response = await fetch('service/config/get_settings.php');
+                const data = await response.json();
+
+                if (data.success && data.data) {
+                    // Load latitude
+                    if (data.data.campus_latitude) {
+                        campusLocation.lat = parseFloat(data.data.campus_latitude.value);
+                    }
+
+                    // Load longitude
+                    if (data.data.campus_longitude) {
+                        campusLocation.lng = parseFloat(data.data.campus_longitude.value);
+                    }
+
+                    // Load radius
+                    if (data.data.campus_radius) {
+                        campusLocation.radius = parseInt(data.data.campus_radius.value);
+                        document.getElementById('campusRadius').value = campusLocation.radius;
+                    }
+
+                    // Load name
+                    if (data.data.campus_name) {
+                        campusLocation.name = data.data.campus_name.value;
+                        document.getElementById('currentLocationName').textContent = campusLocation.name;
+                    }
+
+                    // Update map if already initialized
+                    if (locationMap) {
+                        locationMap.setView([campusLocation.lat, campusLocation.lng], 17);
+                        locationMarker.setLatLng([campusLocation.lat, campusLocation.lng]);
+                        radiusCircle.setLatLng([campusLocation.lat, campusLocation.lng]);
+                        radiusCircle.setRadius(campusLocation.radius);
+                    }
+
+                    // Update display
+                    document.getElementById('campusLatitude').value = campusLocation.lat.toFixed(6);
+                    document.getElementById('campusLongitude').value = campusLocation.lng.toFixed(6);
+                }
+            } catch (error) {
+                console.error('Error loading location settings:', error);
+            }
+        }
+
+        // Save location settings to API
+        async function saveLocationSettings() {
+            const radius = parseInt(document.getElementById('campusRadius').value);
+
+            if (isNaN(radius) || radius < 10 || radius > 500) {
+                showToast('Radius harus antara 10-500 meter!', 'error');
+                return false;
+            }
+
+            try {
+                // Save latitude
+                await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'campus_latitude',
+                        value: campusLocation.lat.toString(),
+                        description: 'Latitude lokasi penjemputan'
+                    })
+                });
+
+                // Save longitude
+                await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'campus_longitude',
+                        value: campusLocation.lng.toString(),
+                        description: 'Longitude lokasi penjemputan'
+                    })
+                });
+
+                // Save radius
+                await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'campus_radius',
+                        value: radius.toString(),
+                        description: 'Radius lokasi penjemputan dalam meter'
+                    })
+                });
+
+                // Save name
+                await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'campus_name',
+                        value: campusLocation.name,
+                        description: 'Nama lokasi penjemputan'
+                    })
+                });
+
+                return true;
+            } catch (error) {
+                console.error('Error saving location settings:', error);
+                showToast('Gagal menyimpan pengaturan lokasi!', 'error');
+                return false;
+            }
         }
     </script>
 </body>

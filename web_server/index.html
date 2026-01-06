@@ -953,11 +953,21 @@
             startAutoRefresh(); // Start auto-refresh
         });
 
-        // Check if user is authenticated
+        // Check if user is authenticated and redirect based on user type
         function checkAuth() {
             const isLoggedIn = localStorage.getItem('isLoggedIn');
+            const userType = localStorage.getItem('user_type');
+
+            // Jika tidak ada session, redirect ke login
             if (!isLoggedIn || isLoggedIn !== 'true') {
                 window.location.href = 'login.html';
+                return;
+            }
+
+            // Jika user_type adalah 'kelas', redirect ke halaman kelas
+            if (userType === 'kelas') {
+                window.location.href = 'class_view/kelas.html';
+                return;
             }
         }
 
