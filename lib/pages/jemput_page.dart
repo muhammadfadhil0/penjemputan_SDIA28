@@ -30,6 +30,16 @@ const double kDefaultAllowedRadiusInMeters = 100.0;
 class PickupDashboardPage extends StatefulWidget {
   const PickupDashboardPage({super.key});
 
+  // Static flag to track if unstable connection bottomsheet has been shown this session
+  // This ensures the bottomsheet only appears once per app lifecycle
+  static bool hasShownUnstableConnectionBottomSheet = false;
+
+  /// Reset static flags saat logout
+  /// Dipanggil dari AuthService.logout() untuk membersihkan state
+  static void resetSessionFlags() {
+    hasShownUnstableConnectionBottomSheet = false;
+  }
+
   @override
   State<PickupDashboardPage> createState() => _PickupDashboardPageState();
 }
@@ -67,10 +77,6 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _isConnected = true;
-
-  // Static flag to track if unstable connection bottomsheet has been shown this session
-  // This ensures the bottomsheet only appears once per app lifecycle
-  static bool _hasShownUnstableConnectionBottomSheet = false;
 
   // Active teacher state
   String _activeTeacherName = '';
@@ -234,8 +240,8 @@ class _PickupDashboardPageState extends State<PickupDashboardPage>
     // Show bottom sheet when connection becomes unstable (only once per app session)
     if (wasConnected &&
         !_isConnected &&
-        !_hasShownUnstableConnectionBottomSheet) {
-      _hasShownUnstableConnectionBottomSheet = true;
+        !PickupDashboardPage.hasShownUnstableConnectionBottomSheet) {
+      PickupDashboardPage.hasShownUnstableConnectionBottomSheet = true;
       _showUnstableConnectionBottomSheet();
     }
   }

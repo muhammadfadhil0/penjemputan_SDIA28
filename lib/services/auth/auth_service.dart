@@ -2,6 +2,8 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_model.dart';
+import 'multi_account_service.dart';
+import '../../pages/jemput_page.dart';
 
 /// Response wrapper untuk hasil autentikasi
 class AuthResult {
@@ -198,6 +200,7 @@ class AuthService {
   }
 
   /// Logout dan hapus data user dari storage
+  /// Juga membersihkan semua cache termasuk multi-account data
   Future<void> logout() async {
     _currentUser = null;
     final prefs = await SharedPreferences.getInstance();
@@ -205,6 +208,14 @@ class AuthService {
     await prefs.setBool(_isLoggedInKey, false);
     // Reset onboarding flag so it shows again on next login
     await prefs.remove('has_seen_jemput_onboarding');
+
+    // Bersihkan juga data multi-account agar tidak ada cache tersisa
+    // dari akun sebelumnya (terutama saat berganti antara guru dan siswa)
+    // Ini akan membersihkan baik SharedPreferences maupun in-memory cache
+    await MultiAccountService().clearAllAccounts();
+
+    // Reset static flags di jemput_page agar tidak ada state tersisa
+    PickupDashboardPage.resetSessionFlags();
   }
 
   /// Cek apakah ada session tersimpan
