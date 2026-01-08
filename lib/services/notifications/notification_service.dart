@@ -24,8 +24,11 @@ class NotificationService {
   // Keys untuk SharedPreferences
   static const String _settingsKey = 'notification_settings';
 
-  // Notification IDs
-  static const int _pickupNotificationId = 1001;
+  // Notification IDs - menggunakan offset + siswaId untuk multi-account
+  // Pickup: 1000 + siswaId (e.g., siswa 1 = 1001, siswa 2 = 1002)
+  // Schedule change: 2000 + siswaId (e.g., siswa 1 = 2001, siswa 2 = 2002)
+  static int _getPickupNotificationId(int siswaId) => 1000 + siswaId;
+  static int _getScheduleChangeNotificationId(int siswaId) => 2000 + siswaId;
 
   // Flag untuk cek apakah sudah diinisialisasi
   bool _isInitialized = false;
@@ -43,7 +46,7 @@ class NotificationService {
 
     // Android initialization settings
     const androidSettings = AndroidInitializationSettings(
-      '@mipmap/launcher_icon',
+      '@drawable/ic_stat_logo_notif',
     );
 
     // iOS initialization settings
@@ -113,10 +116,12 @@ class NotificationService {
 
   /// Menjadwalkan notifikasi penjemputan
   ///
+  /// [siswaId] - ID siswa untuk membedakan notifikasi per-siswa
   /// [pickupTime] - Waktu kepulangan (DateTime hari ini dengan jam pulang)
   /// [minutesBefore] - Berapa menit sebelum jam pulang notifikasi muncul
   /// [studentName] - Nama siswa yang akan dijemput
   Future<void> schedulePickupNotification({
+    required int siswaId,
     required DateTime pickupTime,
     required int minutesBefore,
     required String studentName,
@@ -149,7 +154,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Pengingat Penjemputan',
-      icon: '@mipmap/launcher_icon',
+      icon: '@drawable/ic_stat_logo_notif',
     );
 
     // iOS notification details
@@ -164,17 +169,17 @@ class NotificationService {
       iOS: iosDetails,
     );
 
-    // Jadwalkan notifikasi
+    // Jadwalkan notifikasi dengan ID unik per-siswa
     try {
       await _notifications.zonedSchedule(
-        _pickupNotificationId,
+        _getPickupNotificationId(siswaId),
         'Waktunya $studentName pulang',
         'Sebentar lagi pukul $formattedPickupTime. Bersiaplah untuk menjemput.',
         tzNotificationTime,
         notificationDetails,
         androidScheduleMode: AndroidScheduleMode.inexactAllowWhileIdle,
         matchDateTimeComponents: null, // Tidak berulang, hanya sekali
-        payload: 'pickup_reminder',
+        payload: 'pickup_reminder_$siswaId',
       );
 
       debugPrint(
@@ -187,10 +192,12 @@ class NotificationService {
 
   /// Menjadwalkan notifikasi harian berdasarkan jadwal
   ///
+  /// [siswaId] - ID siswa untuk multi-account
   /// [pickupTimeString] - Waktu kepulangan dalam format "HH:mm"
   /// [minutesBefore] - Berapa menit sebelum jam pulang
   /// [studentName] - Nama siswa
   Future<void> scheduleDailyPickupNotification({
+    required int siswaId,
     required String pickupTimeString,
     required int minutesBefore,
     required String studentName,
@@ -212,16 +219,29 @@ class NotificationService {
     }
 
     await schedulePickupNotification(
+      siswaId: siswaId,
       pickupTime: pickupTime,
       minutesBefore: minutesBefore,
       studentName: studentName,
     );
   }
 
-  /// Membatalkan notifikasi penjemputan
-  Future<void> cancelPickupNotification() async {
-    await _notifications.cancel(_pickupNotificationId);
-    debugPrint('NotificationService: Cancelled pickup notification');
+  /// Membatalkan notifikasi penjemputan untuk siswa tertentu
+  Future<void> cancelPickupNotification(int siswaId) async {
+    await _notifications.cancel(_getPickupNotificationId(siswaId));
+    debugPrint(
+      'NotificationService: Cancelled pickup notification for siswa $siswaId',
+    );
+  }
+
+  /// Membatalkan notifikasi penjemputan untuk semua siswa
+  Future<void> cancelAllPickupNotifications(List<int> siswaIds) async {
+    for (final id in siswaIds) {
+      await _notifications.cancel(_getPickupNotificationId(id));
+    }
+    debugPrint(
+      'NotificationService: Cancelled pickup notifications for ${siswaIds.length} students',
+    );
   }
 
   /// Membatalkan semua notifikasi
@@ -259,8 +279,14 @@ class NotificationService {
     return const NotificationSettings();
   }
 
-  /// Menampilkan notifikasi perubahan jadwal
-  Future<void> showScheduleChangeNotification() async {
+  /// Menampilkan notifikasi perubahan jadwal untuk siswa tertentu
+  ///
+  /// [siswaId] - ID siswa untuk multi-account
+  /// [studentName] - Nama siswa untuk ditampilkan di notifikasi
+  Future<void> showScheduleChangeNotification({
+    required int siswaId,
+    required String studentName,
+  }) async {
     await initialize();
 
     // Request permission untuk Android 13+
@@ -279,7 +305,7 @@ class NotificationService {
       importance: Importance.high,
       priority: Priority.high,
       ticker: 'Perubahan Jadwal',
-      icon: '@mipmap/ic_launcher',
+      icon: '@drawable/ic_stat_logo_notif',
     );
 
     const iosDetails = DarwinNotificationDetails(
@@ -294,14 +320,16 @@ class NotificationService {
     );
 
     await _notifications.show(
-      1002, // ID unik untuk notifikasi perubahan jadwal
-      '📅 Perubahan Jadwal Pulang',
-      'Cek jadwal kepulangan Ananda sekarang!',
+      _getScheduleChangeNotificationId(siswaId),
+      '📅 Jadwal $studentName Berubah',
+      'Cek perubahan jadwal Ananda sekarang',
       notificationDetails,
-      payload: 'schedule_change',
+      payload: 'schedule_change_$siswaId',
     );
 
-    debugPrint('NotificationService: Schedule change notification shown');
+    debugPrint(
+      'NotificationService: Schedule change notification shown for $studentName',
+    );
   }
 
   /// Menampilkan notifikasi test (untuk debugging)

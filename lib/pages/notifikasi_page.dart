@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 import '../main.dart';
 import '../services/notifications/notification_service.dart';
-import '../services/notifications/notification_settings_model.dart';
+import '../services/settings/settings_sync_service.dart';
+import '../services/settings/siswa_settings_model.dart';
 import '../services/auth/auth_service.dart';
 import '../services/jadwal/jadwal_service.dart';
 import '../services/jadwal/schedule_change_monitor.dart';
@@ -30,6 +31,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   bool _developerModeEnabled = false;
 
   final NotificationService _notificationService = NotificationService();
+  final SettingsSyncService _settingsSyncService = SettingsSyncService();
   final AuthService _authService = AuthService();
   final JadwalService _jadwalService = JadwalService();
   final ScheduleChangeMonitor _scheduleChangeMonitor = ScheduleChangeMonitor();
@@ -38,11 +40,46 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
   void initState() {
     super.initState();
     _loadSettings();
+    // Listen for settings changes from server sync
+    _settingsSyncService.addListener(_onSettingsChanged);
   }
 
-  /// Memuat pengaturan notifikasi dari storage
+  @override
+  void dispose() {
+    _settingsSyncService.removeListener(_onSettingsChanged);
+    super.dispose();
+  }
+
+  /// Callback saat settings berubah dari server sync
+  void _onSettingsChanged() {
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) return;
+
+    final cachedSettings = _settingsSyncService.getCachedSettings(
+      currentUser.id,
+    );
+    if (cachedSettings != null && mounted) {
+      setState(() {
+        _pengingatPenjemputan = cachedSettings.pickupReminderEnabled;
+        _pengingatPerubahanJadwal = cachedSettings.scheduleChangeEnabled;
+        _menitSebelumPulang = cachedSettings.minutesBeforePickup;
+        _notificationSound = cachedSettings.notificationSound;
+      });
+      debugPrint('NotifikasiPage: UI refreshed from server sync');
+    }
+  }
+
+  /// Memuat pengaturan notifikasi dari cache (lalu sync dengan server di background)
   Future<void> _loadSettings() async {
-    final settings = await _notificationService.loadSettings();
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      setState(() => _isLoading = false);
+      return;
+    }
+
+    // Load dari cache dulu (instant), server sync di background
+    final settings = await _settingsSyncService.loadSettings(currentUser.id);
+
     if (mounted) {
       setState(() {
         _pengingatPenjemputan = settings.pickupReminderEnabled;
@@ -57,22 +94,31 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
         _scheduleChangeMonitor.startMonitoring();
       }
     }
+
+    // Sync pending changes jika ada (dari sesi offline sebelumnya)
+    _settingsSyncService.syncPendingChanges();
   }
 
   /// Menyimpan pengaturan dan menjadwalkan/membatalkan notifikasi
   Future<void> _saveSettingsAndSchedule() async {
     debugPrint('NotifikasiPage: _saveSettingsAndSchedule called');
 
-    final settings = NotificationSettings(
+    final currentUser = _authService.currentUser;
+    if (currentUser == null) {
+      debugPrint('NotifikasiPage: User not found, cannot save');
+      return;
+    }
+
+    final settings = SiswaSettings(
       pickupReminderEnabled: _pengingatPenjemputan,
       minutesBeforePickup: _menitSebelumPulang,
       scheduleChangeEnabled: _pengingatPerubahanJadwal,
       notificationSound: _notificationSound,
     );
 
-    // Simpan settings
-    await _notificationService.saveSettings(settings);
-    debugPrint('NotifikasiPage: Settings saved');
+    // Simpan ke cache + server (hybrid sync)
+    await _settingsSyncService.saveSettings(currentUser.id, settings);
+    debugPrint('NotifikasiPage: Settings saved (cache + server)');
 
     if (_pengingatPenjemputan) {
       debugPrint('NotifikasiPage: Pengingat aktif, requesting permission...');
@@ -98,7 +144,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
       debugPrint('NotifikasiPage: _scheduleNotification completed');
     } else {
       debugPrint('NotifikasiPage: Pengingat nonaktif, cancelling...');
-      await _notificationService.cancelPickupNotification();
+      await _notificationService.cancelPickupNotification(currentUser.id);
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -162,6 +208,7 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
 
     // Jadwalkan notifikasi
     await _notificationService.scheduleDailyPickupNotification(
+      siswaId: currentUser.id,
       pickupTimeString: todaySchedule.jamPulang,
       minutesBefore: _menitSebelumPulang,
       studentName: currentUser.displayName,
@@ -556,8 +603,13 @@ class _NotifikasiPageState extends State<NotifikasiPage> {
                       // Test Schedule Change Notification Button
                       GestureDetector(
                         onTap: () async {
+                          final currentUser = _authService.currentUser;
+                          if (currentUser == null) return;
                           await _notificationService
-                              .showScheduleChangeNotification();
+                              .showScheduleChangeNotification(
+                                siswaId: currentUser.id,
+                                studentName: currentUser.displayName,
+                              );
                           if (mounted) {
                             ScaffoldMessenger.of(context).showSnackBar(
                               const SnackBar(
