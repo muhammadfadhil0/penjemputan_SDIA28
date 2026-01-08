@@ -23,6 +23,7 @@
                         textMuted: '#9CA3AF',
                         success: '#10B981',
                         successLight: '#D1FAE5',
+                        warning: '#F59E0B',
                     },
                     fontFamily: {
                         inter: ['Inter', 'sans-serif'],
@@ -415,10 +416,235 @@
                 flex: 1;
             }
         }
+
+        /* Left Navigation Sidebar */
+        .nav-sidebar {
+            position: fixed;
+            left: 0;
+            top: 0;
+            height: 100vh;
+            width: 200px;
+            background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+            border-right: 1px solid #e5e7eb;
+            display: flex;
+            flex-direction: column;
+            padding: 20px 12px;
+            z-index: 50;
+            box-shadow: 4px 0 20px rgba(0, 0, 0, 0.05);
+        }
+
+        .nav-items-container {
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+        }
+
+        .nav-active-indicator {
+            position: absolute;
+            left: 0;
+            right: 0;
+            height: 52px;
+            background: linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%);
+            border-radius: 14px;
+            box-shadow: 0 4px 15px rgba(59, 130, 246, 0.4);
+            transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+            z-index: 0;
+        }
+
+        .nav-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            margin: 4px 0;
+            border-radius: 14px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            z-index: 1;
+        }
+
+        .nav-item:hover:not(.active) {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-item.active svg {
+            color: white !important;
+        }
+
+        .nav-item.active .nav-label {
+            color: white;
+        }
+
+        .nav-label {
+            font-size: 14px;
+            color: #374151;
+            font-weight: 500;
+        }
+
+        .nav-profile {
+            margin-top: auto;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 16px;
+            cursor: pointer;
+            border-top: 1px solid #e5e7eb;
+            border-radius: 14px;
+            transition: all 0.3s ease;
+        }
+
+        .nav-profile:hover {
+            background: rgba(219, 234, 254, 0.5);
+        }
+
+        .nav-profile-avatar {
+            width: 36px;
+            height: 36px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+
+        .nav-profile-name {
+            font-size: 13px;
+            color: #374151;
+            font-weight: 600;
+        }
+
+        /* Adjust main container for sidebar */
+        .main-container {
+            margin-left: 200px;
+        }
+
+        /* Page sections */
+        .page-section {
+            display: none;
+        }
+
+        .page-section.active {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        /* Slide in animation */
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .slide-in {
+            animation: slideIn 0.3s ease-out forwards;
+        }
+
+        /* Countdown styles */
+        .countdown-btn .countdown-text {
+            display: flex;
+        }
+
+        .countdown-btn .stop-icon {
+            display: none;
+        }
+
+        .countdown-btn:hover .countdown-text {
+            display: none;
+        }
+
+        .countdown-btn:hover .stop-icon {
+            display: flex;
+        }
+
+        .countdown-btn:hover {
+            background-color: #EF4444 !important;
+        }
+
+        /* Pulse animation */
+        @keyframes pulse-soft {
+
+            0%,
+            100% {
+                transform: scale(1);
+                box-shadow: 0 4px 20px rgba(59, 130, 246, 0.15);
+            }
+
+            50% {
+                transform: scale(1.01);
+                box-shadow: 0 8px 30px rgba(59, 130, 246, 0.25);
+            }
+        }
+
+        .pulse-animation {
+            animation: pulse-soft 2s ease-in-out infinite;
+        }
+
+        /* Responsive sidebar */
+        @media (max-width: 768px) {
+            .nav-sidebar {
+                width: 70px;
+                padding: 20px 8px;
+            }
+
+            .nav-label,
+            .nav-profile-name {
+                display: none;
+            }
+
+            .nav-item,
+            .nav-profile {
+                justify-content: center;
+                padding: 12px;
+            }
+
+            .main-container {
+                margin-left: 70px;
+            }
+        }
     </style>
 </head>
 
 <body class="bg-bgMain">
+    <!-- Left Navigation Sidebar -->
+    <nav class="nav-sidebar">
+        <div class="nav-items-container">
+            <div class="nav-active-indicator" id="navActiveIndicator"></div>
+            <div class="nav-item active" data-index="0" onclick="switchPage('ringkasan', 0)">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2v-2z" />
+                </svg>
+                <span class="nav-label">Ringkasan</span>
+            </div>
+            <div class="nav-item" data-index="1" onclick="switchPage('antrian', 1)">
+                <svg class="w-6 h-6 text-textSecondary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                </svg>
+                <span class="nav-label">Antrian</span>
+            </div>
+        </div>
+        <div class="nav-profile" onclick="logout()">
+            <div class="nav-profile-avatar">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                </svg>
+            </div>
+            <span class="nav-profile-name">Keluar</span>
+        </div>
+    </nav>
+
     <div class="main-container">
         <!-- Header -->
         <header class="bg-cardBg border-b border-borderColor shadow-sm sticky top-0 z-40 flex-shrink-0">
@@ -494,630 +720,880 @@
             </div>
         </header>
 
-        <!-- Main Content Area - 3/4 Grid + 1/4 Sidebar -->
-        <div class="content-wrapper">
-            <!-- Student Cards Grid (3/4) -->
-            <div class="grid-wrapper">
-                <div class="grid-container" id="studentsGrid">
-                    <!-- Student cards will be generated here -->
+        <!-- Page: Ringkasan -->
+        <div id="pageRingkasan" class="page-section active">
+            <div class="content-wrapper">
+                <!-- Student Cards Grid (3/4) -->
+                <div class="grid-wrapper">
+                    <div class="grid-container" id="studentsGrid">
+                        <!-- Student cards will be generated here -->
+                    </div>
+                </div>
+
+                <!-- History Sidebar (1/4) -->
+                <div class="history-sidebar" id="historySidebar">
+                    <!-- Resize Handle -->
+                    <div class="resize-handle" id="resizeHandle"></div>
+
+                    <div class="sidebar-header">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        <h3>Riwayat Hari Ini</h3>
+                    </div>
+                    <div class="sidebar-content" id="historyList">
+                        <!-- History items will be generated here -->
+                        <div class="history-loading">
+                            <svg class="animate-spin h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor"
+                                    stroke-width="4">
+                                </circle>
+                                <path class="opacity-75" fill="currentColor"
+                                    d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
+                                </path>
+                            </svg>
+                            <span>Memuat riwayat...</span>
+                        </div>
+                    </div>
                 </div>
             </div>
+        </div>
 
-            <!-- History Sidebar (1/4) -->
-            <div class="history-sidebar" id="historySidebar">
-                <!-- Resize Handle -->
-                <div class="resize-handle" id="resizeHandle"></div>
-
-                <div class="sidebar-header">
-                    <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                    </svg>
-                    <h3>Riwayat Hari Ini</h3>
+        <!-- Page: Antrian -->
+        <div id="pageAntrian" class="page-section">
+            <div class="content-wrapper p-6 relative" id="antrianContentWrapper">
+                <div id="classAuthorityOverlay"
+                    class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm z-10 rounded-xl flex items-center justify-center text-center px-6">
+                    <p class="text-sm font-semibold text-textSecondary">Pemanggilan diterapkan di Komputer
+                        Kurikulum. Kontrol di halaman kelas dikunci.</p>
                 </div>
-                <div class="sidebar-content" id="historyList">
-                    <!-- History items will be generated here -->
-                    <div class="history-loading">
-                        <svg class="animate-spin h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24">
+                <div class="max-w-4xl mx-auto w-full space-y-6">
+                    <!-- Current Queue Card -->
+                    <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm mb-6 pulse-animation"
+                        id="currentQueueCard">
+                        <div class="flex items-center justify-between mb-4">
+                            <h2 class="text-lg font-semibold text-textPrimary flex items-center gap-2">
+                                <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M15 5v2m0 4v2m0 4v2M5 5a2 2 0 00-2 2v3a2 2 0 110 4v3a2 2 0 002 2h14a2 2 0 002-2v-3a2 2 0 110-4V7a2 2 0 00-2-2H5z" />
+                                </svg>
+                                Antrean Saat Ini
+                            </h2>
+                            <div id="countdownArea">
+                                <div id="countdownDisplay" class="hidden">
+                                    <span class="text-3xl font-bold text-primary" id="countdownNumber">5</span>
+                                </div>
+                                <div id="pausedButtons" class="hidden flex gap-2">
+                                    <button onclick="resumeCountdown()"
+                                        class="text-sm bg-green-100 text-green-700 px-3 py-1 rounded">Lanjut</button>
+                                    <button onclick="skipStudent()"
+                                        class="text-sm bg-red-100 text-red-700 px-3 py-1 rounded">Skip</button>
+                                </div>
+                                <div id="stoppedState" class="hidden text-sm text-textMuted">
+                                    Stopped
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex items-center gap-5" id="currentQueue">
+                            <div id="currentStudentPhoto"
+                                class="w-20 h-20 rounded-full bg-primaryLighter border-3 border-primaryLight flex items-center justify-center shadow-lg shadow-primary/20 overflow-hidden">
+                                <svg class="w-10 h-10 text-primary" fill="none" stroke="currentColor"
+                                    viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                </svg>
+                            </div>
+                            <div class="flex-1">
+                                <h3 class="text-xl font-semibold text-textPrimary" id="currentStudentName">-</h3>
+                                <p class="text-textSecondary" id="currentStudentClass">-</p>
+                                <div class="flex items-center gap-2 mt-2">
+                                    <span class="text-sm text-textMuted">Dijemput oleh:</span>
+                                    <span class="bg-green-50 text-green-700 text-sm font-medium px-3 py-1 rounded-full"
+                                        id="currentPickupBy">-</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                        <!-- Queue List -->
+                        <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                            <div class="flex items-center justify-between mb-4">
+                                <h2 class="text-lg font-semibold text-textPrimary">Daftar Antrean</h2>
+                                <span class="text-sm text-textMuted" id="queueListCount">0 siswa menunggu</span>
+                            </div>
+
+                            <div class="space-y-3 max-h-80 overflow-y-auto pr-2" id="queueList">
+                                <!-- Queue items -->
+                            </div>
+                        </div>
+
+                        <!-- Controls -->
+                        <div class="space-y-6">
+                            <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                                <h2 class="text-lg font-semibold text-textPrimary mb-4">Kontrol</h2>
+                                <div class="space-y-3">
+                                    <button onclick="testSound()"
+                                        class="w-full bg-bgMain hover:bg-primaryLighter border-2 border-borderColor hover:border-primary text-textPrimary py-3 rounded-xl font-semibold transition-all">
+                                        Cek Sound
+                                    </button>
+                                    <button onclick="toggleAutoCalling()" id="btnToggleCalling"
+                                        class="w-full bg-success hover:bg-green-600 text-white py-3 rounded-xl font-semibold flex items-center justify-center gap-2 transition-all shadow-lg">
+                                        <div id="iconToggleCalling">
+                                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                            </svg>
+                                        </div>
+                                        <span id="textToggleCalling">Mulai Pemanggilan</span>
+                                    </button>
+                                    <div id="callingStatus"
+                                        class="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center">
+                                        <p class="text-textMuted text-sm font-medium" id="callingStatusText">⏸️
+                                            Pemanggilan otomatis tidak aktif</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                                <h2 class="text-lg font-semibold text-textPrimary mb-4">Panggil Manual</h2>
+                                <div class="space-y-4">
+                                    <div class="relative">
+                                        <input type="text" id="inputStudentName" placeholder="Cari siswa..."
+                                            class="w-full px-4 py-2 bg-bgMain border border-borderColor rounded-lg focus:ring-2 focus:ring-primary outline-none"
+                                            onclick="showStudentDropdown()">
+                                        <div id="studentDropdown"
+                                            class="absolute top-full left-0 right-0 mt-2 bg-cardBg border border-borderColor rounded-xl shadow-lg hidden z-50 max-h-48 overflow-y-auto">
+                                        </div>
+                                    </div>
+                                    <input type="text" id="inputClass" placeholder="Kelas" readonly
+                                        class="w-full px-4 py-2 bg-gray-100 border border-borderColor rounded-lg text-gray-500">
+                                    <input type="text" id="inputPickupBy" placeholder="Penjemput"
+                                        class="w-full px-4 py-2 bg-bgMain border border-borderColor rounded-lg focus:ring-2 focus:ring-primary outline-none">
+                                    <button onclick="addToQueue()"
+                                        class="w-full bg-primary hover:bg-blue-600 text-white py-2 rounded-lg font-semibold">
+                                        Panggil
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script src="antrian.js"></script>
+        <script>
+            // API Base URL
+            const API_BASE = '../service/class_view';
+
+            // Page Utils
+            function switchPage(pageName, index) {
+                document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+                document.querySelector(`.nav-item[data-index="${index}"]`).classList.add('active');
+
+                const indicator = document.getElementById('navActiveIndicator');
+                if (indicator) indicator.style.transform = `translateY(${index * 56}px)`;
+
+                document.querySelectorAll('.page-section').forEach(el => el.classList.remove('active'));
+                if (pageName === 'ringkasan') {
+                    document.getElementById('pageRingkasan').classList.add('active');
+                    const editBtn = document.getElementById('editBtn');
+                    if (editBtn) editBtn.classList.remove('hidden');
+                } else if (pageName === 'antrian') {
+                    document.getElementById('pageAntrian').classList.add('active');
+                    const editBtn = document.getElementById('editBtn');
+                    if (editBtn) editBtn.classList.add('hidden');
+                    if (typeof fetchQueue === 'function') fetchQueue();
+                }
+            }
+
+            let kelasId = null;
+            let kelasInfo = null;
+
+            // Call authority (index | kelas)
+            let callAuthority = 'index';
+            let authorityPollInterval = null;
+            const AUTHORITY_POLL_MS = 5000;
+
+            // Students data from API
+            let students = [];
+            let isEditMode = false;
+            let originalState = [];
+            let pendingChanges = [];
+            let queueRefreshInterval = null;
+            const QUEUE_REFRESH_MS = 5000;
+
+            // Initialize
+            document.addEventListener('DOMContentLoaded', () => {
+                checkAuth();
+                loadCallAuthority().then(() => {
+                    applyAuthorityState();
+                    if (typeof updateCountdownUI === 'function') updateCountdownUI();
+                });
+                startAuthorityPolling();
+            });
+
+            // Check authentication
+            function checkAuth() {
+                const isLoggedIn = localStorage.getItem('isLoggedIn');
+                const userType = localStorage.getItem('user_type');
+                const userDataStr = localStorage.getItem('user');
+
+                if (!isLoggedIn || userType !== 'kelas' || !userDataStr) {
+                    // Redirect to login
+                    window.location.href = '../login.html';
+                    return;
+                }
+
+                userData = JSON.parse(userDataStr);
+                kelasId = userData.kelas_id;
+
+                // Update header with class info
+                updateHeader();
+
+                // Load students data
+                loadStudents();
+            }
+
+            // Load call authority (shared config)
+            async function loadCallAuthority(silent = false) {
+                let newAuthority = callAuthority;
+                try {
+                    const response = await fetch('../service/config/get_settings.php?key=call_authority');
+                    const data = await response.json();
+                    if (data.success && data.data && data.data.value) {
+                        newAuthority = data.data.value === 'kelas' ? 'kelas' : 'index';
+                    } else {
+                        newAuthority = 'index';
+                    }
+                } catch (error) {
+                    if (!silent) console.error('Error loading call authority:', error);
+                    newAuthority = 'index';
+                }
+
+                callAuthority = newAuthority;
+                window.callAuthority = callAuthority;
+
+                if (callAuthority !== 'kelas' && typeof stopAutoCalling === 'function') {
+                    stopAutoCalling();
+                }
+
+                applyAuthorityState();
+                if (typeof updateCountdownUI === 'function') updateCountdownUI();
+            }
+
+            function applyAuthorityState() {
+                const overlay = document.getElementById('classAuthorityOverlay');
+                const wrapper = document.getElementById('antrianContentWrapper');
+
+                if (callAuthority === 'kelas') {
+                    if (overlay) overlay.classList.add('hidden');
+                    if (wrapper) wrapper.classList.remove('opacity-50', 'select-none');
+                } else {
+                    if (overlay) overlay.classList.remove('hidden');
+                    if (wrapper) wrapper.classList.add('opacity-50', 'select-none');
+                }
+            }
+
+            function startAuthorityPolling() {
+                if (authorityPollInterval) clearInterval(authorityPollInterval);
+                authorityPollInterval = setInterval(() => loadCallAuthority(true), AUTHORITY_POLL_MS);
+            }
+
+            // Update header with class info
+            function updateHeader() {
+                if (userData) {
+                    document.querySelector('header h1').textContent = 'Status Penjemputan';
+                    document.querySelector('header p').textContent = `${userData.nama_kelas} -
+                                    Memuat...`;
+                }
+            }
+
+            // Load students from API
+            async function loadStudents() {
+                try {
+                    const response = await fetch(`${API_BASE}/get_students.php?kelas_id=${kelasId}`);
+                    const result = await response.json();
+
+                    if (result.success) {
+                        kelasInfo = result.data.kelas;
+                        const stats = result.data.statistik;
+
+                        // Map API data to local format
+                        students = result.data.students.map(s => ({
+                            id: s.id,
+                            name: s.nama_panggilan || s.nama,
+                            fullName: s.nama,
+                            picked: s.sudah_dijemput,
+                            foto_url: s.foto_url,
+                            waktu_dijemput: s.waktu_dijemput,
+                            penjemput: s.penjemput
+                        }));
+
+                        // Update header with stats
+                        document.querySelector('header p').textContent =
+                            `${kelasInfo.nama_kelas} - ${stats.total} Siswa (${stats.sudah_dijemput} sudah
+                                    dijemput)`;
+
+                        // Render students
+                        renderStudents();
+
+                        // Load history sidebar
+                        loadHistory();
+
+                        // Load queue for Antrian page immediately (no manual refresh needed)
+                        if (typeof fetchQueue === 'function') {
+                            fetchQueue(false);
+                            startQueueAutoRefresh();
+                        }
+                    } else {
+                        console.error('Failed to load students:', result.message);
+                        showError('Gagal memuat data siswa: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error loading students:', error);
+                    showError('Terjadi kesalahan saat memuat data siswa.');
+                }
+            }
+
+            function startQueueAutoRefresh() {
+                if (queueRefreshInterval) clearInterval(queueRefreshInterval);
+                if (typeof fetchQueue !== 'function') return;
+                queueRefreshInterval = setInterval(() => fetchQueue(false), QUEUE_REFRESH_MS);
+            }
+
+            function stopQueueAutoRefresh() {
+                if (queueRefreshInterval) {
+                    clearInterval(queueRefreshInterval);
+                    queueRefreshInterval = null;
+                }
+            }
+
+            // Show error message
+            function showError(message) {
+                const grid = document.getElementById('studentsGrid');
+                grid.innerHTML = `
+                                    <div class="col-span-full flex flex-col items-center justify-center py-12">
+                                        <svg class="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor"
+                                            viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                                        </svg>
+                                        <p class="text-red-600 text-lg font-medium">${message}</p>
+                                        <button onclick="loadStudents()"
+                                            class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition">
+                                            Coba Lagi
+                                        </button>
+                                    </div>
+                                    `;
+            }
+
+            // Calculate optimal grid layout based on student count and screen size
+            function calculateGridLayout(studentCount) {
+                const grid = document.getElementById('studentsGrid');
+                const wrapper = document.querySelector('.grid-wrapper');
+
+                if (studentCount === 0) return;
+
+                // Get available space
+                const availableWidth = wrapper.clientWidth - 32; // minus padding
+                const availableHeight = wrapper.clientHeight - 32;
+
+                // Try different row counts to find optimal layout
+                let bestCols = 1;
+                let bestRows = studentCount;
+                let bestRatio = Infinity;
+
+                // Target aspect ratio for cards (width/height)
+                const targetCardRatio = 0.9; // slightly taller than wide
+
+                for (let rows = 1; rows <= studentCount; rows++) {
+                    const cols = Math.ceil(studentCount / rows);
+
+                    // Calculate card size with this layout 
+                    const cardWidth = (availableWidth - (cols - 1) * 12) / cols;
+                    const cardHeight = (availableHeight - (rows - 1) * 12) / rows;
+
+                    // Skip if cards would be too small
+                    if (cardWidth < 60 || cardHeight < 60) continue;
+
+                    // Calculate how close this is to our target ratio
+                    const actualRatio = cardWidth / cardHeight;
+                    const ratioDiff = Math.abs(actualRatio - targetCardRatio);
+
+                    // Check if all students fit
+                    const totalSlots = cols * rows;
+                    if (totalSlots >= studentCount && ratioDiff < bestRatio) {
+                        bestRatio = ratioDiff;
+                        bestCols = cols;
+                        bestRows = rows;
+                    }
+                }
+
+                // Apply the calculated layout
+                grid.style.setProperty('--grid-cols', bestCols);
+                grid.style.setProperty('--grid-rows', bestRows);
+            }
+
+            // Render student cards
+            function renderStudents() {
+                const grid = document.getElementById('studentsGrid');
+                grid.innerHTML = '';
+
+                if (students.length === 0) {
+                    grid.innerHTML = ` <div
+                                            class="col-span-full flex flex-col items-center justify-center py-12"
+                                            style="grid-column: 1 / -1; grid-row: 1 / -1;">
+                                            <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor"
+                                                viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                                            </svg>
+                                            <p class="text-gray-500 text-lg">Tidak ada siswa di kelas ini</p>
+                        </div>
+                        `;
+                    return;
+                }
+
+                // Calculate optimal grid layout
+                calculateGridLayout(students.length);
+
+                students.forEach((student, index) => {
+                    const card = document.createElement('div');
+                    card.className = `student-card ${student.picked ? 'picked-up' : 'not-picked-up'}`;
+                    card.style.animationDelay = `${index * 0.02}s`;
+                    card.classList.add('card-appear');
+                    card.dataset.id = student.id;
+
+                    if (isEditMode) {
+                        card.onclick = () => toggleStudentStatus(student.id);
+                    }
+
+                    const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                    card.innerHTML = `
+                        <div
+                            class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
+                            ${student.picked ? `
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            ` : initials}
+                        </div>
+                        <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}"
+                            title="${student.fullName}">
+                            ${student.name}
+                        </p>
+                        ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
+                        `;
+
+                    grid.appendChild(card);
+                });
+            }
+
+            // Recalculate grid on window resize
+            window.addEventListener('resize', () => {
+                if (students.length > 0) {
+                    calculateGridLayout(students.length);
+                }
+            });
+
+            // Toggle edit mode
+            function toggleEditMode() {
+                isEditMode = true;
+                originalState = students.map(s => ({ ...s }));
+                pendingChanges = [];
+
+                document.getElementById('editBtn').classList.add('hidden');
+                document.getElementById('saveButtons').classList.remove('hidden');
+                document.getElementById('studentsGrid').classList.add('edit-mode');
+
+                // Re-render to add click handlers
+                renderStudents();
+            }
+
+            // Toggle student picked status
+            function toggleStudentStatus(id) {
+                if (!isEditMode) return;
+
+                const student = students.find(s => s.id === id);
+                if (student) {
+                    student.picked = !student.picked;
+
+                    // Track change
+                    const existingChangeIndex = pendingChanges.findIndex(c => c.siswa_id === id);
+                    if (existingChangeIndex >= 0) {
+                        pendingChanges[existingChangeIndex].sudah_dijemput = student.picked;
+                    } else {
+                        pendingChanges.push({
+                            siswa_id: id,
+                            sudah_dijemput: student.picked,
+                            penjemput: 'Manual Entry'
+                        });
+                    }
+
+                    // Find and update the card with flip animation
+                    const card = document.querySelector(`[data-id="${id}"]`);
+                    if (card) {
+                        const flipClass = student.picked ? 'flip-to-picked' : 'flip-to-unpicked';
+                        card.classList.add(flipClass);
+
+                        setTimeout(() => {
+                            updateCardContent(card, student);
+                        }, 300);
+
+                        setTimeout(() => {
+                            card.classList.remove(flipClass);
+                        }, 600);
+                    }
+                }
+            }
+
+            // Update card content without re-rendering
+            function updateCardContent(card, student) {
+                const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
+
+                card.classList.remove('picked-up', 'not-picked-up');
+                card.classList.add(student.picked ? 'picked-up' : 'not-picked-up');
+
+                card.innerHTML = `
+                        <div
+                            class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
+                            ${student.picked ? `
+                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3"
+                                    d="M5 13l4 4L19 7" />
+                            </svg>
+                            ` : initials}
+                        </div>
+                        <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}"
+                            title="${student.fullName}">
+                            ${student.name}
+                        </p>
+                        ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
+                        `;
+
+                card.onclick = () => toggleStudentStatus(student.id);
+            }
+
+            // Cancel edit
+            function cancelEdit() {
+                students.forEach((student, index) => {
+                    student.picked = originalState[index].picked;
+                });
+                pendingChanges = [];
+
+                exitEditMode();
+                renderStudents();
+            }
+
+            // Save changes to backend
+            async function saveChanges() {
+                if (pendingChanges.length === 0) {
+                    exitEditMode();
+                    renderStudents();
+                    return;
+                }
+
+                // Show loading state
+                const saveBtn = document.querySelector('#saveButtons button:last-child');
+                const originalContent = saveBtn.innerHTML;
+                saveBtn.innerHTML = `
+                        <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4">
                             </circle>
                             <path class="opacity-75" fill="currentColor"
                                 d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z">
                             </path>
                         </svg>
-                        <span>Memuat riwayat...</span>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
+                        <span>Menyimpan...</span>
+                        `;
+                saveBtn.disabled = true;
 
-    <script>
-        // API Base URL
-        const API_BASE = '../service/class_view';
+                try {
+                    const response = await fetch(`${API_BASE}/batch_update_pickup.php`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ students: pendingChanges })
+                    });
 
-        // Data from localStorage (set during login)
-        let userData = null;
-        let kelasId = null;
-        let kelasInfo = null;
+                    const result = await response.json();
 
-        // Students data from API
-        let students = [];
-        let isEditMode = false;
-        let originalState = [];
-        let pendingChanges = [];
+                    if (result.success) {
+                        console.log('Save successful:', result);
+                        pendingChanges = [];
 
-        // Initialize
-        document.addEventListener('DOMContentLoaded', () => {
-            checkAuth();
-        });
-
-        // Check authentication
-        function checkAuth() {
-            const isLoggedIn = localStorage.getItem('isLoggedIn');
-            const userType = localStorage.getItem('user_type');
-            const userDataStr = localStorage.getItem('user');
-
-            if (!isLoggedIn || userType !== 'kelas' || !userDataStr) {
-                // Redirect to login
-                window.location.href = '../login.html';
-                return;
+                        // Reload data to get fresh state
+                        await loadStudents();
+                    } else {
+                        console.error('Save failed:', result.message);
+                        alert('Gagal menyimpan perubahan: ' + result.message);
+                    }
+                } catch (error) {
+                    console.error('Error saving changes:', error);
+                    alert('Terjadi kesalahan saat menyimpan perubahan.');
+                } finally {
+                    saveBtn.innerHTML = originalContent;
+                    saveBtn.disabled = false;
+                    exitEditMode();
+                }
             }
 
-            userData = JSON.parse(userDataStr);
-            kelasId = userData.kelas_id;
-
-            // Update header with class info
-            updateHeader();
-
-            // Load students data
-            loadStudents();
-        }
-
-        // Update header with class info
-        function updateHeader() {
-            if (userData) {
-                document.querySelector('header h1').textContent = 'Status Penjemputan';
-                document.querySelector('header p').textContent = `${userData.nama_kelas} - Memuat...`;
+            // Exit edit mode
+            function exitEditMode() {
+                isEditMode = false;
+                document.getElementById('editBtn').classList.remove('hidden');
+                document.getElementById('saveButtons').classList.add('hidden');
+                document.getElementById('studentsGrid').classList.remove('edit-mode');
             }
-        }
 
-        // Load students from API
-        async function loadStudents() {
-            try {
-                const response = await fetch(`${API_BASE}/get_students.php?kelas_id=${kelasId}`);
-                const result = await response.json();
+            // Toggle fullscreen mode
+            function toggleFullscreen() {
+                const icon = document.getElementById('fullscreenIcon');
 
-                if (result.success) {
-                    kelasInfo = result.data.kelas;
-                    const stats = result.data.statistik;
-
-                    // Map API data to local format
-                    students = result.data.students.map(s => ({
-                        id: s.id,
-                        name: s.nama_panggilan || s.nama,
-                        fullName: s.nama,
-                        picked: s.sudah_dijemput,
-                        foto_url: s.foto_url,
-                        waktu_dijemput: s.waktu_dijemput,
-                        penjemput: s.penjemput
-                    }));
-
-                    // Update header with stats
-                    document.querySelector('header p').textContent =
-                        `${kelasInfo.nama_kelas} - ${stats.total} Siswa (${stats.sudah_dijemput} sudah dijemput)`;
-
-                    // Render students
-                    renderStudents();
-
-                    // Load history sidebar
-                    loadHistory();
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().then(() => {
+                        icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                        `;
+                    }).catch(err => {
+                        console.log('Fullscreen error:', err);
+                    });
                 } else {
-                    console.error('Failed to load students:', result.message);
-                    showError('Gagal memuat data siswa: ' + result.message);
-                }
-            } catch (error) {
-                console.error('Error loading students:', error);
-                showError('Terjadi kesalahan saat memuat data siswa.');
-            }
-        }
-
-        // Show error message
-        function showError(message) {
-            const grid = document.getElementById('studentsGrid');
-            grid.innerHTML = `
-                <div class="col-span-full flex flex-col items-center justify-center py-12">
-                    <svg class="w-16 h-16 text-red-400 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                            d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                    </svg>
-                    <p class="text-red-600 text-lg font-medium">${message}</p>
-                    <button onclick="loadStudents()" 
-                        class="mt-4 px-4 py-2 bg-primary text-white rounded-lg hover:bg-blue-600 transition">
-                        Coba Lagi
-                    </button>
-                </div>
-            `;
-        }
-
-        // Calculate optimal grid layout based on student count and screen size
-        function calculateGridLayout(studentCount) {
-            const grid = document.getElementById('studentsGrid');
-            const wrapper = document.querySelector('.grid-wrapper');
-
-            if (studentCount === 0) return;
-
-            // Get available space
-            const availableWidth = wrapper.clientWidth - 32; // minus padding
-            const availableHeight = wrapper.clientHeight - 32;
-
-            // Try different row counts to find optimal layout
-            let bestCols = 1;
-            let bestRows = studentCount;
-            let bestRatio = Infinity;
-
-            // Target aspect ratio for cards (width/height)
-            const targetCardRatio = 0.9; // slightly taller than wide
-
-            for (let rows = 1; rows <= studentCount; rows++) {
-                const cols = Math.ceil(studentCount / rows);
-
-                // Calculate card size with this layout
-                const cardWidth = (availableWidth - (cols - 1) * 12) / cols;
-                const cardHeight = (availableHeight - (rows - 1) * 12) / rows;
-
-                // Skip if cards would be too small
-                if (cardWidth < 60 || cardHeight < 60) continue;
-
-                // Calculate how close this is to our target ratio
-                const actualRatio = cardWidth / cardHeight;
-                const ratioDiff = Math.abs(actualRatio - targetCardRatio);
-
-                // Check if all students fit
-                const totalSlots = cols * rows;
-                if (totalSlots >= studentCount && ratioDiff < bestRatio) {
-                    bestRatio = ratioDiff;
-                    bestCols = cols;
-                    bestRows = rows;
-                }
-            }
-
-            // Apply the calculated layout
-            grid.style.setProperty('--grid-cols', bestCols);
-            grid.style.setProperty('--grid-rows', bestRows);
-        }
-
-        // Render student cards
-        function renderStudents() {
-            const grid = document.getElementById('studentsGrid');
-            grid.innerHTML = '';
-
-            if (students.length === 0) {
-                grid.innerHTML = `
-                    <div class="col-span-full flex flex-col items-center justify-center py-12" style="grid-column: 1 / -1; grid-row: 1 / -1;">
-                        <svg class="w-16 h-16 text-gray-300 mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                        </svg>
-                        <p class="text-gray-500 text-lg">Tidak ada siswa di kelas ini</p>
-                    </div>
-                `;
-                return;
-            }
-
-            // Calculate optimal grid layout
-            calculateGridLayout(students.length);
-
-            students.forEach((student, index) => {
-                const card = document.createElement('div');
-                card.className = `student-card ${student.picked ? 'picked-up' : 'not-picked-up'}`;
-                card.style.animationDelay = `${index * 0.02}s`;
-                card.classList.add('card-appear');
-                card.dataset.id = student.id;
-
-                if (isEditMode) {
-                    card.onclick = () => toggleStudentStatus(student.id);
-                }
-
-                const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
-                card.innerHTML = `
-                    <div class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
-                        ${student.picked ? `
-                            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                            </svg>
-                        ` : initials}
-                    </div>
-                    <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.fullName}">
-                        ${student.name}
-                    </p>
-                    ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
-                `;
-
-                grid.appendChild(card);
-            });
-        }
-
-        // Recalculate grid on window resize
-        window.addEventListener('resize', () => {
-            if (students.length > 0) {
-                calculateGridLayout(students.length);
-            }
-        });
-
-        // Toggle edit mode
-        function toggleEditMode() {
-            isEditMode = true;
-            originalState = students.map(s => ({ ...s }));
-            pendingChanges = [];
-
-            document.getElementById('editBtn').classList.add('hidden');
-            document.getElementById('saveButtons').classList.remove('hidden');
-            document.getElementById('studentsGrid').classList.add('edit-mode');
-
-            // Re-render to add click handlers
-            renderStudents();
-        }
-
-        // Toggle student picked status
-        function toggleStudentStatus(id) {
-            if (!isEditMode) return;
-
-            const student = students.find(s => s.id === id);
-            if (student) {
-                student.picked = !student.picked;
-
-                // Track change
-                const existingChangeIndex = pendingChanges.findIndex(c => c.siswa_id === id);
-                if (existingChangeIndex >= 0) {
-                    pendingChanges[existingChangeIndex].sudah_dijemput = student.picked;
-                } else {
-                    pendingChanges.push({
-                        siswa_id: id,
-                        sudah_dijemput: student.picked,
-                        penjemput: 'Manual Entry'
+                    document.exitFullscreen().then(() => {
+                        icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        `;
                     });
                 }
-
-                // Find and update the card with flip animation
-                const card = document.querySelector(`[data-id="${id}"]`);
-                if (card) {
-                    const flipClass = student.picked ? 'flip-to-picked' : 'flip-to-unpicked';
-                    card.classList.add(flipClass);
-
-                    setTimeout(() => {
-                        updateCardContent(card, student);
-                    }, 300);
-
-                    setTimeout(() => {
-                        card.classList.remove(flipClass);
-                    }, 600);
-                }
             }
-        }
 
-        // Update card content without re-rendering
-        function updateCardContent(card, student) {
-            const initials = student.name.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase();
-
-            card.classList.remove('picked-up', 'not-picked-up');
-            card.classList.add(student.picked ? 'picked-up' : 'not-picked-up');
-
-            card.innerHTML = `
-                <div class="avatar ${student.picked ? 'bg-success text-white' : 'bg-gray-200 text-textSecondary'}">
-                    ${student.picked ? `
-                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M5 13l4 4L19 7" />
-                        </svg>
-                    ` : initials}
-                </div>
-                <p class="student-name ${student.picked ? 'text-green-800' : 'text-textSecondary'}" title="${student.fullName}">
-                    ${student.name}
-                </p>
-                ${student.picked ? '<p class="student-status text-green-600">Sudah dijemput</p>' : ''}
-            `;
-
-            card.onclick = () => toggleStudentStatus(student.id);
-        }
-
-        // Cancel edit
-        function cancelEdit() {
-            students.forEach((student, index) => {
-                student.picked = originalState[index].picked;
+            // Listen for fullscreen change to update icon
+            document.addEventListener('fullscreenchange', () => {
+                const icon = document.getElementById('fullscreenIcon');
+                if (document.fullscreenElement) {
+                    icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />
+                        `;
+                } else {
+                    icon.innerHTML = `
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        `;
+                }
             });
-            pendingChanges = [];
 
-            exitEditMode();
-            renderStudents();
-        }
-
-        // Save changes to backend
-        async function saveChanges() {
-            if (pendingChanges.length === 0) {
-                exitEditMode();
-                renderStudents();
-                return;
+            // Logout function
+            function logout() {
+                localStorage.removeItem('user');
+                localStorage.removeItem('isLoggedIn');
+                localStorage.removeItem('user_type');
+                window.location.href = '../login.html';
             }
 
-            // Show loading state
-            const saveBtn = document.querySelector('#saveButtons button:last-child');
-            const originalContent = saveBtn.innerHTML;
-            saveBtn.innerHTML = `
-                <svg class="w-5 h-5 animate-spin" fill="none" viewBox="0 0 24 24">
-                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                <span>Menyimpan...</span>
-            `;
-            saveBtn.disabled = true;
-
-            try {
-                const response = await fetch(`${API_BASE}/batch_update_pickup.php`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ students: pendingChanges })
-                });
-
-                const result = await response.json();
-
-                if (result.success) {
-                    console.log('Save successful:', result);
-                    pendingChanges = [];
-
-                    // Reload data to get fresh state
-                    await loadStudents();
-                } else {
-                    console.error('Save failed:', result.message);
-                    alert('Gagal menyimpan perubahan: ' + result.message);
+            // Auto-refresh every 30 seconds (to keep status updated)
+            setInterval(() => {
+                if (!isEditMode) {
+                    loadStudents();
                 }
-            } catch (error) {
-                console.error('Error saving changes:', error);
-                alert('Terjadi kesalahan saat menyimpan perubahan.');
-            } finally {
-                saveBtn.innerHTML = originalContent;
-                saveBtn.disabled = false;
-                exitEditMode();
-            }
-        }
+            }, 10000);
 
-        // Exit edit mode
-        function exitEditMode() {
-            isEditMode = false;
-            document.getElementById('editBtn').classList.remove('hidden');
-            document.getElementById('saveButtons').classList.add('hidden');
-            document.getElementById('studentsGrid').classList.remove('edit-mode');
-        }
+            // Load history from API
+            async function loadHistory() {
+                const historyList = document.getElementById('historyList');
 
-        // Toggle fullscreen mode
-        function toggleFullscreen() {
-            const icon = document.getElementById('fullscreenIcon');
+                try {
+                    const response = await fetch(`${API_BASE}/get_class_history.php?kelas_id=${kelasId}&limit=30`);
+                    const result = await response.json();
 
-            if (!document.fullscreenElement) {
-                document.documentElement.requestFullscreen().then(() => {
-                    icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />`;
-                }).catch(err => {
-                    console.log('Fullscreen error:', err);
-                });
-            } else {
-                document.exitFullscreen().then(() => {
-                    icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />`;
-                });
-            }
-        }
-
-        // Listen for fullscreen change to update icon
-        document.addEventListener('fullscreenchange', () => {
-            const icon = document.getElementById('fullscreenIcon');
-            if (document.fullscreenElement) {
-                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 9V4.5M9 9H4.5M9 9L3.75 3.75M9 15v4.5M9 15H4.5M9 15l-5.25 5.25M15 9h4.5M15 9V4.5M15 9l5.25-5.25M15 15h4.5M15 15v4.5m0-4.5l5.25 5.25" />`;
-            } else {
-                icon.innerHTML = `<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />`;
-            }
-        });
-
-        // Logout function
-        function logout() {
-            localStorage.removeItem('user');
-            localStorage.removeItem('isLoggedIn');
-            localStorage.removeItem('user_type');
-            window.location.href = '../login.html';
-        }
-
-        // Auto-refresh every 30 seconds (to keep status updated)
-        setInterval(() => {
-            if (!isEditMode) {
-                loadStudents();
-            }
-        }, 10000);
-
-        // Load history from API
-        async function loadHistory() {
-            const historyList = document.getElementById('historyList');
-
-            try {
-                const response = await fetch(`${API_BASE}/get_class_history.php?kelas_id=${kelasId}&limit=30`);
-                const result = await response.json();
-
-                if (result.success) {
-                    renderHistory(result.data);
-                } else {
-                    historyList.innerHTML = `
+                    if (result.success) {
+                        renderHistory(result.data);
+                    } else {
+                        historyList.innerHTML = `
                         <div class="history-empty">
                             <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                             <p>Gagal memuat riwayat</p>
                         </div>
-                    `;
-                }
-            } catch (error) {
-                console.error('Error loading history:', error);
-                historyList.innerHTML = `
-                    <div class="history-empty">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                        </svg>
-                        <p>Error memuat riwayat</p>
-                    </div>
-                `;
-            }
-        }
-
-        // Render history items
-        function renderHistory(historyData) {
-            const historyList = document.getElementById('historyList');
-
-            if (!historyData || historyData.length === 0) {
-                historyList.innerHTML = `
-                    <div class="history-empty">
-                        <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        <p>Belum ada riwayat penjemputan hari ini</p>
-                    </div>
-                `;
-                return;
-            }
-
-            historyList.innerHTML = historyData.map(item => `
-                <div class="history-item">
-                    <div class="history-item-name">${item.nama_siswa}</div>
-                    <div class="history-item-details">
-                        <div class="history-item-penjemput">
-                            <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" 
-                                    d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        `;
+                    }
+                } catch (error) {
+                    console.error('Error loading history:', error);
+                    historyList.innerHTML = `
+                        <div class="history-empty">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
                             </svg>
-                            <span>${item.penjemput}</span>
+                            <p>Error memuat riwayat</p>
                         </div>
-                        <span class="history-item-time">${item.waktu}</span>
-                    </div>
-                </div>
-            `).join('');
-        }
-
-        // ============================================
-        // Sidebar Resize Functionality
-        // ============================================
-
-        let isResizing = false;
-        let startX = 0;
-        let startWidth = 0;
-
-        function initSidebarResize() {
-            const sidebar = document.getElementById('historySidebar');
-            const resizeHandle = document.getElementById('resizeHandle');
-            const contentWrapper = document.querySelector('.content-wrapper');
-
-            if (!sidebar || !resizeHandle) return;
-
-            // Load saved width from localStorage
-            const savedWidth = localStorage.getItem('sidebarWidth');
-            if (savedWidth) {
-                sidebar.style.setProperty('--sidebar-width', savedWidth + 'px');
-                sidebar.style.width = savedWidth + 'px';
+                        `;
+                }
             }
 
-            // Mouse down - start resizing
-            resizeHandle.addEventListener('mousedown', (e) => {
-                isResizing = true;
-                startX = e.clientX;
-                startWidth = sidebar.offsetWidth;
+            // Render history items
+            function renderHistory(historyData) {
+                const historyList = document.getElementById('historyList');
 
-                resizeHandle.classList.add('active');
-                document.body.classList.add('resizing');
-
-                e.preventDefault();
-            });
-
-            // Mouse move - resize
-            document.addEventListener('mousemove', (e) => {
-                if (!isResizing) return;
-
-                const diff = startX - e.clientX;
-                let newWidth = startWidth + diff;
-
-                // Constraints
-                const minWidth = 200;
-                const maxWidth = window.innerWidth * 0.5;
-
-                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-
-                sidebar.style.width = newWidth + 'px';
-                sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
-
-                // Recalculate grid layout
-                if (students.length > 0) {
-                    calculateGridLayout(students.length);
+                if (!historyData || historyData.length === 0) {
+                    historyList.innerHTML = `
+                        <div class="history-empty">
+                            <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <p>Belum ada riwayat penjemputan hari ini</p>
+                        </div>
+                        `;
+                    return;
                 }
-            });
 
-            // Mouse up - stop resizing
-            document.addEventListener('mouseup', () => {
-                if (isResizing) {
-                    isResizing = false;
-                    resizeHandle.classList.remove('active');
-                    document.body.classList.remove('resizing');
+                historyList.innerHTML = historyData.map(item => `
+                        <div class="history-item">
+                            <div class="history-item-name">${item.nama_siswa}</div>
+                            <div class="history-item-details">
+                                <div class="history-item-penjemput">
+                                    <svg class="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                                    </svg>
+                                    <span>${item.penjemput}</span>
+                                </div>
+                                <span class="history-item-time">${item.waktu}</span>
+                            </div>
+                        </div>
+                        `).join('');
+            }
 
-                    // Save width to localStorage
-                    const currentWidth = sidebar.offsetWidth;
-                    localStorage.setItem('sidebarWidth', currentWidth);
+            // ============================================
+            // Sidebar Resize Functionality
+            // ============================================
 
-                    // Final grid recalculation
+            let isResizing = false;
+            let startX = 0;
+            let startWidth = 0;
+
+            function initSidebarResize() {
+                const sidebar = document.getElementById('historySidebar');
+                const resizeHandle = document.getElementById('resizeHandle');
+                const contentWrapper = document.querySelector('.content-wrapper');
+
+                if (!sidebar || !resizeHandle) return;
+
+                // Load saved width from localStorage
+                const savedWidth = localStorage.getItem('sidebarWidth');
+                if (savedWidth) {
+                    sidebar.style.setProperty('--sidebar-width', savedWidth + 'px');
+                    sidebar.style.width = savedWidth + 'px';
+                }
+
+                // Mouse down - start resizing
+                resizeHandle.addEventListener('mousedown', (e) => {
+                    isResizing = true;
+                    startX = e.clientX;
+                    startWidth = sidebar.offsetWidth;
+
+                    resizeHandle.classList.add('active');
+                    document.body.classList.add('resizing');
+
+                    e.preventDefault();
+                });
+
+                // Mouse move - resize
+                document.addEventListener('mousemove', (e) => {
+                    if (!isResizing) return;
+
+                    const diff = startX - e.clientX;
+                    let newWidth = startWidth + diff;
+
+                    // Constraints
+                    const minWidth = 200;
+                    const maxWidth = window.innerWidth * 0.5;
+
+                    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+
+                    sidebar.style.width = newWidth + 'px';
+                    sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
+
+                    // Recalculate grid layout
                     if (students.length > 0) {
                         calculateGridLayout(students.length);
                     }
-                }
-            });
+                });
 
-            // Touch support for mobile
-            resizeHandle.addEventListener('touchstart', (e) => {
-                isResizing = true;
-                startX = e.touches[0].clientX;
-                startWidth = sidebar.offsetWidth;
-                resizeHandle.classList.add('active');
-                document.body.classList.add('resizing');
-            });
+                // Mouse up - stop resizing
+                document.addEventListener('mouseup', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        resizeHandle.classList.remove('active');
+                        document.body.classList.remove('resizing');
 
-            document.addEventListener('touchmove', (e) => {
-                if (!isResizing) return;
+                        // Save width to localStorage
+                        const currentWidth = sidebar.offsetWidth;
+                        localStorage.setItem('sidebarWidth', currentWidth);
 
-                const diff = startX - e.touches[0].clientX;
-                let newWidth = startWidth + diff;
-
-                const minWidth = 200;
-                const maxWidth = window.innerWidth * 0.5;
-
-                newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
-                sidebar.style.width = newWidth + 'px';
-                sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
-            });
-
-            document.addEventListener('touchend', () => {
-                if (isResizing) {
-                    isResizing = false;
-                    resizeHandle.classList.remove('active');
-                    document.body.classList.remove('resizing');
-                    localStorage.setItem('sidebarWidth', sidebar.offsetWidth);
-
-                    if (students.length > 0) {
-                        calculateGridLayout(students.length);
+                        // Final grid recalculation
+                        if (students.length > 0) {
+                            calculateGridLayout(students.length);
+                        }
                     }
-                }
-            });
-        }
+                });
 
-        // Initialize sidebar resize after DOM is loaded
-        document.addEventListener('DOMContentLoaded', () => {
-            initSidebarResize();
-        });
-    </script>
+                // Touch support for mobile
+                resizeHandle.addEventListener('touchstart', (e) => {
+                    isResizing = true;
+                    startX = e.touches[0].clientX;
+                    startWidth = sidebar.offsetWidth;
+                    resizeHandle.classList.add('active');
+                    document.body.classList.add('resizing');
+                });
+
+                document.addEventListener('touchmove', (e) => {
+                    if (!isResizing) return;
+
+                    const diff = startX - e.touches[0].clientX;
+                    let newWidth = startWidth + diff;
+
+                    const minWidth = 200;
+                    const maxWidth = window.innerWidth * 0.5;
+
+                    newWidth = Math.max(minWidth, Math.min(maxWidth, newWidth));
+                    sidebar.style.width = newWidth + 'px';
+                    sidebar.style.setProperty('--sidebar-width', newWidth + 'px');
+                });
+
+                document.addEventListener('touchend', () => {
+                    if (isResizing) {
+                        isResizing = false;
+                        resizeHandle.classList.remove('active');
+                        document.body.classList.remove('resizing');
+                        localStorage.setItem('sidebarWidth', sidebar.offsetWidth);
+
+                        if (students.length > 0) {
+                            calculateGridLayout(students.length);
+                        }
+                    }
+                });
+            }
+
+            // Initialize sidebar resize after DOM is loaded
+            document.addEventListener('DOMContentLoaded', () => {
+                initSidebarResize();
+            });
+        </script>
 </body>
 
 </html>

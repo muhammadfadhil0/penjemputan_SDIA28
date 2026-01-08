@@ -38,6 +38,9 @@ date_default_timezone_set('Asia/Jakarta');
 $kelas_id = isset($_GET['kelas_id']) ? (int)$_GET['kelas_id'] : 0;
 $limit = isset($_GET['limit']) ? (int)$_GET['limit'] : 20;
 
+// Parameter tanggal opsional (format: YYYY-MM-DD)
+$tanggal = isset($_GET['tanggal']) ? $_GET['tanggal'] : null;
+
 if ($kelas_id <= 0) {
     http_response_code(400);
     echo json_encode([
@@ -47,7 +50,12 @@ if ($kelas_id <= 0) {
     exit();
 }
 
-$today = date('Y-m-d');
+// Gunakan tanggal yang diberikan atau hari ini
+if ($tanggal && preg_match('/^\d{4}-\d{2}-\d{2}$/', $tanggal)) {
+    $today = $tanggal;
+} else {
+    $today = date('Y-m-d');
+}
 
 // Query riwayat penjemputan hari ini berdasarkan kelas
 // ORDER BY waktu_dipanggil ASC untuk menghitung urutan panggilan per siswa

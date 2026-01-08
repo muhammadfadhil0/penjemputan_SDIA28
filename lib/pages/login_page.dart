@@ -97,6 +97,11 @@ class _LoginPageState extends State<LoginPage>
             builder: (context) => const TeacherMainNavigation(),
           ),
         );
+      } else if (result.user != null && result.user!.isKelas) {
+        // Kelas: navigate ke KelasMainNavigation
+        Navigator.of(context).pushReplacement(
+          MaterialPageRoute(builder: (context) => const KelasMainNavigation()),
+        );
       } else {
         // Siswa/Ortu: navigate ke MainNavigation biasa
         Navigator.of(context).pushReplacement(

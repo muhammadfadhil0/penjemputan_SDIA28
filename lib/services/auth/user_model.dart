@@ -4,7 +4,7 @@ class SiswaUser {
   final String username;
   final String nama;
   final String? namaPanggilan;
-  final String role; // 'siswa', 'guru', 'class_viewer'
+  final String role; // 'siswa', 'guru', 'class_viewer', 'kelas'
   final int? kelasId; // Nullable untuk guru
   final String? namaKelas; // Nullable untuk guru
   final int? tingkat; // Nullable untuk guru
@@ -26,12 +26,18 @@ class SiswaUser {
     this.noTelepon,
   });
 
-  /// Membuat SiswaUser dari JSON response API (siswa)
+  /// Membuat SiswaUser dari JSON response API (siswa, guru, atau kelas)
   factory SiswaUser.fromJson(Map<String, dynamic> json) {
+    // Untuk kelas login, nama tidak tersedia, gunakan nama_kelas sebagai fallback
+    final String nama =
+        json['nama'] as String? ??
+        json['nama_kelas'] as String? ??
+        json['username'] as String;
+
     return SiswaUser(
       id: json['id'] as int,
       username: json['username'] as String,
-      nama: json['nama'] as String,
+      nama: nama,
       namaPanggilan: json['nama_panggilan'] as String?,
       role: json['role'] as String? ?? 'siswa',
       kelasId: json['kelas_id'] as int?,
@@ -65,6 +71,9 @@ class SiswaUser {
 
   /// Cek apakah user adalah siswa
   bool get isSiswa => role == 'siswa';
+
+  /// Cek apakah user adalah kelas viewer
+  bool get isKelas => role == 'kelas' || role == 'class_viewer';
 
   /// Mendapatkan nama tampilan (nama panggilan atau nama lengkap)
   String get displayName => namaPanggilan ?? nama.split(' ').first;

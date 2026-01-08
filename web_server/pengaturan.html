@@ -779,6 +779,52 @@
                 </div>
             </div>
 
+            <!-- Call Authority Setting -->
+            <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                <div class="flex items-center gap-3 mb-4">
+                    <div class="p-2 bg-blue-100 rounded-xl">
+                        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                    </div>
+                    <div>
+                        <h2 class="text-lg font-semibold text-textPrimary">Pemanggilan akan diaktifkan pada</h2>
+                        <p class="text-sm text-textMuted">Pilih perangkat yang berwenang memutar suara TTS</p>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <label class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
+                        for="authorityIndex">
+                        <input type="radio" name="callAuthority" id="authorityIndex" value="index"
+                            class="mt-1" onclick="setCallAuthority('index')">
+                        <div>
+                            <p class="font-semibold text-textPrimary">Komputer Kurikulum</p>
+                            <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer kurikulum.
+                                Halaman kelas tetap menampilkan kartu antrean dengan status "dipanggil di kelas".</p>
+                        </div>
+                    </label>
+
+                    <label class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
+                        for="authorityKelas">
+                        <input type="radio" name="callAuthority" id="authorityKelas" value="kelas"
+                            class="mt-1" onclick="setCallAuthority('kelas')">
+                        <div>
+                            <p class="font-semibold text-textPrimary">Layar Kelas</p>
+                            <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas. Kontrol di
+                                komputer kurikulum akan dikunci.</p>
+                        </div>
+                    </label>
+                </div>
+
+                <p class="mt-3 text-sm font-medium text-textSecondary" id="callAuthorityHint">
+                    Saat ini pemanggilan aktif di Komputer Kurikulum
+                </p>
+            </div>
+
             <!-- Cooldown Settings -->
             <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
                 <div class="flex items-center gap-3 mb-4">
@@ -1079,6 +1125,9 @@
             dijemput_oleh: 'Ayah'
         };
 
+        // Call authority setting (index | kelas)
+        let callAuthoritySetting = 'index';
+
         // Bell audio
         let customBellUrl = null;
 
@@ -1287,8 +1336,50 @@
                 customBellUrl = savedBellUrl;
             }
 
+            // Load call authority
+            loadCallAuthoritySetting();
+
             // Load cooldown from API
             loadCooldownSetting();
+        }
+
+        // Load call authority setting from API
+        async function loadCallAuthoritySetting() {
+            try {
+                const response = await fetch('service/config/get_settings.php?key=call_authority');
+                const data = await response.json();
+
+                if (data.success && data.data && data.data.value) {
+                    callAuthoritySetting = data.data.value === 'kelas' ? 'kelas' : 'index';
+                } else {
+                    callAuthoritySetting = 'index';
+                }
+            } catch (error) {
+                console.error('Error loading call authority:', error);
+                callAuthoritySetting = 'index';
+            }
+
+            renderCallAuthorityUI();
+        }
+
+        function renderCallAuthorityUI() {
+            const radioIndex = document.getElementById('authorityIndex');
+            const radioKelas = document.getElementById('authorityKelas');
+            const hint = document.getElementById('callAuthorityHint');
+
+            if (radioIndex) radioIndex.checked = callAuthoritySetting === 'index';
+            if (radioKelas) radioKelas.checked = callAuthoritySetting === 'kelas';
+
+            if (hint) {
+                hint.textContent = callAuthoritySetting === 'index'
+                    ? 'Saat ini pemanggilan aktif di Komputer Kurikulum'
+                    : 'Saat ini pemanggilan aktif di Layar Kelas';
+            }
+        }
+
+        function setCallAuthority(value) {
+            callAuthoritySetting = value === 'kelas' ? 'kelas' : 'index';
+            renderCallAuthorityUI();
         }
 
         // Load cooldown setting from API
@@ -1559,13 +1650,14 @@
                 localStorage.setItem('customBellUrl', customBellUrl);
             }
 
+            const authoritySaved = await saveCallAuthoritySetting();
             // Save cooldown to API
             const cooldownSaved = await saveCooldownSetting();
 
             // Save location to API
             const locationSaved = await saveLocationSettings();
 
-            if (cooldownSaved && locationSaved) {
+            if (authoritySaved && cooldownSaved && locationSaved) {
                 showToast('✅ Pengaturan berhasil disimpan!');
             }
             // If any fails, the error toast is shown by the respective function
@@ -1578,6 +1670,34 @@
                 renderBlocks();
                 updatePreview();
                 showToast('Perubahan dibatalkan');
+            }
+        }
+
+        // Save call authority to API
+        async function saveCallAuthoritySetting() {
+            try {
+                const response = await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'call_authority',
+                        value: callAuthoritySetting,
+                        description: 'Penentu perangkat yang menjalankan pemanggilan otomatis'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (data.success) {
+                    return true;
+                }
+
+                showToast(data.message || 'Gagal menyimpan otoritas pemanggilan!', 'error');
+                return false;
+            } catch (error) {
+                console.error('Error saving call authority:', error);
+                showToast('Gagal menyimpan otoritas pemanggilan!', 'error');
+                return false;
             }
         }
 

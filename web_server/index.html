@@ -490,6 +490,99 @@
                 width: 260px;
             }
         }
+
+        /* Authority Modal Animations */
+        @keyframes bounce-modal {
+            0% {
+                transform: scale(0.5) translateY(100px);
+                opacity: 0;
+            }
+
+            50% {
+                transform: scale(1.05) translateY(-10px);
+            }
+
+            70% {
+                transform: scale(0.98) translateY(5px);
+            }
+
+            100% {
+                transform: scale(1) translateY(0);
+                opacity: 1;
+            }
+        }
+
+        @keyframes bounce-out {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            50% {
+                transform: scale(1.1);
+            }
+
+            100% {
+                transform: scale(0.3);
+                opacity: 0;
+            }
+        }
+
+        .authority-modal-content {
+            transform: scale(0.5) translateY(100px);
+            opacity: 0;
+        }
+
+        .modal-overlay.active .authority-modal-content {
+            animation: bounce-modal 0.5s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        .modal-overlay.closing .authority-modal-content {
+            animation: bounce-out 0.3s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+        }
+
+        /* Authority Card Styles */
+        .authority-card {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            padding: 20px;
+            border-radius: 16px;
+            border: 2px solid #e5e7eb;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+            background: white;
+        }
+
+        .authority-card:hover {
+            border-color: #3b82f6;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
+        }
+
+        .authority-card input[type="radio"]:checked ~ * {
+            border-color: #3b82f6;
+        }
+
+        .authority-icon-box {
+            width: 64px;
+            height: 64px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+            flex-shrink: 0;
+            transition: all 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+        }
+
+        .authority-card:hover .authority-icon-box {
+            transform: scale(1.1) rotate(-5deg);
+        }
+
+        .authority-card input[type="radio"]:checked + .authority-icon-box {
+            transform: scale(1.15);
+        }
     </style>
 </head>
 
@@ -738,7 +831,12 @@
                 </div>
 
                 <!-- Control Button Group -->
-                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm">
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm relative" id="callingControlCard">
+                    <div id="callingAuthorityOverlay"
+                        class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center text-center px-6">
+                        <p class="text-sm font-semibold text-textSecondary">Pemanggilan dialihkan ke kelas. Kontrol di
+                            komputer kurikulum dinonaktifkan.</p>
+                    </div>
                     <h2 class="text-lg font-semibold text-textPrimary mb-4 flex items-center gap-2">
                         <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
@@ -911,6 +1009,78 @@
         </div>
     </div>
 
+    <!-- Call Authority Modal -->
+    <div id="authorityModal"
+        class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
+        <div class="authority-modal-content bg-cardBg border border-borderColor rounded-2xl shadow-2xl w-full max-w-4xl p-8 relative">
+            <button type="button" onclick="closeCallAuthorityModal()"
+                class="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:rotate-90">
+                <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+
+            <div class="flex items-start gap-3 mb-6">
+                <div class="p-3 bg-blue-100 rounded-xl">
+                    <svg class="w-6 h-6 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                            d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-1.274 4.057-5.065 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                    </svg>
+                </div>
+                <div>
+                    <h2 class="text-xl font-bold text-textPrimary">Pemanggilan akan diaktifkan pada</h2>
+                    <p class="text-sm text-textMuted">Pilih perangkat yang berwenang memutar suara TTS</p>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-4 mb-6">
+                <label class="authority-card" for="modalAuthorityIndex">
+                    <input type="radio" name="modalCallAuthority" id="modalAuthorityIndex" value="index" class="mt-1">
+                    <div class="authority-icon-box bg-blue-50">
+                        💻
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-lg text-textPrimary mb-1">Komputer Kurikulum</p>
+                        <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer kurikulum. Halaman kelas tetap menampilkan kartu antrean dengan status "dipanggil di kelas".</p>
+                    </div>
+                </label>
+
+                <label class="authority-card" for="modalAuthorityKelas">
+                    <input type="radio" name="modalCallAuthority" id="modalAuthorityKelas" value="kelas" class="mt-1">
+                    <div class="authority-icon-box bg-green-50">
+                        🖥️
+                    </div>
+                    <div class="flex-1">
+                        <p class="font-bold text-lg text-textPrimary mb-1">Layar Kelas</p>
+                        <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas. Kontrol di komputer kurikulum akan dikunci.</p>
+                    </div>
+                </label>
+            </div>
+
+            <div class="flex items-center gap-2 px-4 py-3 bg-blue-50 border border-blue-200 rounded-xl mb-6">
+                <svg class="w-5 h-5 text-blue-600 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <p class="text-sm font-medium text-blue-800" id="authorityModalHint">Saat ini pemanggilan aktif di Komputer Kurikulum</p>
+            </div>
+
+            <div class="flex justify-end gap-3">
+                <button type="button" onclick="closeCallAuthorityModal()"
+                    class="px-6 py-3 rounded-xl border border-borderColor text-textSecondary hover:bg-bgMain transition-colors font-medium">
+                    Nanti saja
+                </button>
+                <button type="button" id="authorityModalSaveBtn" onclick="saveCallAuthoritySelection()"
+                    class="px-6 py-3 rounded-xl bg-primary text-white font-semibold hover:bg-blue-600 transition-colors shadow-lg shadow-primary/30">
+                    Simpan dan lanjut
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Toast Notification -->
     <div id="toast"
         class="fixed bottom-6 right-6 bg-textPrimary text-white px-6 py-4 rounded-xl shadow-lg hidden z-50 slide-in">
@@ -931,6 +1101,15 @@
         let selectedVoice = 'male';
         let selectedStudent = null;
 
+        // Call authority (index | kelas)
+        let callAuthority = 'index';
+        let authorityPollInterval = null;
+        const AUTHORITY_POLL_MS = 5000;
+        const shouldPromptAuthorityFromLogin = sessionStorage.getItem('showAuthorityModal') === 'true';
+        if (shouldPromptAuthorityFromLogin) {
+            sessionStorage.removeItem('showAuthorityModal');
+        }
+
         // Auto-calling state
         let isAutoCallingActive = false;
         let isPaused = false;
@@ -947,6 +1126,14 @@
         document.addEventListener('DOMContentLoaded', () => {
             checkAuth();
             loadUserInfo();
+            loadCallAuthority().then(() => {
+                applyAuthorityState();
+                updateCountdownUI();
+                if (shouldPromptAuthorityFromLogin) {
+                    openCallAuthorityModal();
+                }
+            });
+            startAuthorityPolling();
             fetchQueue(); // Fetch from API instead of using dummy data
             startConnectionSimulation();
             updateCountdownUI();
@@ -1017,9 +1204,54 @@
                     } catch (error) {
                         console.error('Error setting active teacher:', error);
                     }
+
+                    // Start heartbeat (every 3 seconds)
+                    startHeartbeat(user);
                 }
             }
         }
+
+        // ===============================
+        // HEARTBEAT SYSTEM (File-based)
+        // ===============================
+        let heartbeatInterval = null;
+
+        function startHeartbeat(user) {
+            // Send first heartbeat immediately
+            sendHeartbeat(user);
+
+            // Then send every 3 seconds
+            if (heartbeatInterval) clearInterval(heartbeatInterval);
+            heartbeatInterval = setInterval(() => sendHeartbeat(user), 3000);
+
+            console.log('Heartbeat started for', user.nama || user.name);
+        }
+
+        async function sendHeartbeat(user) {
+            try {
+                await fetch('service/heartbeat/heartbeat.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        user_id: user.id,
+                        nama: user.nama || user.name || 'Unknown',
+                        role: user.role || 'guru',
+                        foto: user.foto || ''
+                    })
+                });
+            } catch (error) {
+                console.error('Heartbeat error:', error);
+            }
+        }
+
+        function stopHeartbeat() {
+            if (heartbeatInterval) {
+                clearInterval(heartbeatInterval);
+                heartbeatInterval = null;
+                console.log('Heartbeat stopped');
+            }
+        }
+
 
         // Get display text for role
         function getRoleDisplay(role) {
@@ -1084,6 +1316,146 @@
             }
         }
 
+        // Load call authority (index | kelas) from server
+        async function loadCallAuthority(silent = false) {
+            let newAuthority = callAuthority;
+            try {
+                const response = await fetch('service/config/get_settings.php?key=call_authority');
+                const data = await response.json();
+                if (data.success && data.data && data.data.value) {
+                    newAuthority = data.data.value === 'kelas' ? 'kelas' : 'index';
+                } else {
+                    newAuthority = 'index';
+                }
+            } catch (error) {
+                if (!silent) console.error('Error loading call authority:', error);
+                newAuthority = 'index';
+            }
+
+            const previousAuthority = callAuthority;
+            callAuthority = newAuthority;
+            window.callAuthority = callAuthority;
+            updateAuthorityModalUI();
+
+            if (previousAuthority !== callAuthority) {
+                if (callAuthority !== 'index' && isAutoCallingActive) {
+                    stopAutoCalling();
+                }
+                applyAuthorityState();
+                updateCountdownUI();
+                updateQueueList(false);
+            }
+        }
+
+        function applyAuthorityState() {
+            updateAuthorityModalUI();
+            const overlay = document.getElementById('callingAuthorityOverlay');
+            const card = document.getElementById('callingControlCard');
+
+            if (callAuthority === 'index') {
+                if (overlay) overlay.classList.add('hidden');
+                if (card) card.classList.remove('opacity-50', 'select-none');
+            } else {
+                if (overlay) overlay.classList.remove('hidden');
+                if (card) card.classList.add('opacity-50', 'select-none');
+            }
+        }
+
+        function updateAuthorityModalUI() {
+            const radioIndex = document.getElementById('modalAuthorityIndex');
+            const radioKelas = document.getElementById('modalAuthorityKelas');
+            const hint = document.getElementById('authorityModalHint');
+
+            if (radioIndex) radioIndex.checked = callAuthority === 'index';
+            if (radioKelas) radioKelas.checked = callAuthority === 'kelas';
+
+            if (hint) {
+                hint.textContent = callAuthority === 'index'
+                    ? 'Saat ini pemanggilan aktif di Komputer Kurikulum'
+                    : 'Saat ini pemanggilan aktif di Layar Kelas';
+            }
+        }
+
+        function openCallAuthorityModal() {
+            updateAuthorityModalUI();
+            const modal = document.getElementById('authorityModal');
+            if (!modal) return;
+            modal.classList.remove('hidden', 'closing');
+            modal.classList.add('active');
+        }
+
+        function closeCallAuthorityModal() {
+            const modal = document.getElementById('authorityModal');
+            if (!modal) return;
+            
+            modal.classList.add('closing');
+            setTimeout(() => {
+                modal.classList.remove('active', 'closing');
+                modal.classList.add('hidden');
+            }, 300);
+            
+            const saveBtn = document.getElementById('authorityModalSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = false;
+                saveBtn.textContent = 'Simpan dan lanjut';
+            }
+        }
+
+        async function saveCallAuthoritySelection() {
+            const selected = document.querySelector('input[name="modalCallAuthority"]:checked');
+            const selectedValue = selected && selected.value === 'kelas' ? 'kelas' : 'index';
+
+            const saveBtn = document.getElementById('authorityModalSaveBtn');
+            if (saveBtn) {
+                saveBtn.disabled = true;
+                saveBtn.textContent = 'Menyimpan...';
+            }
+
+            try {
+                const response = await fetch('service/config/update_settings.php', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        key: 'call_authority',
+                        value: selectedValue,
+                        description: 'Penentu perangkat yang menjalankan pemanggilan otomatis'
+                    })
+                });
+
+                const data = await response.json();
+
+                if (!data.success) {
+                    showToast(data.message || 'Gagal menyimpan otoritas pemanggilan!', 'error');
+                    return;
+                }
+
+                callAuthority = selectedValue;
+                window.callAuthority = callAuthority;
+                if (callAuthority !== 'index' && isAutoCallingActive) {
+                    stopAutoCalling();
+                }
+                applyAuthorityState();
+                updateQueueList(false);
+                updateCountdownUI();
+                showToast('Otoritas pemanggilan diperbarui');
+                closeCallAuthorityModal();
+            } catch (error) {
+                console.error('Error saving call authority:', error);
+                showToast('Gagal menyimpan otoritas pemanggilan!', 'error');
+            } finally {
+                const saveBtnFinal = document.getElementById('authorityModalSaveBtn');
+                if (saveBtnFinal) {
+                    saveBtnFinal.disabled = false;
+                    saveBtnFinal.textContent = 'Simpan dan lanjut';
+                }
+            }
+        }
+
+        function startAuthorityPolling() {
+            if (authorityPollInterval) clearInterval(authorityPollInterval);
+            authorityPollInterval = setInterval(() => loadCallAuthority(true), AUTHORITY_POLL_MS);
+        }
+
         // Start auto-refresh (without animation)
         function startAutoRefresh() {
             if (refreshInterval) {
@@ -1145,6 +1517,8 @@
             const animationClass = withAnimation ? 'slide-in' : '';
             const animationStyle = withAnimation ? 'animation-delay: ${index * 0.05}s' : '';
 
+            const isDelegatedToClass = callAuthority === 'kelas';
+
             queueList.innerHTML = queue.map((item, index) => `
                 <div class="flex items-center gap-4 p-4 bg-bgMain rounded-xl border border-borderColor hover:border-primaryLight transition-all ${withAnimation ? 'slide-in' : ''}" ${withAnimation ? `style="animation-delay: ${index * 0.05}s"` : ''}>
                     <div class="w-10 h-10 rounded-full bg-primaryLighter flex items-center justify-center overflow-hidden border-2 border-primaryLight">
@@ -1156,6 +1530,7 @@
                     <div class="flex-1">
                         <p class="font-medium text-textPrimary">${item.name}</p>
                         <p class="text-sm text-textMuted">${item.class} • Dijemput: ${item.pickupBy}</p>
+                        ${isDelegatedToClass ? '<span class="inline-flex mt-1 px-2 py-1 text-[11px] font-semibold rounded-full bg-primaryLighter text-primary">Dipanggil di kelas</span>' : ''}
                     </div>
                     <button onclick="removeFromQueue(${index})" class="p-2 text-textMuted hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors">
                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -1293,6 +1668,15 @@
             pausedButtons.classList.add('hidden');
             stoppedState.classList.add('hidden');
 
+            // If authority is delegated to class, lock controls and show notice
+            if (callAuthority !== 'index') {
+                stoppedState.classList.remove('hidden');
+                stoppedState.classList.add('flex');
+                statusDiv.className = 'mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-center';
+                statusText.textContent = '🚦 Pemanggilan dialihkan ke kelas';
+                return;
+            }
+
             if (!isAutoCallingActive) {
                 // Stopped state
                 stoppedState.classList.remove('hidden');
@@ -1321,6 +1705,10 @@
         }
 
         function startAutoCalling() {
+            if (callAuthority !== 'index') {
+                showToast('Pemanggilan dialihkan ke kelas', 'error');
+                return;
+            }
             // Allow starting even with empty queue - will wait for students
             isAutoCallingActive = true;
             isPaused = false;
@@ -1347,6 +1735,10 @@
         }
 
         function toggleAutoCalling() {
+            if (callAuthority !== 'index') {
+                showToast('Pemanggilan dialihkan ke kelas', 'error');
+                return;
+            }
             if (isAutoCallingActive) {
                 stopAutoCalling();
             } else {
@@ -1382,6 +1774,7 @@
         }
 
         function startCountdown() {
+            if (callAuthority !== 'index') return;
             if (countdownInterval) {
                 clearInterval(countdownInterval);
             }
@@ -1484,6 +1877,10 @@
 
         // Call student (used by auto-call)
         async function callStudent() {
+            if (callAuthority !== 'index') {
+                showToast('Pemanggilan dialihkan ke kelas', 'error');
+                return;
+            }
             if (queue.length === 0) {
                 showToast('Tidak ada siswa dalam antrean!', 'error');
                 return;
@@ -1521,6 +1918,10 @@
 
         // Test sound
         function testSound() {
+            if (callAuthority !== 'index') {
+                showToast('Pemanggilan dialihkan ke kelas', 'error');
+                return;
+            }
             const text = "Test suara, satu dua tiga, ini adalah simulasi pemanggilan otomatis";
             speakText(text);
             showToast('🔊 Memutar test suara...');
@@ -1830,6 +2231,9 @@
             // Show confirmation dialog
             if (confirm('Apakah Anda yakin ingin keluar?')) {
                 showToast('👋 Keluar dari akun...');
+
+                // Stop heartbeat
+                stopHeartbeat();
 
                 // Get user data before clearing
                 const userData = localStorage.getItem('user');

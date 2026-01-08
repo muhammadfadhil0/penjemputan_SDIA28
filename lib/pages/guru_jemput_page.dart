@@ -4,7 +4,9 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/guru/guru_pickup_service.dart';
+import '../services/teacher/teacher_service.dart';
 import '../widgets/guru_profile_bottomsheet.dart';
+import 'package:http/http.dart' as http;
 
 // ============================================
 // GURU PICKUP DASHBOARD PAGE
@@ -21,11 +23,19 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     with TickerProviderStateMixin {
   final AuthService _authService = AuthService();
   final GuruPickupService _guruPickupService = GuruPickupService();
+  final TeacherService _teacherService = TeacherService();
 
   // Connection status monitoring
   final Connectivity _connectivity = Connectivity();
   StreamSubscription<List<ConnectivityResult>>? _connectivitySubscription;
   bool _isConnected = true;
+  bool _isServerReachable = false;
+  bool _isDashboardActive = false;
+  String? _activeTeacherName;
+  Timer? _connectionCheckTimer;
+
+  // Callback to update bottom sheet modal state (if open)
+  void Function(void Function())? _modalStateCallback;
 
   // Search and filter state
   final TextEditingController _searchController = TextEditingController();
@@ -48,6 +58,10 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   // Guru data
   String get guruName => _authService.currentUser?.nama ?? "Guru";
 
+  // Check if all 3 connections are OK
+  bool get _isAllConnected =>
+      _isConnected && _isServerReachable && _isDashboardActive;
+
   @override
   void initState() {
     super.initState();
@@ -57,6 +71,8 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     );
     _loadKelasList();
     _searchController.addListener(_onSearchChanged);
+    _checkExtendedConnectionStatus();
+    _startConnectionCheckTimer();
   }
 
   @override
@@ -66,6 +82,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     _ojekLainnyaController.dispose();
     _connectivitySubscription?.cancel();
     _debounceTimer?.cancel();
+    _connectionCheckTimer?.cancel();
     super.dispose();
   }
 
@@ -86,6 +103,54 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       _isConnected =
           result.isNotEmpty && !result.contains(ConnectivityResult.none);
     });
+  }
+
+  // Start periodic connection status check
+  void _startConnectionCheckTimer() {
+    _connectionCheckTimer = Timer.periodic(
+      const Duration(seconds: 5),
+      (_) => _checkExtendedConnectionStatus(),
+    );
+  }
+
+  // Check extended connection status (server and dashboard)
+  Future<void> _checkExtendedConnectionStatus() async {
+    if (!mounted) return;
+    final serverReachable = await _checkServerReachable();
+    bool dashboardActive = false;
+    String? teacherName;
+    if (serverReachable) {
+      final activeTeacher = await _teacherService.getActiveTeacher();
+      if (activeTeacher != null) {
+        dashboardActive = true;
+        teacherName = activeTeacher.nama;
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _isServerReachable = serverReachable;
+        _isDashboardActive = dashboardActive;
+        _activeTeacherName = teacherName;
+      });
+      // Also update modal if open
+      _modalStateCallback?.call(() {});
+    }
+  }
+
+  // Check if server is reachable
+  Future<bool> _checkServerReachable() async {
+    try {
+      final response = await http
+          .get(
+            Uri.parse(
+              'https://soulhbc.com/penjemputan/service/pickup/get_pickup_queue.php',
+            ),
+          )
+          .timeout(const Duration(seconds: 5));
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
   }
 
   // Load list of classes
@@ -373,97 +438,287 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
 
   // Handle connection status tap
   void _handleConnectionStatusTap() {
+    _checkExtendedConnectionStatus();
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
-      builder: (context) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
-        decoration: const BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 24),
-            Container(
-              width: 80,
-              height: 80,
-              decoration: BoxDecoration(
-                color: _isConnected
-                    ? const Color(0xFFDCFCE7)
-                    : const Color(0xFFFEE2E2),
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _isConnected
-                      ? const Color(0xFF22C55E)
-                      : const Color(0xFFEF4444),
-                  width: 3,
+      isScrollControlled: true,
+      builder: (bottomSheetContext) {
+        bool isCheckingStatus = false;
+        return StatefulBuilder(
+          builder: (ctx, setModalState) {
+            // Store callback so timer can update this modal
+            _modalStateCallback = setModalState;
+
+            Future<void> refreshStatus() async {
+              setModalState(() => isCheckingStatus = true);
+              final serverReachable = await _checkServerReachable();
+              bool dashboardActive = false;
+              String? teacherName;
+              if (serverReachable) {
+                final activeTeacher = await _teacherService.getActiveTeacher();
+                if (activeTeacher != null) {
+                  dashboardActive = true;
+                  teacherName = activeTeacher.nama;
+                }
+              }
+              final connectivityResult = await _connectivity
+                  .checkConnectivity();
+              final isConnectedNow =
+                  connectivityResult.isNotEmpty &&
+                  !connectivityResult.contains(ConnectivityResult.none);
+              if (mounted) {
+                setState(() {
+                  _isConnected = isConnectedNow;
+                  _isServerReachable = serverReachable;
+                  _isDashboardActive = dashboardActive;
+                  _activeTeacherName = teacherName;
+                });
+              }
+              setModalState(() => isCheckingStatus = false);
+            }
+
+            Widget buildStatusItem(
+              IconData icon,
+              String title,
+              String subtitle,
+              bool isActive,
+              bool isLoading,
+            ) {
+              final color = isLoading
+                  ? Colors.grey
+                  : (isActive
+                        ? const Color(0xFF22C55E)
+                        : const Color(0xFFEF4444));
+              final bgColor = isLoading
+                  ? Colors.grey[100]!
+                  : (isActive
+                        ? const Color(0xFFDCFCE7)
+                        : const Color(0xFFFEE2E2));
+              return Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(color: color.withOpacity(0.3), width: 1),
                 ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 44,
+                      decoration: BoxDecoration(
+                        color: Colors.white,
+                        shape: BoxShape.circle,
+                        border: Border.all(color: color, width: 2),
+                      ),
+                      child: isLoading
+                          ? const Padding(
+                              padding: EdgeInsets.all(10),
+                              child: CircularProgressIndicator(strokeWidth: 2),
+                            )
+                          : Icon(icon, color: color, size: 22),
+                    ),
+                    const SizedBox(width: 14),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            style: const TextStyle(
+                              fontSize: 15,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.textPrimary,
+                            ),
+                          ),
+                          const SizedBox(height: 2),
+                          Text(
+                            isLoading ? 'Memeriksa' : subtitle,
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: color,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    Container(
+                      width: 12,
+                      height: 12,
+                      decoration: BoxDecoration(
+                        color: color,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: color.withOpacity(0.4),
+                            blurRadius: 6,
+                            spreadRadius: 1,
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            }
+
+            return Container(
+              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              decoration: const BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
               ),
-              child: Icon(
-                _isConnected ? Icons.wifi_rounded : Icons.wifi_off_rounded,
-                color: _isConnected
-                    ? const Color(0xFF22C55E)
-                    : const Color(0xFFEF4444),
-                size: 40,
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              _isConnected ? 'Koneksi Anda stabil' : 'Jaringan tidak stabil',
-              style: const TextStyle(
-                fontSize: 22,
-                fontWeight: FontWeight.bold,
-                color: AppColors.textPrimary,
-              ),
-            ),
-            const SizedBox(height: 12),
-            Text(
-              _isConnected
-                  ? 'Kami mendeteksi koneksi Anda stabil'
-                  : 'Jaringan tidak stabil dapat menyebabkan kegagalan pengiriman data',
-              textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontSize: 15,
-                color: AppColors.textMuted,
-                height: 1.5,
-              ),
-            ),
-            const SizedBox(height: 24),
-            SizedBox(
-              width: double.infinity,
-              child: ElevatedButton(
-                onPressed: () => Navigator.pop(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: _isConnected
-                      ? const Color(0xFF22C55E)
-                      : const Color(0xFFEF4444),
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Container(
+                    width: 40,
+                    height: 4,
+                    decoration: BoxDecoration(
+                      color: Colors.grey[300],
+                      borderRadius: BorderRadius.circular(2),
+                    ),
                   ),
-                ),
-                child: const Text(
-                  'Mengerti',
-                  style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
-                ),
+                  const SizedBox(height: 24),
+                  const Row(
+                    children: [
+                      Icon(
+                        Icons.signal_cellular_alt_rounded,
+                        color: AppColors.primary,
+                        size: 24,
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Status Koneksi',
+                        style: TextStyle(
+                          fontSize: 20,
+                          fontWeight: FontWeight.bold,
+                          color: AppColors.textPrimary,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 20),
+                  buildStatusItem(
+                    Icons.wifi_rounded,
+                    'Jaringan Anda',
+                    _isConnected ? 'Terhubung' : 'Tidak ada koneksi',
+                    _isConnected,
+                    isCheckingStatus,
+                  ),
+                  const SizedBox(height: 12),
+                  buildStatusItem(
+                    Icons.dns_rounded,
+                    'Server Penjemputan',
+                    _isServerReachable ? 'Online' : 'Tidak dapat dijangkau',
+                    _isServerReachable,
+                    isCheckingStatus,
+                  ),
+                  const SizedBox(height: 12),
+                  buildStatusItem(
+                    Icons.computer_rounded,
+                    'Komputer Kurikulum',
+                    _isDashboardActive
+                        ? 'Aktif - $_activeTeacherName'
+                        : 'Terputus',
+                    _isDashboardActive,
+                    isCheckingStatus,
+                  ),
+                  const SizedBox(height: 24),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: AppColors.primaryLighter.withOpacity(0.5),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          Icons.info_outline_rounded,
+                          color: AppColors.primary,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            'Status diperbarui setiap 5 detik secara otomatis',
+                            style: TextStyle(
+                              fontSize: 13,
+                              color: AppColors.textSecondary,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 20),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: OutlinedButton.icon(
+                          onPressed: isCheckingStatus
+                              ? null
+                              : () => refreshStatus(),
+                          icon: isCheckingStatus
+                              ? const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: AppColors.primary,
+                                  ),
+                                )
+                              : const Icon(Icons.refresh_rounded, size: 20),
+                          label: Text(isCheckingStatus ? 'Tunggu' : 'Refresh'),
+                          style: OutlinedButton.styleFrom(
+                            foregroundColor: AppColors.primary,
+                            side: const BorderSide(
+                              color: AppColors.primary,
+                              width: 1.5,
+                            ),
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: AppColors.primary,
+                            foregroundColor: Colors.white,
+                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(12),
+                            ),
+                          ),
+                          child: const Text(
+                            'Tutup',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: MediaQuery.of(ctx).padding.bottom + 16),
+                ],
               ),
-            ),
-            const SizedBox(height: 70),
-          ],
-        ),
-      ),
-    );
+            );
+          },
+        );
+      },
+    ).then((_) {
+      // Clear callback when modal closes
+      _modalStateCallback = null;
+    });
   }
 
   @override
@@ -582,22 +837,22 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: _isConnected
+                        color: _isAllConnected
                             ? const Color(0xFFDCFCE7)
                             : const Color(0xFFFEE2E2),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _isConnected
+                          color: _isAllConnected
                               ? const Color(0xFF22C55E)
                               : const Color(0xFFEF4444),
                           width: 1.5,
                         ),
                       ),
                       child: Icon(
-                        _isConnected
+                        _isAllConnected
                             ? Icons.wifi_rounded
                             : Icons.wifi_off_rounded,
-                        color: _isConnected
+                        color: _isAllConnected
                             ? const Color(0xFF22C55E)
                             : const Color(0xFFEF4444),
                         size: 22,

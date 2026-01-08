@@ -8,6 +8,8 @@ import 'pages/jemput_page.dart';
 import 'pages/guru_jemput_page.dart';
 import 'pages/guru_riwayat_page.dart';
 import 'pages/guru_antrean_page.dart';
+import 'pages/kelas_ringkasan_page.dart';
+import 'pages/kelas_riwayat_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'pages/onboarding_page.dart';
@@ -135,6 +137,13 @@ class _SplashPageState extends State<SplashPage> {
           Navigator.of(context).pushReplacement(
             MaterialPageRoute(
               builder: (context) => const TeacherMainNavigation(),
+            ),
+          );
+        } else if (user != null && user.isKelas) {
+          // Kelas: navigate ke KelasMainNavigation
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(
+              builder: (context) => const KelasMainNavigation(),
             ),
           );
         } else {
@@ -798,6 +807,287 @@ class ShadcnCard extends StatelessWidget {
         ],
       ),
       child: child,
+    );
+  }
+}
+
+// ============================================
+// KELAS MAIN NAVIGATION
+// For kelas/class_viewer role - 2 tabs: Ringkasan, Riwayat
+// ============================================
+class KelasMainNavigation extends StatefulWidget {
+  const KelasMainNavigation({super.key});
+
+  @override
+  State<KelasMainNavigation> createState() => _KelasMainNavigationState();
+}
+
+class _KelasMainNavigationState extends State<KelasMainNavigation>
+    with SingleTickerProviderStateMixin {
+  int _currentIndex = 0; // Start at Ringkasan
+  late AnimationController _indicatorController;
+  late Animation<double> _indicatorAnimation;
+  double _indicatorPosition = 0.0;
+
+  final AuthService _authService = AuthService();
+
+  final List<Widget> _pages = const [KelasRingkasanPage(), KelasRiwayatPage()];
+
+  /// Logout dan navigasi ke login page
+  Future<void> _handleLogout() async {
+    // Tampilkan dialog konfirmasi
+    final shouldLogout = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+        title: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: Colors.red.shade50,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Icon(
+                Icons.logout_rounded,
+                color: Colors.red.shade600,
+                size: 24,
+              ),
+            ),
+            const SizedBox(width: 12),
+            const Text('Keluar dari Akun?'),
+          ],
+        ),
+        content: const Text(
+          'Apakah Anda yakin ingin keluar dari akun ini?',
+          style: TextStyle(fontSize: 15),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: const Text('Batal'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red.shade600,
+              foregroundColor: Colors.white,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
+            ),
+            child: const Text('Keluar'),
+          ),
+        ],
+      ),
+    );
+
+    if (shouldLogout == true && mounted) {
+      // Logout dan bersihkan semua data lokal
+      await _authService.logout();
+
+      // Navigasi ke login page dan hapus semua route sebelumnya
+      if (mounted) {
+        Navigator.of(context).pushAndRemoveUntil(
+          MaterialPageRoute(builder: (context) => const LoginPage()),
+          (route) => false,
+        );
+      }
+    }
+  }
+
+  @override
+  void initState() {
+    super.initState();
+    _indicatorController = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+    _indicatorAnimation = Tween<double>(begin: 0.0, end: 0.0).animate(
+      CurvedAnimation(parent: _indicatorController, curve: Curves.easeOutBack),
+    );
+  }
+
+  @override
+  void dispose() {
+    _indicatorController.dispose();
+    super.dispose();
+  }
+
+  void _animateToIndex(int newIndex) {
+    _indicatorAnimation =
+        Tween<double>(
+          begin: _indicatorPosition,
+          end: newIndex.toDouble(),
+        ).animate(
+          CurvedAnimation(
+            parent: _indicatorController,
+            curve: Curves.easeOutBack,
+          ),
+        );
+
+    _indicatorController.forward(from: 0).then((_) {
+      _indicatorPosition = newIndex.toDouble();
+    });
+
+    setState(() => _currentIndex = newIndex);
+  }
+
+  // Handle swipe gestures on the nav bar
+  void _handleNavBarSwipe(DragEndDetails details) {
+    final velocity = details.primaryVelocity ?? 0;
+
+    if (velocity.abs() > 200) {
+      if (velocity > 0 && _currentIndex > 0) {
+        _animateToIndex(_currentIndex - 1);
+      } else if (velocity < 0 && _currentIndex < 1) {
+        _animateToIndex(_currentIndex + 1);
+      }
+    }
+  }
+
+  // Handle drag update for direct selection
+  void _handleNavBarDragUpdate(
+    DragUpdateDetails details,
+    double containerWidth,
+  ) {
+    final itemWidth = containerWidth / 2;
+    final dragPosition = details.localPosition.dx;
+    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 1);
+
+    if (newIndex != _currentIndex) {
+      _animateToIndex(newIndex);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      body: _pages[_currentIndex],
+      bottomNavigationBar: _buildBottomNavBar(),
+    );
+  }
+
+  Widget _buildBottomNavBar() {
+    return Container(
+      decoration: BoxDecoration(
+        color: AppColors.card,
+        border: Border(top: BorderSide(color: AppColors.border, width: 1)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.05),
+            blurRadius: 10,
+            offset: const Offset(0, -4),
+          ),
+        ],
+      ),
+      child: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceAround,
+            children: [
+              _buildNavItem(
+                index: 0,
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view,
+                label: 'Ringkasan',
+                isFirst: _currentIndex == 0,
+              ),
+              _buildNavItem(
+                index: 1,
+                icon: Icons.history_outlined,
+                activeIcon: Icons.history,
+                label: 'Riwayat',
+                isFirst: _currentIndex == 1,
+              ),
+              // Logout button styled same as nav items
+              _buildLogoutButton(),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildNavItem({
+    required int index,
+    required IconData icon,
+    required IconData activeIcon,
+    required String label,
+    bool isFirst = false,
+  }) {
+    final isSelected = _currentIndex == index;
+
+    return GestureDetector(
+      onTap: () {
+        if (_currentIndex != index) {
+          _animateToIndex(index);
+        }
+      },
+      behavior: HitTestBehavior.opaque,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.primary : Colors.transparent,
+          borderRadius: BorderRadius.circular(16),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: AppColors.primary.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    offset: const Offset(0, 2),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              isSelected ? activeIcon : icon,
+              color: isSelected ? Colors.white : AppColors.textMuted,
+              size: 24,
+            ),
+            const SizedBox(height: 4),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  /// Tombol logout di kanan navbar
+  Widget _buildLogoutButton() {
+    return GestureDetector(
+      onTap: _handleLogout,
+      behavior: HitTestBehavior.opaque,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(Icons.logout_rounded, color: Colors.red.shade500, size: 24),
+            const SizedBox(height: 4),
+            Text(
+              'Keluar',
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w500,
+                color: Colors.red.shade500,
+              ),
+            ),
+          ],
+        ),
+      ),
     );
   }
 }
