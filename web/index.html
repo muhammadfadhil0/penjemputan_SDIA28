@@ -1,4 +1,7 @@
-<!DOCTYPE html><html><head>
+<!DOCTYPE html>
+<html>
+
+<head>
   <!--
     If you are serving your web app in a path other than the root, change the
     href value below to reflect the base path you are serving from.
@@ -12,7 +15,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/penjemputan_web/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -29,17 +32,189 @@
 
   <title>salam_sdia28</title>
   <link rel="manifest" href="manifest.json">
-  
-  
-  <meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" name="viewport">
-  
-  
-  
-  
-  
-  
-  
-  
+
+
+  <meta content="width=420, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, interactive-widget=resizes-visual"
+    name="viewport">
+  <!-- Force mobile view styles -->
+  <style id="mobile-force-style">
+    /* Fix for virtual keyboard resize issue - use svh (small viewport height) */
+    /* svh is the viewport height WITHOUT keyboard - stays constant */
+    html {
+      height: 100svh !important;
+      height: -webkit-fill-available;
+      overflow: hidden !important;
+    }
+
+    /* Force mobile container - no resize on keyboard */
+    body {
+      height: 100svh !important;
+      height: -webkit-fill-available;
+      overflow: hidden !important;
+      margin: 0;
+      padding: 0;
+      position: fixed;
+      width: 100%;
+      top: 0;
+      left: 0;
+      max-width: 100vw;
+    }
+
+    /* Center the app in a mobile-sized container on desktop */
+    flt-glass-pane {
+      max-width: 420px !important;
+      margin: 0 auto !important;
+      box-shadow: 0 0 40px rgba(0, 0, 0, 0.2) !important;
+      height: 100svh !important;
+      height: -webkit-fill-available;
+    }
+
+    /* Add background for desktop browsers */
+    @media (min-width: 421px) {
+      body {
+        background: linear-gradient(135deg, #1e3a5f 0%, #0d1b2a 100%) !important;
+        background-attachment: fixed !important;
+      }
+    }
+
+    /* Prevent text selection */
+    * {
+      -webkit-user-select: none;
+      -moz-user-select: none;
+      -ms-user-select: none;
+      user-select: none;
+    }
+
+    /* Allow text selection in input fields */
+    input,
+    textarea {
+      -webkit-user-select: text;
+      -moz-user-select: text;
+      -ms-user-select: text;
+      user-select: text;
+    }
+  </style>
+
+  <!-- Lock orientation script -->
+  <script>
+    // Lock screen orientation to portrait (for browsers that support it)
+    if (screen.orientation && screen.orientation.lock) {
+      screen.orientation.lock('portrait').catch(function (error) {
+        console.log('Orientation lock failed:', error);
+      });
+    }
+
+    // Fallback: detect orientation and show warning
+    function checkOrientation() {
+      if (window.innerWidth > window.innerHeight && window.innerWidth > 420) {
+        document.getElementById('orientation-warning')?.style.display = 'flex';
+      } else {
+        document.getElementById('orientation-warning')?.style.display = 'none';
+      }
+    }
+    window.addEventListener('resize', checkOrientation);
+    window.addEventListener('orientationchange', checkOrientation);
+  </script>
+
+  <!-- AGGRESSIVE KEYBOARD FIX -->
+  <script>
+    (function () {
+      // Store original viewport height on first load (before any keyboard)
+      var originalHeight = window.innerHeight;
+      var isInputFocused = false;
+
+      // Force height on all elements
+      function forceHeight() {
+        var h = originalHeight + 'px';
+        document.documentElement.style.height = h;
+        document.documentElement.style.minHeight = h;
+        document.documentElement.style.maxHeight = h;
+        document.body.style.height = h;
+        document.body.style.minHeight = h;
+        document.body.style.maxHeight = h;
+
+        // Force scroll to top
+        window.scrollTo(0, 0);
+        document.body.scrollTop = 0;
+        document.documentElement.scrollTop = 0;
+
+        // Also force on Flutter glass pane if exists
+        var flt = document.querySelector('flt-glass-pane');
+        if (flt) {
+          flt.style.height = h;
+          flt.style.minHeight = h;
+          flt.style.maxHeight = h;
+        }
+      }
+
+      // Run immediately
+      forceHeight();
+
+      // Run on DOM ready
+      document.addEventListener('DOMContentLoaded', forceHeight);
+
+      // Run after Flutter loads
+      window.addEventListener('load', function () {
+        forceHeight();
+        // Keep running every 100ms for 5 seconds after load
+        var count = 0;
+        var interval = setInterval(function () {
+          forceHeight();
+          count++;
+          if (count > 50) clearInterval(interval);
+        }, 100);
+      });
+
+      // Intercept focus events on inputs
+      document.addEventListener('focusin', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          isInputFocused = true;
+        }
+      }, true);
+
+      document.addEventListener('focusout', function (e) {
+        if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+          isInputFocused = false;
+          // Force height reset after keyboard closes
+          setTimeout(forceHeight, 50);
+          setTimeout(forceHeight, 150);
+          setTimeout(forceHeight, 300);
+          setTimeout(forceHeight, 500);
+        }
+      }, true);
+
+      // Override any resize events
+      window.addEventListener('resize', function () {
+        if (!isInputFocused) {
+          forceHeight();
+        }
+      });
+
+      // VisualViewport resize
+      if (window.visualViewport) {
+        window.visualViewport.addEventListener('resize', function () {
+          if (!isInputFocused) {
+            setTimeout(forceHeight, 0);
+            setTimeout(forceHeight, 100);
+          }
+        });
+      }
+
+      // Also run periodically to catch any edge cases
+      setInterval(function () {
+        if (!isInputFocused) {
+          window.scrollTo(0, 0);
+        }
+      }, 500);
+    })();
+  </script>
+
+
+
+
+
+
+
   <style id="splash-screen-style">
     html {
       height: 100%
@@ -49,7 +224,7 @@
       margin: 0;
       min-height: 100%;
       background-color: #ffffff;
-          background-size: 100% 100%;
+      background-size: 100% 100%;
     }
 
     .center {
@@ -62,19 +237,22 @@
     }
 
     .contain {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
       object-fit: contain;
     }
 
     .stretch {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
     }
 
     .cover {
-      display:block;
-      width:100%; height:100%;
+      display: block;
+      width: 100%;
+      height: 100%;
       object-fit: cover;
     }
 
@@ -106,18 +284,27 @@
     }
   </script>
 </head>
+
 <body>
-  <picture id="splash">
-      <source srcset="splash/img/light-1x.png 1x, splash/img/light-2x.png 2x, splash/img/light-3x.png 3x, splash/img/light-4x.png 4x" media="(prefers-color-scheme: light)">
-      <source srcset="splash/img/dark-1x.png 1x, splash/img/dark-2x.png 2x, splash/img/dark-3x.png 3x, splash/img/dark-4x.png 4x" media="(prefers-color-scheme: dark)">
-      <img class="center" aria-hidden="true" src="splash/img/light-1x.png" alt="">
-  </picture>
-  
-  
-  
-  
-  
+  <!-- Splash screen removed for faster loading -->
+
+
+
+
+
+  <!-- Force CanvasKit renderer for better animation performance -->
+  <script>
+    window.flutterConfiguration = {
+      // Use CanvasKit for best animation/graphics quality (like mobile)
+      renderer: "canvaskit",
+      // Enable anti-aliasing for smoother graphics
+      canvasKitVariant: "full"
+    };
+  </script>
+
   <script src="flutter_bootstrap.js" async=""></script>
 
 
-</body></html>
+</body>
+
+</html>

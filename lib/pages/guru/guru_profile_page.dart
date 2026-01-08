@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../main.dart';
 import '../../services/auth/auth_service.dart';
+import '../login_page.dart';
 import 'guru_data_page.dart';
 
 class GuruProfilePage extends StatefulWidget {
@@ -314,7 +315,10 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
   void _performLogout() async {
     await _authService.logout();
     if (mounted) {
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
     }
   }
 }

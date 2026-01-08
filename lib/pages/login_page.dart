@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../main.dart';
 import '../services/auth/auth_service.dart';
 import '../services/auth/multi_account_service.dart';
@@ -133,6 +134,8 @@ class _LoginPageState extends State<LoginPage>
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: AppColors.background,
+      // Disable resize on web to prevent keyboard white space issue
+      resizeToAvoidBottomInset: kIsWeb ? false : true,
       body: SafeArea(
         child: SingleChildScrollView(
           physics: const BouncingScrollPhysics(),

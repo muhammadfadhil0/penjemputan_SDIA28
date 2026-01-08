@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import '../services/auth/auth_service.dart';
 import '../main.dart';
-
+import '../pages/login_page.dart';
 import '../pages/guru/guru_profile_page.dart';
 
 /// Bottom sheet untuk menampilkan profil guru dengan tombol logout
@@ -233,7 +233,10 @@ class GuruProfileBottomSheet extends StatelessWidget {
 
     if (context.mounted) {
       // Navigate to login page and clear all previous routes
-      Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      Navigator.of(context).pushAndRemoveUntil(
+        MaterialPageRoute(builder: (context) => const LoginPage()),
+        (route) => false,
+      );
     }
   }
 }

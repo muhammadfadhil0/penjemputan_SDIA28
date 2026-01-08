@@ -15,7 +15,6 @@ class PengaturanPage extends StatefulWidget {
 class _PengaturanPageState extends State<PengaturanPage>
     with WidgetsBindingObserver {
   bool _matikanOptimalisasiBaterai = false;
-  bool _kurangiAnimasi = false;
   bool _isCheckingBattery = true;
 
   @override
@@ -117,26 +116,7 @@ class _PengaturanPageState extends State<PengaturanPage>
 
                     _buildBatteryOptimizationCard(),
 
-                    const SizedBox(height: 24),
-
-                    // Section: Visual
-                    _buildSectionHeader('Visual'),
-                    const SizedBox(height: 12),
-
-                    _buildSettingCard(
-                      icon: Icons.animation_rounded,
-                      title: 'Kurangi Gestur Animasi',
-                      subtitle:
-                          'Matikan semua animasi dalam aplikasi, cocok untuk perangkat spesifikasi rendah',
-                      value: _kurangiAnimasi,
-                      onChanged: (value) {
-                        setState(() {
-                          _kurangiAnimasi = value;
-                        });
-                      },
-                    ),
-
-                    const SizedBox(height: 32),
+                    const SizedBox(height:  32),
                   ],
                 ),
               ),
@@ -248,74 +228,6 @@ class _PengaturanPageState extends State<PengaturanPage>
               fontWeight: FontWeight.w600,
               letterSpacing: 0.5,
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSettingCard({
-    required IconData icon,
-    required String title,
-    required String subtitle,
-    required bool value,
-    required ValueChanged<bool> onChanged,
-  }) {
-    return ShadcnCard(
-      padding: const EdgeInsets.all(16),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  color: value
-                      ? AppColors.primaryLighter
-                      : AppColors.border.withValues(alpha: 0.5),
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Icon(
-                  icon,
-                  color: value ? AppColors.primary : AppColors.textMuted,
-                  size: 22,
-                ),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      title,
-                      style: const TextStyle(
-                        color: AppColors.textPrimary,
-                        fontSize: 15,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    const SizedBox(height: 6),
-                    Text(
-                      subtitle,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 12,
-                        height: 1.4,
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 8),
-              Switch.adaptive(
-                value: value,
-                onChanged: onChanged,
-                activeColor: AppColors.primary,
-                activeTrackColor: AppColors.primaryLighter,
-              ),
-            ],
           ),
         ],
       ),
