@@ -698,7 +698,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                                         ),
                                         decoration: BoxDecoration(
                                           color: Colors.white,
-                                          borderRadius: BorderRadius.circular(999),
+                                          borderRadius: BorderRadius.circular(
+                                            999,
+                                          ),
                                         ),
                                         child: const Text(
                                           'AKTIF',
@@ -855,7 +857,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
               Container(
                 padding: const EdgeInsets.all(16),
                 child: const Text(
-                  'Emergency mode adalah mode dimana data permintaan penjemputan orang tua akan langsung dipanggil menuju halaman penjemputan dengan user kelas.',
+                  'Emergency Mode akan mengalihkan antrian penjemputan langsung ke Aplikasi Kelas, tanpa melewati Komputer kurikulum dan Komputer kelas.',
                   textAlign: TextAlign.center,
                   style: TextStyle(
                     fontSize: 14,
@@ -880,27 +882,22 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
               const SizedBox(height: 12),
               _buildEmergencyConsequenceItem(
                 '1',
-                'Komputer kurikulum penjemputan akan dinonaktifkan',
+                'Akses pemanggilan dari Komputer Kurikulum dan Komputer Kelas akan dimatikan.',
               ),
               const SizedBox(height: 8),
               _buildEmergencyConsequenceItem(
                 '2',
-                'Komputer kelas pemanggilan akan dinonaktifkan',
+                'Seluruh notifikasi penjemputan masuk langsung ke akun kelas di aplikasi Penjemputan.',
               ),
               const SizedBox(height: 8),
               _buildEmergencyConsequenceItem(
                 '3',
-                'Pengalihan penjemputan di dalam aplikasi Penjemputan dengan login kelas',
-              ),
-              const SizedBox(height: 8),
-              _buildEmergencyConsequenceItem(
-                '4',
-                'Anda akan menjadi penanggung jawab penuh atas pengaktifan mode ini, sehingga kami akan menaruh nama Anda sebagai nama pengaktif mode ini',
+                'Aktivitas ini akan direkam. Nama Anda akan tercatat sebagai penanggung jawab pengaktifan mode ini.',
               ),
               const SizedBox(height: 24),
               // Red Swipe to Confirm
               EmergencySwipeToConfirm(
-                text: 'Geser untuk aktifkan',
+                text: 'Geser untuk Darurat',
                 onConfirm: () {
                   Navigator.pop(ctx);
                   _activateEmergencyMode();
@@ -947,8 +944,11 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(success ? Icons.check_circle : Icons.error,
-                color: Colors.white, size: 20),
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+              size: 20,
+            ),
             const SizedBox(width: 10),
             Expanded(
               child: Text(
@@ -961,9 +961,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
         ),
         backgroundColor: success ? Colors.red : Colors.orange,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
       ),
     );
@@ -1110,21 +1108,18 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       SnackBar(
         content: Row(
           children: [
-            Icon(success ? Icons.check_circle : Icons.error,
-                color: Colors.white, size: 20),
-            const SizedBox(width: 10),
-            const Expanded(
-              child: Text(
-                'Emergency Mode dinonaktifkan',
-              ),
+            Icon(
+              success ? Icons.check_circle : Icons.error,
+              color: Colors.white,
+              size: 20,
             ),
+            const SizedBox(width: 10),
+            const Expanded(child: Text('Emergency Mode dinonaktifkan')),
           ],
         ),
         backgroundColor: success ? Colors.green : Colors.orange,
         behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(10),
-        ),
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
         margin: const EdgeInsets.all(16),
       ),
     );
