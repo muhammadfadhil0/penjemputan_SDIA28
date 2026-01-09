@@ -2137,7 +2137,9 @@ class _PickupBottomSheetState extends State<PickupBottomSheet> {
             Expanded(
               child: Text(
                 result.success
-                    ? 'Permintaan jemput berhasil! Nomor antrian: ${result.nomorAntrian}'
+                    ? (result.emergencyActive
+                        ? 'Permintaan dikirim (Emergency Mode aktif).'
+                        : 'Permintaan jemput berhasil! Nomor antrian: ${result.nomorAntrian ?? '-'}')
                     : result.message,
               ),
             ),

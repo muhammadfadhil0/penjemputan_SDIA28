@@ -8,6 +8,8 @@ let queue = [];
 let queueStudents = [];
 let queueCalledCount = 0;
 let selectedStudent = null;
+let isEmergencyActive = false;
+let emergencyPollInterval = null;
 
 // Authority from shared setting (index | kelas)
 if (!window.callAuthority) {
@@ -47,6 +49,70 @@ const defaultAnnouncementBlocks = [
     { type: 'dijemput_oleh', label: 'Dijemput Oleh' }
 ];
 
+function formatEmergencyTime(ts) {
+    if (!ts) return '';
+    try {
+        const dt = new Date(ts.replace(' ', 'T'));
+        const days = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu'];
+        const months = ['Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun', 'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des'];
+        const h = dt.getHours().toString().padStart(2, '0');
+        const m = dt.getMinutes().toString().padStart(2, '0');
+        return `${days[dt.getDay()]}, ${dt.getDate()} ${months[dt.getMonth()]} ${dt.getFullYear()}, ${h}:${m}`;
+    } catch (e) {
+        return ts;
+    }
+}
+
+function applyEmergencyState(active, details = {}) {
+    const overlay = document.getElementById('emergencyOverlay');
+    const byEl = document.getElementById('emergencyActivatedBy');
+    const atEl = document.getElementById('emergencyActivatedAt');
+
+    isEmergencyActive = !!active;
+
+    if (!overlay) return;
+
+    if (isEmergencyActive) {
+        document.body.classList.add('emergency-blur');
+        overlay.classList.remove('hidden');
+
+        if (byEl) {
+            const by = details.activated_by || 'Guru';
+            byEl.textContent = `${by} telah mengaktifkan mode ini.`;
+        }
+        if (atEl) {
+            const ts = formatEmergencyTime(details.activated_at);
+            atEl.textContent = ts || '';
+        }
+
+        stopAutoCalling();
+        if (countdownInterval) {
+            clearInterval(countdownInterval);
+            countdownInterval = null;
+        }
+    } else {
+        document.body.classList.remove('emergency-blur');
+        overlay.classList.add('hidden');
+    }
+}
+
+async function pollEmergencyMode() {
+    try {
+        const res = await fetch('../service/config/emergency_mode.php');
+        const data = await res.json();
+        const status = data?.data || {};
+        applyEmergencyState(status.active === true, status);
+    } catch (e) {
+        console.error('Emergency mode check failed', e);
+    }
+}
+
+function startEmergencyPolling() {
+    pollEmergencyMode();
+    if (emergencyPollInterval) clearInterval(emergencyPollInterval);
+    emergencyPollInterval = setInterval(pollEmergencyMode, 5000);
+}
+
 // Fetch queue from API (filtered by class)
 async function fetchQueue(withAnimation = true) {
     if (!kelasId) return;
@@ -56,6 +122,18 @@ async function fetchQueue(withAnimation = true) {
     try {
         const response = await fetch(`${API_BASE}/get_class_pickup_queue.php?kelas_id=${kelasId}`);
         const data = await response.json();
+
+        if (data.emergency_mode) {
+            applyEmergencyState(data.emergency_mode.active === true, data.emergency_mode);
+        }
+
+        if (isEmergencyActive) {
+            queue = [];
+            queueCalledCount = 0;
+            updateQueueList(false);
+            updateQueueStats();
+            return;
+        }
 
         if (data.success) {
             queue = data.queue.map(item => ({

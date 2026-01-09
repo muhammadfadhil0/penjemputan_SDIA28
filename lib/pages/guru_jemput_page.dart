@@ -7,6 +7,7 @@ import '../services/guru/guru_pickup_service.dart';
 import '../services/teacher/teacher_service.dart';
 import '../widgets/guru_profile_bottomsheet.dart';
 import 'package:http/http.dart' as http;
+import '../services/emergency/emergency_service.dart';
 
 // ============================================
 // GURU PICKUP DASHBOARD PAGE
@@ -24,6 +25,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   final AuthService _authService = AuthService();
   final GuruPickupService _guruPickupService = GuruPickupService();
   final TeacherService _teacherService = TeacherService();
+  final EmergencyService _emergencyService = EmergencyService();
 
   // Connection status monitoring
   final Connectivity _connectivity = Connectivity();
@@ -45,6 +47,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   StudentForPickup? _selectedStudent;
   bool _isSearching = false;
   bool _isCallingStudent = false;
+
+  // Emergency mode status
+  EmergencyStatus _emergencyStatus = const EmergencyStatus(active: false);
 
   // Picker selection state
   String _selectedPicker = 'ayah';
@@ -70,6 +75,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       _updateConnectionStatus,
     );
     _loadKelasList();
+    _loadEmergencyStatus();
     _searchController.addListener(_onSearchChanged);
     _checkExtendedConnectionStatus();
     _startConnectionCheckTimer();
@@ -135,6 +141,16 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       // Also update modal if open
       _modalStateCallback?.call(() {});
     }
+  }
+
+  // Load emergency mode status from backend
+  Future<void> _loadEmergencyStatus() async {
+    final status = await _emergencyService.getStatus();
+    if (!mounted) return;
+    setState(() {
+      _emergencyStatus = status;
+    });
+    _modalStateCallback?.call(() {});
   }
 
   // Check if server is reachable
@@ -438,6 +454,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
 
   // Handle connection status tap
   void _handleConnectionStatusTap() {
+    _loadEmergencyStatus();
     _checkExtendedConnectionStatus();
     showModalBottomSheet(
       context: context,
@@ -631,7 +648,11 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                   GestureDetector(
                     onTap: () {
                       Navigator.pop(ctx);
-                      _showEmergencyModeBottomSheet();
+                      if (_emergencyStatus.active) {
+                        _showEmergencyModeDeactivateBottomSheet();
+                      } else {
+                        _showEmergencyModeBottomSheet();
+                      }
                     },
                     child: Container(
                       padding: const EdgeInsets.all(12),
@@ -654,21 +675,47 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Expanded(
+                          Expanded(
                             child: Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  'Emergency Mode',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    fontWeight: FontWeight.w600,
-                                    color: Colors.white,
-                                  ),
+                                Row(
+                                  children: [
+                                    const Text(
+                                      'Emergency Mode',
+                                      style: TextStyle(
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w600,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 8),
+                                    if (_emergencyStatus.active)
+                                      Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.white,
+                                          borderRadius: BorderRadius.circular(999),
+                                        ),
+                                        child: const Text(
+                                          'AKTIF',
+                                          style: TextStyle(
+                                            fontSize: 10,
+                                            fontWeight: FontWeight.w700,
+                                            color: Colors.red,
+                                          ),
+                                        ),
+                                      ),
+                                  ],
                                 ),
                                 Text(
-                                  'Aktifkan mode darurat',
-                                  style: TextStyle(
+                                  _emergencyStatus.active
+                                      ? 'Matikan mode darurat'
+                                      : 'Aktifkan mode darurat',
+                                  style: const TextStyle(
                                     fontSize: 11,
                                     color: Colors.white,
                                   ),
@@ -856,28 +903,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                 text: 'Geser untuk aktifkan',
                 onConfirm: () {
                   Navigator.pop(ctx);
-                  // TODO: Implement emergency mode activation
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(
-                      content: const Row(
-                        children: [
-                          Icon(
-                            Icons.check_circle,
-                            color: Colors.white,
-                            size: 20,
-                          ),
-                          SizedBox(width: 10),
-                          Text('Emergency Mode diaktifkan'),
-                        ],
-                      ),
-                      backgroundColor: const Color(0xFFEF4444),
-                      behavior: SnackBarBehavior.floating,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
-                      ),
-                      margin: const EdgeInsets.all(16),
-                    ),
-                  );
+                  _activateEmergencyMode();
                 },
               ),
               SizedBox(height: MediaQuery.of(ctx).padding.bottom + 8),
@@ -885,6 +911,222 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
           ),
         );
       },
+    );
+  }
+
+  Future<void> _activateEmergencyMode() async {
+    final user = _authService.currentUser;
+    final snackbarController = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Mengaktifkan Emergency Mode...'),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    final status = await _emergencyService.activate(
+      activatedBy: user?.nama ?? 'Guru',
+      activatedById: user?.id,
+      activatedByRole: user?.role,
+      kelasId: user?.kelasId,
+      kelasName: user?.namaKelas,
+    );
+
+    await snackbarController.closed;
+
+    if (!mounted) return;
+
+    setState(() {
+      _emergencyStatus = status;
+    });
+    _modalStateCallback?.call(() {});
+
+    final success = status.active;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(success ? Icons.check_circle : Icons.error,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                success
+                    ? 'Emergency Mode diaktifkan oleh ${status.activatedBy ?? 'Guru'}'
+                    : 'Gagal mengaktifkan Emergency Mode',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: success ? Colors.red : Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
+    );
+  }
+
+  void _showEmergencyModeDeactivateBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFEF4444), width: 3),
+                ),
+                child: const Icon(
+                  Icons.power_settings_new,
+                  color: Color(0xFFEF4444),
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Ingin menonaktifkan mode darurat?',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              const SizedBox(height: 12),
+              const Text(
+                'Pemanggilan akan kembali berjalan seperti biasa di komputer kurikulum.',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF4B5563),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton(
+                      onPressed: () => Navigator.pop(ctx),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: AppColors.textSecondary,
+                        side: const BorderSide(color: AppColors.border),
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Batal',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: ElevatedButton(
+                      onPressed: () {
+                        Navigator.pop(ctx);
+                        _deactivateEmergencyMode();
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.red,
+                        foregroundColor: Colors.white,
+                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: const Text(
+                        'Matikan',
+                        style: TextStyle(
+                          fontSize: 16,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Future<void> _deactivateEmergencyMode() async {
+    final snackbarController = ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: const Text('Menonaktifkan Emergency Mode...'),
+        backgroundColor: Colors.red.shade400,
+        behavior: SnackBarBehavior.floating,
+        duration: const Duration(seconds: 2),
+      ),
+    );
+
+    final status = await _emergencyService.deactivate();
+
+    await snackbarController.closed;
+
+    if (!mounted) return;
+
+    setState(() {
+      _emergencyStatus = status;
+    });
+    _modalStateCallback?.call(() {});
+
+    final success = status.active == false;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Row(
+          children: [
+            Icon(success ? Icons.check_circle : Icons.error,
+                color: Colors.white, size: 20),
+            const SizedBox(width: 10),
+            const Expanded(
+              child: Text(
+                'Emergency Mode dinonaktifkan',
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: success ? Colors.green : Colors.orange,
+        behavior: SnackBarBehavior.floating,
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(10),
+        ),
+        margin: const EdgeInsets.all(16),
+      ),
     );
   }
 

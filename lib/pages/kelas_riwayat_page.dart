@@ -4,6 +4,8 @@ import '../main.dart';
 import '../services/kelas/kelas_service.dart';
 import '../services/kelas/kelas_models.dart';
 import '../services/auth/auth_service.dart';
+import '../services/emergency/emergency_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 /// Halaman Riwayat - menampilkan riwayat penjemputan dengan filter tanggal
 class KelasRiwayatPage extends StatefulWidget {
@@ -17,11 +19,16 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
     with SingleTickerProviderStateMixin {
   final KelasService _kelasService = KelasService();
   final AuthService _authService = AuthService();
+  final EmergencyService _emergencyService = EmergencyService();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isLoading = true;
   String? _errorMessage;
   List<KelasHistoryItem> _historyItems = [];
   String? _tanggal;
+  EmergencyStatus _emergencyStatus = const EmergencyStatus(active: false);
+  int _lastHistoryCount = 0;
+  bool _hasLoadedOnce = false;
 
   Timer? _refreshTimer;
 
@@ -67,6 +74,7 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
   void dispose() {
     _refreshTimer?.cancel();
     _filterAnimationController.dispose();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -86,11 +94,13 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
       return;
     }
 
+    final emergencyFuture = _emergencyService.getStatus();
     final response = await _kelasService.getHistory(
       user.kelasId!,
       limit: 100,
       tanggal: _selectedDate,
     );
+    final emergencyStatus = await emergencyFuture;
 
     if (mounted) {
       setState(() {
@@ -99,10 +109,34 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
           _historyItems = response.data;
           _tanggal = response.tanggal;
           _errorMessage = null;
+          _handleEmergency(emergencyStatus);
         } else {
           _errorMessage = response.message;
+          _handleEmergency(emergencyStatus);
         }
+        _hasLoadedOnce = true;
       });
+    }
+  }
+
+  void _handleEmergency(EmergencyStatus status) {
+    final currentCount = _historyItems.length;
+    final shouldRing = status.active && _hasLoadedOnce && currentCount > _lastHistoryCount;
+
+    _emergencyStatus = status;
+    _lastHistoryCount = currentCount;
+
+    if (shouldRing) {
+      _playBell();
+    }
+  }
+
+  Future<void> _playBell() async {
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource('web_server/assets/bell, in.MP3'));
+    } catch (e) {
+      debugPrint('Failed to play bell: $e');
     }
   }
 
@@ -170,89 +204,181 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            // Filter indicator dengan animasi
-            AnimatedSize(
-              duration: const Duration(milliseconds: 300),
-              curve: Curves.easeOutCubic,
-              child: _selectedDate != null
-                  ? FadeTransition(
-                      opacity: _filterFadeAnimation,
-                      child: SlideTransition(
-                        position: _filterSlideAnimation,
-                        child: Padding(
-                          padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 16,
-                              vertical: 12,
-                            ),
-                            decoration: BoxDecoration(
-                              color: AppColors.card,
-                              borderRadius: BorderRadius.circular(12),
-                              border: Border.all(color: AppColors.border),
-                              boxShadow: [
-                                BoxShadow(
-                                  color: Colors.black.withValues(alpha: 0.05),
-                                  blurRadius: 8,
-                                  offset: const Offset(0, 2),
-                                ),
-                              ],
-                            ),
-                            child: Row(
-                              children: [
-                                const Icon(
-                                  Icons.filter_alt,
-                                  color: AppColors.primary,
-                                  size: 20,
-                                ),
-                                const SizedBox(width: 10),
-                                Expanded(
-                                  child: Text(
-                                    'Filter: ${_formatDate(_selectedDate!)}',
-                                    style: const TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontSize: 14,
-                                      fontWeight: FontWeight.w500,
+        child: Container(
+          width: double.infinity,
+          decoration: _emergencyStatus.active
+              ? BoxDecoration(
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (_emergencyStatus.active) _buildEmergencyBanner(),
+              _buildHeader(),
+              // Filter indicator dengan animasi
+              AnimatedSize(
+                duration: const Duration(milliseconds: 300),
+                curve: Curves.easeOutCubic,
+                child: _selectedDate != null
+                    ? FadeTransition(
+                        opacity: _filterFadeAnimation,
+                        child: SlideTransition(
+                          position: _filterSlideAnimation,
+                          child: Padding(
+                            padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: 12,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.card,
+                                borderRadius: BorderRadius.circular(12),
+                                border: Border.all(color: AppColors.border),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.black.withValues(alpha: 0.05),
+                                    blurRadius: 8,
+                                    offset: const Offset(0, 2),
+                                  ),
+                                ],
+                              ),
+                              child: Row(
+                                children: [
+                                  const Icon(
+                                    Icons.filter_alt,
+                                    color: AppColors.primary,
+                                    size: 20,
+                                  ),
+                                  const SizedBox(width: 10),
+                                  Expanded(
+                                    child: Text(
+                                      'Filter: ${_formatDate(_selectedDate!)}',
+                                      style: const TextStyle(
+                                        color: AppColors.textPrimary,
+                                        fontSize: 14,
+                                        fontWeight: FontWeight.w500,
+                                      ),
                                     ),
                                   ),
-                                ),
-                                GestureDetector(
-                                  onTap: _clearFilter,
-                                  child: Container(
-                                    padding: const EdgeInsets.all(6),
-                                    decoration: BoxDecoration(
-                                      color: Colors.red.withValues(alpha: 0.1),
-                                      borderRadius: BorderRadius.circular(6),
-                                    ),
-                                    child: const Icon(
-                                      Icons.close,
-                                      color: Colors.red,
-                                      size: 16,
+                                  GestureDetector(
+                                    onTap: _clearFilter,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(6),
+                                      decoration: BoxDecoration(
+                                        color: Colors.red.withValues(alpha: 0.1),
+                                        borderRadius: BorderRadius.circular(6),
+                                      ),
+                                      child: const Icon(
+                                        Icons.close,
+                                        color: Colors.red,
+                                        size: 16,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
+                                ],
+                              ),
                             ),
                           ),
                         ),
-                      ),
-                    )
-                  : const SizedBox.shrink(),
-            ),
-            Expanded(
-              child: _isLoading
-                  ? _buildLoading()
-                  : _errorMessage != null
-                  ? _buildError()
-                  : _buildHistoryList(),
-            ),
-          ],
+                      )
+                    : const SizedBox.shrink(),
+              ),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoading()
+                    : _errorMessage != null
+                        ? _buildError()
+                        : _buildHistoryList(),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildEmergencyBanner() {
+    final activatedBy = _emergencyStatus.activatedBy ?? 'Guru';
+    final activatedAt = _formatTimestamp(_emergencyStatus.activatedAt);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        border: Border(
+          bottom: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Emergency Mode diaktifkan',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (activatedAt != null)
+                  Text(
+                    '$activatedBy mengaktifkan pada $activatedAt',
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _formatTimestamp(String? timestamp) {
+    if (timestamp == null) return null;
+    try {
+      final dt = DateTime.parse(timestamp);
+      const days = [
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+        'Minggu'
+      ];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des'
+      ];
+      final dayName = days[dt.weekday - 1];
+      final monthName = months[dt.month - 1];
+      final time = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '$dayName, ${dt.day} $monthName ${dt.year}, $time';
+    } catch (_) {
+      return timestamp;
+    }
   }
 
   Widget _buildHeader() {

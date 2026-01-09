@@ -17,8 +17,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+date_default_timezone_set('Asia/Jakarta');
+
 // Include database connection
 require_once '../config/koneksi.php';
+require_once '../lib/emergency.php';
 
 // Get cooldown minutes from settings (default 10 if not set)
 $cooldown_query_setting = "SELECT value FROM pengaturan_aplikasi WHERE key_name = 'cooldown_minutes' LIMIT 1";
@@ -29,6 +32,9 @@ if ($cooldown_result_setting && mysqli_num_rows($cooldown_result_setting) > 0) {
     $cooldown_minutes = intval($cooldown_row_setting['value']);
 }
 $cooldown_seconds = $cooldown_minutes * 60;
+
+// Emergency status (if active, permintaan diarahkan ke aplikasi kelas)
+$emergency_status = get_emergency_status($conn);
 
 // Only accept POST requests
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -142,6 +148,62 @@ $waktu_estimasi_sql = $waktu_estimasi ? "'$waktu_estimasi'" : "NULL";
 $penjemput_detail_sql = $penjemput_detail ? "'$penjemput_detail'" : "NULL";
 
 // Insert pickup request (include cooldown_minutes_used so countdown is fixed per-request)
+// Jika emergency mode aktif, langsung tandai sebagai "dipanggil" dan masukkan ke status harian
+if ($emergency_status['active'] === true) {
+    $insert_query = "INSERT INTO permintaan_jemput 
+                     (siswa_id, user_id, penjemput, penjemput_detail, estimasi_waktu, waktu_estimasi, 
+                      status, nomor_antrian, waktu_request, waktu_dipanggil, cooldown_minutes_used) 
+                     VALUES 
+                     ($siswa_id, $user_id, '$penjemput', $penjemput_detail_sql, '$estimasi_waktu', 
+                      $waktu_estimasi_sql, 'dipanggil', $next_queue, NOW(), NOW(), $cooldown_minutes)";
+
+    if (mysqli_query($conn, $insert_query)) {
+        $request_id = mysqli_insert_id($conn);
+
+        // Update siswa last_pickup_request
+        $update_siswa = "UPDATE siswa SET last_pickup_request = NOW() WHERE id = $siswa_id";
+        mysqli_query($conn, $update_siswa);
+
+        // Tandai status penjemputan harian agar muncul sebagai sudah dijemput di ringkasan kelas
+        $todayDate = date('Y-m-d');
+        $penjemput_safe = mysqli_real_escape_string($conn, $penjemput);
+        $check_daily = "SELECT id FROM status_penjemputan_harian WHERE siswa_id = $siswa_id AND tanggal = '$todayDate'";
+        $daily_result = mysqli_query($conn, $check_daily);
+
+        if ($daily_result && mysqli_num_rows($daily_result) > 0) {
+            $update_daily = "UPDATE status_penjemputan_harian 
+                             SET sudah_dijemput = 1, waktu_dijemput = NOW(), penjemput = '$penjemput_safe' 
+                             WHERE siswa_id = $siswa_id AND tanggal = '$todayDate'";
+            mysqli_query($conn, $update_daily);
+        } else {
+            $insert_daily = "INSERT INTO status_penjemputan_harian 
+                             (siswa_id, tanggal, sudah_dijemput, waktu_dijemput, penjemput) 
+                             VALUES ($siswa_id, '$todayDate', 1, NOW(), '$penjemput_safe')";
+            mysqli_query($conn, $insert_daily);
+        }
+
+        echo json_encode([
+            'success' => true,
+            'message' => 'Emergency mode aktif, permintaan langsung diteruskan ke kelas.',
+            'data' => [
+                'request_id' => $request_id,
+                'nomor_antrian' => intval($next_queue),
+                'nama_siswa' => $siswa['nama'],
+                'kelas' => $siswa['nama_kelas'],
+                'emergency_mode' => $emergency_status
+            ]
+        ]);
+    } else {
+        echo json_encode([
+            'success' => false,
+            'message' => 'Gagal menyimpan permintaan (emergency): ' . mysqli_error($conn)
+        ]);
+    }
+
+    mysqli_close($conn);
+    exit();
+}
+
 $insert_query = "INSERT INTO permintaan_jemput 
                  (siswa_id, user_id, penjemput, penjemput_detail, estimasi_waktu, waktu_estimasi, 
                   status, nomor_antrian, waktu_request, cooldown_minutes_used) 

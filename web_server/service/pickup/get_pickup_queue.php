@@ -17,8 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+date_default_timezone_set('Asia/Jakarta');
+
 // Include database connection
 require_once '../config/koneksi.php';
+require_once '../lib/emergency.php';
+
+$emergency_status = get_emergency_status($conn);
 
 // Get today's date
 $today = date('Y-m-d');
@@ -111,7 +116,8 @@ echo json_encode([
     'queue' => $queue,
     'stats' => $stats,
     'students' => $students,
-    'timestamp' => date('Y-m-d H:i:s')
+    'timestamp' => date('Y-m-d H:i:s'),
+    'emergency_mode' => $emergency_status
 ]);
 
 mysqli_close($conn);

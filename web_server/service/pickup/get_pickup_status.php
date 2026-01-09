@@ -17,8 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+date_default_timezone_set('Asia/Jakarta');
+
 // Include database connection
 require_once '../config/koneksi.php';
+require_once '../lib/emergency.php';
+
+$emergency_status = get_emergency_status($conn);
 
 // Get cooldown minutes from settings (default 10 if not set)
 $cooldown_query = "SELECT value FROM pengaturan_aplikasi WHERE key_name = 'cooldown_minutes' LIMIT 1";
@@ -100,7 +105,8 @@ if (mysqli_num_rows($result) > 0) {
             'success' => true,
             'has_active_request' => false,
             'in_cooldown' => false,
-            'status' => null
+            'status' => null,
+            'emergency_mode' => $emergency_status
         ]);
     } else {
         echo json_encode([
@@ -113,7 +119,8 @@ if (mysqli_num_rows($result) > 0) {
             'waktu_request' => $row['waktu_request'],
             'waktu_dipanggil' => $row['waktu_dipanggil'],
             'cooldown_remaining_seconds' => $cooldown_remaining,
-            'in_cooldown' => $cooldown_remaining > 0
+            'in_cooldown' => $cooldown_remaining > 0,
+            'emergency_mode' => $emergency_status
         ]);
     }
 } else {
@@ -155,7 +162,8 @@ if (mysqli_num_rows($result) > 0) {
                 'has_active_request' => false,
                 'in_cooldown' => true,
                 'cooldown_remaining_seconds' => max(0, $remaining_seconds),
-                'waktu_dijemput' => $cooldown_row['waktu_dijemput']
+                'waktu_dijemput' => $cooldown_row['waktu_dijemput'],
+                'emergency_mode' => $emergency_status
             ]);
         } else {
             // Cooldown expired
@@ -163,7 +171,8 @@ if (mysqli_num_rows($result) > 0) {
                 'success' => true,
                 'has_active_request' => false,
                 'in_cooldown' => false,
-                'status' => null
+                'status' => null,
+                'emergency_mode' => $emergency_status
             ]);
         }
     } else {
@@ -171,7 +180,8 @@ if (mysqli_num_rows($result) > 0) {
             'success' => true,
             'has_active_request' => false,
             'in_cooldown' => false,
-            'status' => null
+            'status' => null,
+            'emergency_mode' => $emergency_status
         ]);
     }
 }

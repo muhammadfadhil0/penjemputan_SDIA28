@@ -38,6 +38,54 @@
             box-sizing: border-box;
         }
 
+        .hidden {
+            display: none !important;
+        }
+
+        .emergency-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+        }
+
+        .emergency-card {
+            max-width: 560px;
+            width: 100%;
+            background: #fff;
+            border: 1px solid #fecaca;
+            border-radius: 18px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+            z-index: 10000;
+        }
+
+        .emergency-card h2 {
+            color: #dc2626;
+            font-size: 22px;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        .emergency-card p {
+            color: #374151;
+            margin: 6px 0;
+        }
+
+        body.emergency-blur .main-container,
+        body.emergency-blur header,
+        body.emergency-blur nav {
+            filter: blur(3px);
+            pointer-events: none;
+            user-select: none;
+        }
+
         html,
         body {
             height: 100vh;
@@ -886,6 +934,16 @@
             </div>
         </div>
 
+        <!-- Emergency Overlay -->
+        <div id="emergencyOverlay" class="emergency-overlay hidden">
+            <div class="emergency-card">
+                <h2>Emergency Mode diaktifkan</h2>
+                <p>Seluruh permintaan penjemputan orang tua akan dialihkan menuju aplikasi yang telah terlogin dengan akun kelas.</p>
+                <p id="emergencyActivatedBy" style="color:#b91c1c;font-weight:700;"></p>
+                <p id="emergencyActivatedAt" style="color:#b91c1c;"></p>
+            </div>
+        </div>
+
         <script src="antrian.js"></script>
         <script>
             // API Base URL
@@ -936,6 +994,7 @@
                     if (typeof updateCountdownUI === 'function') updateCountdownUI();
                 });
                 startAuthorityPolling();
+                if (typeof startEmergencyPolling === 'function') startEmergencyPolling();
             });
 
             // Check authentication

@@ -4,6 +4,8 @@ import '../main.dart';
 import '../services/kelas/kelas_service.dart';
 import '../services/kelas/kelas_models.dart';
 import '../services/auth/auth_service.dart';
+import '../services/emergency/emergency_service.dart';
+import 'package:audioplayers/audioplayers.dart';
 
 /// Halaman Ringkasan - menampilkan grid siswa dengan status penjemputan
 class KelasRingkasanPage extends StatefulWidget {
@@ -16,12 +18,17 @@ class KelasRingkasanPage extends StatefulWidget {
 class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
   final KelasService _kelasService = KelasService();
   final AuthService _authService = AuthService();
+  final EmergencyService _emergencyService = EmergencyService();
+  final AudioPlayer _audioPlayer = AudioPlayer();
 
   bool _isLoading = true;
   String? _errorMessage;
   KelasInfo? _kelasInfo;
   KelasStatistik? _statistik;
   List<KelasStudent> _students = [];
+  EmergencyStatus _emergencyStatus = const EmergencyStatus(active: false);
+  int _lastPickedUpCount = 0;
+  bool _hasLoadedOnce = false;
 
   Timer? _refreshTimer;
 
@@ -38,6 +45,7 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
   @override
   void dispose() {
     _refreshTimer?.cancel();
+    _audioPlayer.dispose();
     super.dispose();
   }
 
@@ -57,7 +65,9 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
       return;
     }
 
+    final emergencyFuture = _emergencyService.getStatus();
     final response = await _kelasService.getStudents(user.kelasId!);
+    final emergencyStatus = await emergencyFuture;
 
     if (mounted) {
       setState(() {
@@ -67,10 +77,35 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
           _statistik = response.statistik;
           _students = response.students;
           _errorMessage = null;
+
+          _handleEmergencyStatus(emergencyStatus);
         } else {
           _errorMessage = response.message;
+          _handleEmergencyStatus(emergencyStatus);
         }
+        _hasLoadedOnce = true;
       });
+    }
+  }
+
+  void _handleEmergencyStatus(EmergencyStatus status) {
+    final pickedUp = _statistik?.sudahDijemput ?? 0;
+    final shouldRing = status.active && _hasLoadedOnce && pickedUp > _lastPickedUpCount;
+
+    _emergencyStatus = status;
+    _lastPickedUpCount = pickedUp;
+
+    if (shouldRing) {
+      _playBell();
+    }
+  }
+
+  Future<void> _playBell() async {
+    try {
+      await _audioPlayer.stop();
+      await _audioPlayer.play(AssetSource('web_server/assets/bell, in.MP3'));
+    } catch (e) {
+      debugPrint('Failed to play bell: $e');
     }
   }
 
@@ -79,20 +114,112 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
     return Scaffold(
       backgroundColor: AppColors.background,
       body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: _isLoading
-                  ? _buildLoading()
-                  : _errorMessage != null
-                  ? _buildError()
-                  : _buildStudentGrid(),
-            ),
-          ],
+        child: Container(
+          width: double.infinity,
+          decoration: _emergencyStatus.active
+              ? BoxDecoration(
+                  border: Border.all(
+                    color: Colors.red.withValues(alpha: 0.5),
+                    width: 2,
+                  ),
+                )
+              : null,
+          child: Column(
+            children: [
+              if (_emergencyStatus.active) _buildEmergencyBanner(),
+              _buildHeader(),
+              Expanded(
+                child: _isLoading
+                    ? _buildLoading()
+                    : _errorMessage != null
+                        ? _buildError()
+                        : _buildStudentGrid(),
+              ),
+            ],
+          ),
         ),
       ),
     );
+  }
+
+  Widget _buildEmergencyBanner() {
+    final activatedBy = _emergencyStatus.activatedBy ?? 'Guru';
+    final activatedAt = _formatTimestamp(_emergencyStatus.activatedAt);
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+      decoration: BoxDecoration(
+        color: Colors.red.withValues(alpha: 0.08),
+        border: Border(
+          bottom: BorderSide(color: Colors.red.withValues(alpha: 0.3)),
+        ),
+      ),
+      child: Row(
+        children: [
+          const Icon(Icons.warning_amber_rounded, color: Colors.red, size: 20),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Emergency Mode diaktifkan',
+                  style: TextStyle(
+                    color: Colors.red,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                if (activatedAt != null)
+                  Text(
+                    '$activatedBy mengaktifkan pada $activatedAt',
+                    style: TextStyle(
+                      color: Colors.red.shade700,
+                      fontSize: 12,
+                    ),
+                  ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  String? _formatTimestamp(String? timestamp) {
+    if (timestamp == null) return null;
+    try {
+      final dt = DateTime.parse(timestamp);
+      const days = [
+        'Senin',
+        'Selasa',
+        'Rabu',
+        'Kamis',
+        'Jumat',
+        'Sabtu',
+        'Minggu'
+      ];
+      const months = [
+        'Jan',
+        'Feb',
+        'Mar',
+        'Apr',
+        'Mei',
+        'Jun',
+        'Jul',
+        'Agu',
+        'Sep',
+        'Okt',
+        'Nov',
+        'Des'
+      ];
+      final dayName = days[dt.weekday - 1];
+      final monthName = months[dt.month - 1];
+      final time = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      return '$dayName, ${dt.day} $monthName ${dt.year}, $time';
+    } catch (_) {
+      return timestamp;
+    }
   }
 
   Widget _buildHeader() {

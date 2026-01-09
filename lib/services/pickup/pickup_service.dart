@@ -7,12 +7,16 @@ class PickupResult {
   final String message;
   final int? nomorAntrian;
   final int? requestId;
+  final bool emergencyActive;
+  final Map<String, dynamic>? emergencyData;
 
   PickupResult({
     required this.success,
     required this.message,
     this.nomorAntrian,
     this.requestId,
+    this.emergencyActive = false,
+    this.emergencyData,
   });
 }
 
@@ -81,6 +85,8 @@ class PickupService {
       );
 
       final responseData = jsonDecode(response.body);
+      final emergency = responseData['data']?['emergency_mode'] ?? responseData['emergency_mode'];
+      final isEmergencyActive = emergency is Map && (emergency['active'] == true);
 
       if (response.statusCode == 200 && responseData['success'] == true) {
         return PickupResult(
@@ -88,12 +94,20 @@ class PickupService {
           message: responseData['message'] ?? 'Permintaan jemput berhasil!',
           nomorAntrian: responseData['data']?['nomor_antrian'],
           requestId: responseData['data']?['request_id'],
+          emergencyActive: isEmergencyActive,
+          emergencyData: emergency is Map<String, dynamic>
+              ? emergency as Map<String, dynamic>
+              : null,
         );
       } else {
         return PickupResult(
           success: false,
           message:
               responseData['message'] ?? 'Gagal mengirim permintaan jemput.',
+          emergencyActive: isEmergencyActive,
+          emergencyData: emergency is Map<String, dynamic>
+              ? emergency as Map<String, dynamic>
+              : null,
         );
       }
     } catch (e) {
@@ -101,6 +115,8 @@ class PickupService {
         success: false,
         message:
             'Tidak dapat terhubung ke server. Periksa koneksi internet Anda.',
+        emergencyActive: false,
+        emergencyData: null,
       );
     }
   }

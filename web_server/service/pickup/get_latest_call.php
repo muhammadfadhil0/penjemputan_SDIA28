@@ -17,8 +17,23 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+date_default_timezone_set('Asia/Jakarta');
+
 // Include database connection
 require_once '../config/koneksi.php';
+require_once '../lib/emergency.php';
+
+$emergency_status = get_emergency_status($conn);
+
+if ($emergency_status['active'] === true) {
+    echo json_encode([
+        'success' => true,
+        'call' => null,
+        'message' => 'Emergency mode aktif - pemanggilan dialihkan ke aplikasi kelas',
+        'emergency_mode' => $emergency_status
+    ]);
+    exit();
+}
 
 // Get today's date
 $today = date('Y-m-d');
@@ -73,14 +88,16 @@ if ($result && mysqli_num_rows($result) > 0) {
     echo json_encode([
         'success' => true,
         'call' => $call,
-        'message' => 'Latest call retrieved'
+        'message' => 'Latest call retrieved',
+        'emergency_mode' => $emergency_status
     ]);
 } else {
     // No active call
     echo json_encode([
         'success' => true,
         'call' => null,
-        'message' => 'No active call'
+        'message' => 'No active call',
+        'emergency_mode' => $emergency_status
     ]);
 }
 

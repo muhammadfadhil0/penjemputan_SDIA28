@@ -17,8 +17,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'OPTIONS') {
     exit();
 }
 
+date_default_timezone_set('Asia/Jakarta');
+
 // Include database connection
 require_once '../config/koneksi.php';
+require_once '../lib/emergency.php';
+
+$emergency_status = get_emergency_status($conn);
 
 // Get kelas_id parameter
 $kelas_id = isset($_GET['kelas_id']) ? intval($_GET['kelas_id']) : 0;
@@ -127,7 +132,8 @@ echo json_encode([
     'stats' => $stats,
     'students' => $students,
     'kelas_id' => $kelas_id,
-    'timestamp' => date('Y-m-d H:i:s')
+    'timestamp' => date('Y-m-d H:i:s'),
+    'emergency_mode' => $emergency_status
 ]);
 
 mysqli_close($conn);
