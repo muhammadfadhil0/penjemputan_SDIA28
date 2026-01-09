@@ -627,30 +627,62 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                     isCheckingStatus,
                   ),
                   const SizedBox(height: 24),
-                  Container(
-                    padding: const EdgeInsets.all(12),
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLighter.withOpacity(0.5),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: Row(
-                      children: [
-                        Icon(
-                          Icons.info_outline_rounded,
-                          color: AppColors.primary,
-                          size: 20,
-                        ),
-                        const SizedBox(width: 10),
-                        Expanded(
-                          child: Text(
-                            'Status diperbarui setiap 5 detik secara otomatis',
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: AppColors.textSecondary,
+                  // Emergency Mode Button
+                  GestureDetector(
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showEmergencyModeBottomSheet();
+                    },
+                    child: Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: Colors.red,
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                      child: Row(
+                        children: [
+                          Container(
+                            padding: const EdgeInsets.all(6),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              shape: BoxShape.circle,
+                            ),
+                            child: const Icon(
+                              Icons.warning_amber_rounded,
+                              color: Colors.red,
+                              size: 18,
                             ),
                           ),
-                        ),
-                      ],
+                          const SizedBox(width: 10),
+                          const Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Emergency Mode',
+                                  style: TextStyle(
+                                    fontSize: 13,
+                                    fontWeight: FontWeight.w600,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                                Text(
+                                  'Aktifkan mode darurat',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: Colors.white,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          const Icon(
+                            Icons.chevron_right_rounded,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                   const SizedBox(height: 20),
@@ -719,6 +751,178 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       // Clear callback when modal closes
       _modalStateCallback = null;
     });
+  }
+
+  // Show Emergency Mode confirmation bottomsheet
+  void _showEmergencyModeBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Warning Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFEF4444), width: 3),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 36,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Apa itu Emergency Mode?',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              // const SizedBox(height: 12),
+              // Description
+              Container(
+                padding: const EdgeInsets.all(16),
+                child: const Text(
+                  'Emergency mode adalah mode dimana data permintaan penjemputan orang tua akan langsung dipanggil menuju halaman penjemputan dengan user kelas.',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: Color(0xFF374151),
+                    height: 1.5,
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              // Consequences
+              const Align(
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  'Dengan mengaktifkan mode ini:',
+                  style: TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF374151),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 12),
+              _buildEmergencyConsequenceItem(
+                '1',
+                'Komputer kurikulum penjemputan akan dinonaktifkan',
+              ),
+              const SizedBox(height: 8),
+              _buildEmergencyConsequenceItem(
+                '2',
+                'Komputer kelas pemanggilan akan dinonaktifkan',
+              ),
+              const SizedBox(height: 8),
+              _buildEmergencyConsequenceItem(
+                '3',
+                'Pengalihan penjemputan di dalam aplikasi Penjemputan dengan login kelas',
+              ),
+              const SizedBox(height: 8),
+              _buildEmergencyConsequenceItem(
+                '4',
+                'Anda akan menjadi penanggung jawab penuh atas pengaktifan mode ini, sehingga kami akan menaruh nama Anda sebagai nama pengaktif mode ini',
+              ),
+              const SizedBox(height: 24),
+              // Red Swipe to Confirm
+              EmergencySwipeToConfirm(
+                text: 'Geser untuk aktifkan',
+                onConfirm: () {
+                  Navigator.pop(ctx);
+                  // TODO: Implement emergency mode activation
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: const Row(
+                        children: [
+                          Icon(
+                            Icons.check_circle,
+                            color: Colors.white,
+                            size: 20,
+                          ),
+                          SizedBox(width: 10),
+                          Text('Emergency Mode diaktifkan'),
+                        ],
+                      ),
+                      backgroundColor: const Color(0xFFEF4444),
+                      behavior: SnackBarBehavior.floating,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      margin: const EdgeInsets.all(16),
+                    ),
+                  );
+                },
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 8),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _buildEmergencyConsequenceItem(String number, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 24,
+          height: 24,
+          decoration: BoxDecoration(
+            color: const Color(0xFFFEE2E2),
+            borderRadius: BorderRadius.circular(6),
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFDC2626),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF4B5563),
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
   }
 
   @override
@@ -1468,6 +1672,276 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
           prefixIconConstraints: const BoxConstraints(minWidth: 40),
         ),
       ),
+    );
+  }
+}
+
+// ============================================
+// EMERGENCY SWIPE TO CONFIRM WIDGET (Red Theme)
+// ============================================
+class EmergencySwipeToConfirm extends StatefulWidget {
+  final String text;
+  final VoidCallback onConfirm;
+
+  const EmergencySwipeToConfirm({
+    super.key,
+    required this.text,
+    required this.onConfirm,
+  });
+
+  @override
+  State<EmergencySwipeToConfirm> createState() =>
+      _EmergencySwipeToConfirmState();
+}
+
+class _EmergencySwipeToConfirmState extends State<EmergencySwipeToConfirm>
+    with SingleTickerProviderStateMixin {
+  double _dragPosition = 0;
+  double _containerWidth = 0;
+  bool _isConfirmed = false;
+  late AnimationController _shimmerController;
+
+  static const double _thumbSize = 52;
+  static const double _padding = 4;
+
+  // Emergency red colors
+  static const Color _primaryRed = Color(0xFFEF4444);
+  static const Color _darkRed = Color(0xFFDC2626);
+  static const Color _lightRed = Color(0xFFFEE2E2);
+
+  @override
+  void initState() {
+    super.initState();
+    _shimmerController = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1500),
+    )..repeat();
+  }
+
+  @override
+  void dispose() {
+    _shimmerController.dispose();
+    super.dispose();
+  }
+
+  double get _maxDragDistance => _containerWidth - _thumbSize - (_padding * 2);
+  double get _dragPercentage => _maxDragDistance > 0
+      ? (_dragPosition / _maxDragDistance).clamp(0.0, 1.0)
+      : 0.0;
+
+  void _onDragUpdate(DragUpdateDetails details) {
+    if (_isConfirmed) return;
+    setState(() {
+      _dragPosition = (_dragPosition + details.delta.dx).clamp(
+        0.0,
+        _maxDragDistance,
+      );
+    });
+  }
+
+  void _onDragEnd(DragEndDetails details) {
+    if (_isConfirmed) return;
+
+    if (_dragPercentage > 0.85) {
+      // Confirmation success
+      setState(() {
+        _dragPosition = _maxDragDistance;
+        _isConfirmed = true;
+      });
+
+      Future.delayed(const Duration(milliseconds: 200), () {
+        widget.onConfirm();
+      });
+    } else {
+      // Animate back to start
+      _animateBack();
+    }
+  }
+
+  void _animateBack() {
+    const duration = Duration(milliseconds: 400);
+    final startPosition = _dragPosition;
+
+    Future<void> animate() async {
+      const steps = 20;
+      for (int i = 0; i <= steps; i++) {
+        await Future.delayed(duration ~/ steps);
+        if (!mounted) return;
+
+        final t = i / steps;
+        final curve = Curves.easeOutBack.transform(t);
+
+        setState(() {
+          _dragPosition = startPosition * (1 - curve);
+        });
+      }
+    }
+
+    animate();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        _containerWidth = constraints.maxWidth;
+
+        return Container(
+          height: 60,
+          decoration: BoxDecoration(
+            color: _isConfirmed ? _darkRed : _lightRed,
+            borderRadius: BorderRadius.circular(30),
+            border: Border.all(
+              color: _isConfirmed ? _darkRed : _primaryRed.withOpacity(0.5),
+              width: 2,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: _isConfirmed
+                    ? _darkRed.withOpacity(0.3)
+                    : _primaryRed.withOpacity(0.15),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: Stack(
+            children: [
+              // Progress fill
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 100),
+                width: _dragPosition + _thumbSize + _padding,
+                height: double.infinity,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: _isConfirmed
+                        ? [_darkRed, _primaryRed]
+                        : [
+                            _primaryRed.withOpacity(0.3),
+                            _primaryRed.withOpacity(0.4),
+                          ],
+                  ),
+                  borderRadius: BorderRadius.circular(28),
+                ),
+              ),
+
+              // Text with shimmer effect
+              Center(
+                child: AnimatedOpacity(
+                  duration: const Duration(milliseconds: 200),
+                  opacity: _isConfirmed ? 0 : (1 - _dragPercentage * 0.5),
+                  child: AnimatedBuilder(
+                    animation: _shimmerController,
+                    builder: (context, child) {
+                      return ShaderMask(
+                        shaderCallback: (bounds) {
+                          return LinearGradient(
+                            colors: const [
+                              _darkRed,
+                              Color(0xFFB91C1C),
+                              _darkRed,
+                            ],
+                            stops: [
+                              (_shimmerController.value - 0.3).clamp(0.0, 1.0),
+                              _shimmerController.value,
+                              (_shimmerController.value + 0.3).clamp(0.0, 1.0),
+                            ],
+                          ).createShader(bounds);
+                        },
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Text(
+                              widget.text,
+                              style: const TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w500,
+                                color: Colors.white,
+                              ),
+                            ),
+                            const SizedBox(width: 8),
+                            const Icon(
+                              Icons.arrow_forward_rounded,
+                              size: 18,
+                              color: Colors.white,
+                            ),
+                          ],
+                        ),
+                      );
+                    },
+                  ),
+                ),
+              ),
+
+              // Confirmed text
+              if (_isConfirmed)
+                const Center(
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.white,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: 10),
+                      Text(
+                        'Mengaktifkan..',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // Draggable thumb
+              Positioned(
+                left: _padding + _dragPosition,
+                top: 0,
+                bottom: 0,
+                child: Center(
+                  child: GestureDetector(
+                    onHorizontalDragUpdate: _onDragUpdate,
+                    onHorizontalDragEnd: _onDragEnd,
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 100),
+                      width: _thumbSize,
+                      height: _thumbSize,
+                      decoration: BoxDecoration(
+                        color: _isConfirmed ? Colors.white : _primaryRed,
+                        shape: BoxShape.circle,
+                        boxShadow: [
+                          BoxShadow(
+                            color: (_isConfirmed ? _darkRed : _primaryRed)
+                                .withOpacity(0.4),
+                            blurRadius: 8,
+                            offset: const Offset(0, 2),
+                          ),
+                        ],
+                      ),
+                      child: Icon(
+                        _isConfirmed
+                            ? Icons.check_rounded
+                            : Icons.chevron_right_rounded,
+                        color: _isConfirmed ? _darkRed : Colors.white,
+                        size: 28,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 }
