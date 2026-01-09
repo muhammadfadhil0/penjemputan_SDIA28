@@ -20,11 +20,31 @@ class _GuruDataPageState extends State<GuruDataPage> {
 
   bool _isUploading = false;
 
+  // Check if current user is kelas
+  bool get _isKelas => _authService.currentUser?.isKelas ?? false;
+
   // Existing data
-  String get _guruName => _authService.currentUser?.nama ?? '';
-  String get _guruUsername => _authService.currentUser?.username ?? '';
+  String get _displayName => _isKelas
+      ? (_authService.currentUser?.namaKelas ??
+            _authService.currentUser?.nama ??
+            '')
+      : (_authService.currentUser?.nama ?? '');
+  String get _username => _authService.currentUser?.username ?? '';
   String? get _fotoUrl => _authService.currentUser?.fotoUrl;
   int get _userId => _authService.currentUser?.id ?? 0;
+
+  // Dynamic labels
+  String get _pageTitle => _isKelas ? 'Data Kelas' : 'Data Guru';
+  String get _usernameLabel => _isKelas ? 'Username Kelas' : 'Username / NIP';
+  String get _nameLabel => _isKelas ? 'Nama Kelas' : 'Nama Lengkap';
+  IconData get _avatarIcon =>
+      _isKelas ? Icons.class_rounded : Icons.person_rounded;
+  Color get _accentColor =>
+      _isKelas ? AppColors.primary : Colors.amber.shade400;
+  Color get _accentColorLight =>
+      _isKelas ? AppColors.primaryLighter : Colors.amber.shade50;
+  Color get _accentColorDark =>
+      _isKelas ? AppColors.primary : Colors.amber.shade700;
 
   @override
   Widget build(BuildContext context) {
@@ -37,9 +57,9 @@ class _GuruDataPageState extends State<GuruDataPage> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Data Guru',
-          style: TextStyle(
+        title: Text(
+          _pageTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -60,19 +80,28 @@ class _GuruDataPageState extends State<GuruDataPage> {
             // Info Cards
             _buildDataCard(
               icon: Icons.badge_outlined,
-              label: 'Username / NIP',
-              value: _guruUsername,
+              label: _usernameLabel,
+              value: _username,
               isLocked: true,
             ),
 
             const SizedBox(height: 16),
 
-            _buildEditableDataCard(
-              icon: Icons.person_outline_rounded,
-              label: 'Nama Lengkap',
-              value: _guruName,
-              onEdit: _showEditNameBottomSheet,
-            ),
+            // Name field - editable for guru, locked for kelas
+            if (_isKelas)
+              _buildDataCard(
+                icon: Icons.class_outlined,
+                label: _nameLabel,
+                value: _displayName,
+                isLocked: true,
+              )
+            else
+              _buildEditableDataCard(
+                icon: Icons.person_outline_rounded,
+                label: _nameLabel,
+                value: _displayName,
+                onEdit: _showEditNameBottomSheet,
+              ),
 
             const SizedBox(height: 16),
 
@@ -98,10 +127,10 @@ class _GuruDataPageState extends State<GuruDataPage> {
             height: 140,
             decoration: BoxDecoration(
               shape: BoxShape.circle,
-              border: Border.all(color: Colors.amber.shade400, width: 4),
+              border: Border.all(color: _accentColor, width: 4),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.amber.withOpacity(0.2),
+                  color: _accentColor.withOpacity(0.2),
                   blurRadius: 20,
                   offset: const Offset(0, 10),
                 ),
@@ -110,12 +139,12 @@ class _GuruDataPageState extends State<GuruDataPage> {
             child: ClipOval(
               child: _isUploading
                   ? Container(
-                      color: Colors.amber.shade50,
-                      child: const Center(
-                        child: CircularProgressIndicator(color: Colors.amber),
+                      color: _accentColorLight,
+                      child: Center(
+                        child: CircularProgressIndicator(color: _accentColor),
                       ),
                     )
-                  : _fotoUrl != null
+                  : _fotoUrl != null && !_isKelas
                   ? Builder(
                       builder: (context) {
                         final fullUrl = _fotoUrl!.startsWith('http')
@@ -133,34 +162,36 @@ class _GuruDataPageState extends State<GuruDataPage> {
                   : _buildDefaultAvatar(),
             ),
           ),
-          Positioned(
-            right: 0,
-            bottom: 0,
-            child: GestureDetector(
-              onTap: _showPhotoOptionsBottomSheet,
-              child: Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primary,
-                  shape: BoxShape.circle,
-                  border: Border.all(color: Colors.white, width: 3),
-                  boxShadow: [
-                    BoxShadow(
-                      color: AppColors.primary.withOpacity(0.3),
-                      blurRadius: 8,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.camera_alt_rounded,
-                  color: Colors.white,
-                  size: 20,
+          // Only show camera button for guru, not kelas
+          if (!_isKelas)
+            Positioned(
+              right: 0,
+              bottom: 0,
+              child: GestureDetector(
+                onTap: _showPhotoOptionsBottomSheet,
+                child: Container(
+                  width: 44,
+                  height: 44,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: Colors.white, width: 3),
+                    boxShadow: [
+                      BoxShadow(
+                        color: AppColors.primary.withOpacity(0.3),
+                        blurRadius: 8,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
+                  ),
+                  child: const Icon(
+                    Icons.camera_alt_rounded,
+                    color: Colors.white,
+                    size: 20,
+                  ),
                 ),
               ),
             ),
-          ),
         ],
       ),
     );
@@ -168,8 +199,8 @@ class _GuruDataPageState extends State<GuruDataPage> {
 
   Widget _buildDefaultAvatar() {
     return Container(
-      color: Colors.amber.shade50,
-      child: Icon(Icons.person_rounded, color: Colors.amber.shade700, size: 70),
+      color: _accentColorLight,
+      child: Icon(_avatarIcon, color: _accentColorDark, size: 70),
     );
   }
 
@@ -440,7 +471,7 @@ class _GuruDataPageState extends State<GuruDataPage> {
   }
 
   void _showEditNameBottomSheet() {
-    final nameController = TextEditingController(text: _guruName);
+    final nameController = TextEditingController(text: _displayName);
 
     showModalBottomSheet(
       context: context,
@@ -472,7 +503,7 @@ class _GuruDataPageState extends State<GuruDataPage> {
               TextField(
                 controller: nameController,
                 decoration: InputDecoration(
-                  labelText: 'Nama Lengkap',
+                  labelText: _nameLabel,
                   border: OutlineInputBorder(
                     borderRadius: BorderRadius.circular(12),
                   ),
@@ -597,7 +628,7 @@ class _GuruDataPageState extends State<GuruDataPage> {
 
     final result = await _profileService.updateProfile(
       id: _userId,
-      nama: nama ?? _guruName,
+      nama: nama ?? _displayName,
       noTelepon:
           '', // No HP not yet persisted, sending empty string or implement if needed
       password: password,

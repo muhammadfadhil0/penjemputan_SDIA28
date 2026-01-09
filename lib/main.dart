@@ -8,6 +8,7 @@ import 'pages/jemput_page.dart';
 import 'pages/guru_jemput_page.dart';
 import 'pages/guru_riwayat_page.dart';
 import 'pages/guru_antrean_page.dart';
+import 'pages/guru_paket_page.dart';
 import 'pages/kelas_ringkasan_page.dart';
 import 'pages/kelas_riwayat_page.dart';
 import 'pages/profile_page.dart';
@@ -15,6 +16,7 @@ import 'pages/login_page.dart';
 import 'pages/onboarding_page.dart';
 import 'services/auth/auth_service.dart';
 import 'services/auth/multi_account_service.dart';
+import 'services/auth/guru_multi_account_service.dart';
 import 'services/notifications/notification_service.dart';
 import 'widgets/account_switch_transition.dart';
 
@@ -103,12 +105,21 @@ class _SplashPageState extends State<SplashPage> {
       // Onboarding completed, proceed with session check
       final authService = AuthService();
       final multiAccountService = MultiAccountService();
+      final guruMultiAccountService = GuruMultiAccountService();
 
-      // Initialize multi-account service with timeout
+      // Initialize multi-account services with timeout
       await multiAccountService.init().timeout(
         const Duration(seconds: 5),
         onTimeout: () {
           debugPrint('MultiAccountService init timeout');
+        },
+      );
+
+      // Initialize guru multi-account service
+      await guruMultiAccountService.init().timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          debugPrint('GuruMultiAccountService init timeout');
         },
       );
 
@@ -122,16 +133,24 @@ class _SplashPageState extends State<SplashPage> {
 
       // Navigate berdasarkan status session
       if (hasSession) {
-        // Sync first account to multi-account if not exists
-        if (authService.currentUser != null &&
-            !multiAccountService.isAccountRegistered(
-              authService.currentUser!.id,
-            )) {
-          await multiAccountService.addAccount(authService.currentUser!);
+        final user = authService.currentUser;
+
+        // Sync account to appropriate multi-account service
+        if (user != null) {
+          if (user.isGuru || user.isKelas) {
+            // Guru/Kelas: sync to GuruMultiAccountService
+            if (!guruMultiAccountService.isAccountRegistered(user.id)) {
+              await guruMultiAccountService.addAccount(user);
+            }
+          } else {
+            // Siswa: sync to MultiAccountService
+            if (!multiAccountService.isAccountRegistered(user.id)) {
+              await multiAccountService.addAccount(user);
+            }
+          }
         }
 
         // Cek role untuk menentukan halaman tujuan
-        final user = authService.currentUser;
         if (user != null && user.role == 'guru') {
           // Guru: navigate ke TeacherMainNavigation
           Navigator.of(context).pushReplacement(
@@ -228,7 +247,7 @@ class AppColors {
 
 // ============================================
 // TEACHER MAIN NAVIGATION
-// For guru/teacher role - 3 tabs: Riwayat, Panggil, Antrean
+// For guru/teacher role - 4 tabs: Paket, Riwayat, Panggil, Antrean
 // ============================================
 class TeacherMainNavigation extends StatefulWidget {
   const TeacherMainNavigation({super.key});
@@ -239,12 +258,13 @@ class TeacherMainNavigation extends StatefulWidget {
 
 class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 1; // Start at Panggil (center)
+  int _currentIndex = 2; // Start at Panggil (center)
   late AnimationController _indicatorController;
   late Animation<double> _indicatorAnimation;
-  double _indicatorPosition = 1.0;
+  double _indicatorPosition = 2.0;
 
   final List<Widget> _pages = const [
+    GuruPaketPage(),
     GuruRiwayatPage(),
     GuruPickupDashboardPage(),
     GuruAntreanPage(),
@@ -257,7 +277,7 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
       duration: const Duration(milliseconds: 400),
       vsync: this,
     );
-    _indicatorAnimation = Tween<double>(begin: 1.0, end: 1.0).animate(
+    _indicatorAnimation = Tween<double>(begin: 2.0, end: 2.0).animate(
       CurvedAnimation(parent: _indicatorController, curve: Curves.easeOutBack),
     );
   }
@@ -294,7 +314,7 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     if (velocity.abs() > 200) {
       if (velocity > 0 && _currentIndex > 0) {
         _animateToIndex(_currentIndex - 1);
-      } else if (velocity < 0 && _currentIndex < 2) {
+      } else if (velocity < 0 && _currentIndex < 3) {
         _animateToIndex(_currentIndex + 1);
       }
     }
@@ -305,9 +325,9 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
     DragUpdateDetails details,
     double containerWidth,
   ) {
-    final itemWidth = containerWidth / 3;
+    final itemWidth = containerWidth / 4;
     final dragPosition = details.localPosition.dx;
-    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 2);
+    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 3);
 
     if (newIndex != _currentIndex) {
       _animateToIndex(newIndex);
@@ -340,7 +360,7 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
           child: LayoutBuilder(
             builder: (context, constraints) {
-              final itemWidth = constraints.maxWidth / 3;
+              final itemWidth = constraints.maxWidth / 4;
               return GestureDetector(
                 onHorizontalDragUpdate: (details) =>
                     _handleNavBarDragUpdate(details, constraints.maxWidth),
@@ -352,7 +372,7 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
                       animation: _indicatorAnimation,
                       builder: (context, child) {
                         final position = _indicatorAnimation.value;
-                        final isCenter = position.round() == 1;
+                        final isCenter = position.round() == 2;
                         return Positioned(
                           left:
                               position * itemWidth +
@@ -391,19 +411,25 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
                       children: [
                         _buildNavItem(
                           index: 0,
+                          icon: Icons.inventory_2_outlined,
+                          activeIcon: Icons.inventory_2,
+                          label: 'Paket',
+                        ),
+                        _buildNavItem(
+                          index: 1,
                           icon: Icons.history_outlined,
                           activeIcon: Icons.history,
                           label: 'Riwayat',
                         ),
                         _buildNavItem(
-                          index: 1,
+                          index: 2,
                           icon: Icons.campaign_outlined,
                           activeIcon: Icons.campaign,
                           label: 'Panggil',
                           isCenter: true,
                         ),
                         _buildNavItem(
-                          index: 2,
+                          index: 3,
                           icon: Icons.queue_outlined,
                           activeIcon: Icons.queue,
                           label: 'Antrean',
@@ -429,40 +455,39 @@ class _TeacherMainNavigationState extends State<TeacherMainNavigation>
   }) {
     final isSelected = _currentIndex == index;
 
-    return GestureDetector(
-      onTap: () {
-        if (_currentIndex != index) {
-          _animateToIndex(index);
-        }
-      },
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: isCenter ? 24 : 16,
-          vertical: 8,
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(
-              isSelected ? activeIcon : icon,
-              color: isSelected
-                  ? (isCenter ? Colors.white : AppColors.primary)
-                  : AppColors.textMuted,
-              size: isCenter ? 26 : 24,
-            ),
-            const SizedBox(height: 4),
-            Text(
-              label,
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          if (_currentIndex != index) {
+            _animateToIndex(index);
+          }
+        },
+        behavior: HitTestBehavior.opaque,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 8),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                isSelected ? activeIcon : icon,
                 color: isSelected
                     ? (isCenter ? Colors.white : AppColors.primary)
                     : AppColors.textMuted,
+                size: isCenter ? 26 : 24,
               ),
-            ),
-          ],
+              const SizedBox(height: 4),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
+                  color: isSelected
+                      ? (isCenter ? Colors.white : AppColors.primary)
+                      : AppColors.textMuted,
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

@@ -5,6 +5,7 @@ import '../services/kelas/kelas_service.dart';
 import '../services/kelas/kelas_models.dart';
 import '../services/auth/auth_service.dart';
 import '../services/emergency/emergency_service.dart';
+import '../widgets/guru_profile_bottomsheet.dart';
 import 'package:audioplayers/audioplayers.dart';
 
 /// Halaman Ringkasan - menampilkan grid siswa dengan status penjemputan
@@ -90,7 +91,8 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
 
   void _handleEmergencyStatus(EmergencyStatus status) {
     final pickedUp = _statistik?.sudahDijemput ?? 0;
-    final shouldRing = status.active && _hasLoadedOnce && pickedUp > _lastPickedUpCount;
+    final shouldRing =
+        status.active && _hasLoadedOnce && pickedUp > _lastPickedUpCount;
 
     _emergencyStatus = status;
     _lastPickedUpCount = pickedUp;
@@ -132,8 +134,8 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
                 child: _isLoading
                     ? _buildLoading()
                     : _errorMessage != null
-                        ? _buildError()
-                        : _buildStudentGrid(),
+                    ? _buildError()
+                    : _buildStudentGrid(),
               ),
             ],
           ),
@@ -173,10 +175,7 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
                 if (activatedAt != null)
                   Text(
                     '$activatedBy mengaktifkan pada $activatedAt',
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
                   ),
               ],
             ),
@@ -197,7 +196,7 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
         'Kamis',
         'Jumat',
         'Sabtu',
-        'Minggu'
+        'Minggu',
       ];
       const months = [
         'Jan',
@@ -211,11 +210,12 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
         'Sep',
         'Okt',
         'Nov',
-        'Des'
+        'Des',
       ];
       final dayName = days[dt.weekday - 1];
       final monthName = months[dt.month - 1];
-      final time = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      final time =
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       return '$dayName, ${dt.day} $monthName ${dt.year}, $time';
     } catch (_) {
       return timestamp;
@@ -246,18 +246,22 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
         children: [
           Row(
             children: [
-              Container(
-                width: 48,
-                height: 48,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLighter,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: AppColors.primaryLight, width: 2),
-                ),
-                child: const Icon(
-                  Icons.school_outlined,
-                  color: AppColors.primary,
-                  size: 24,
+              // Clickable icon for account switching
+              GestureDetector(
+                onTap: () => showGuruProfileBottomSheet(context),
+                child: Container(
+                  width: 48,
+                  height: 48,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLighter,
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: AppColors.primaryLight, width: 2),
+                  ),
+                  child: const Icon(
+                    Icons.school_outlined,
+                    color: AppColors.primary,
+                    size: 24,
+                  ),
                 ),
               ),
               const SizedBox(width: 16),
@@ -266,8 +270,8 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Status Penjemputan',
-                      style: TextStyle(
+                      namaKelas,
+                      style: const TextStyle(
                         fontSize: 20,
                         fontWeight: FontWeight.bold,
                         color: AppColors.textPrimary,
@@ -275,7 +279,7 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
                     ),
                     const SizedBox(height: 4),
                     Text(
-                      '$namaKelas • $total Siswa',
+                      'Status penjemputan • $total Siswa',
                       style: TextStyle(
                         fontSize: 14,
                         color: AppColors.textSecondary,

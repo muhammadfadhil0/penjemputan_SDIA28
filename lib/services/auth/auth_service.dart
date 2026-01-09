@@ -3,6 +3,7 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'user_model.dart';
 import 'multi_account_service.dart';
+import 'guru_multi_account_service.dart';
 import '../../pages/jemput_page.dart';
 
 /// Response wrapper untuk hasil autentikasi
@@ -213,6 +214,9 @@ class AuthService {
     // dari akun sebelumnya (terutama saat berganti antara guru dan siswa)
     // Ini akan membersihkan baik SharedPreferences maupun in-memory cache
     await MultiAccountService().clearAllAccounts();
+
+    // Bersihkan juga data guru multi-account
+    await GuruMultiAccountService().clearAllAccounts();
 
     // Reset static flags di jemput_page agar tidak ada state tersisa
     PickupDashboardPage.resetSessionFlags();

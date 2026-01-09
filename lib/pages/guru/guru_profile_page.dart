@@ -14,8 +14,33 @@ class GuruProfilePage extends StatefulWidget {
 class _GuruProfilePageState extends State<GuruProfilePage> {
   final AuthService _authService = AuthService();
 
-  String get _guruName => _authService.currentUser?.nama ?? 'Guru';
+  // Check if current user is kelas
+  bool get _isKelas => _authService.currentUser?.isKelas ?? false;
+
+  // Dynamic name based on role
+  String get _displayName => _isKelas
+      ? (_authService.currentUser?.namaKelas ??
+            _authService.currentUser?.nama ??
+            'Kelas')
+      : (_authService.currentUser?.nama ?? 'Guru');
   String? get _fotoUrl => _authService.currentUser?.fotoUrl;
+
+  // Dynamic labels based on role
+  String get _pageTitle => _isKelas ? 'Profil Kelas' : 'Profil Saya';
+  String get _roleLabel => _isKelas ? 'Akun Kelas' : 'Guru Piket';
+  String get _dataMenuTitle => _isKelas ? 'Data Kelas' : 'Data Guru';
+  String get _dataMenuSubtitle =>
+      _isKelas ? 'Lihat dan ubah data kelas' : 'Ubah foto profil dan data diri';
+  String get _logoutSubtitle =>
+      _isKelas ? 'Keluar dari akun kelas' : 'Keluar dari akun guru';
+  IconData get _avatarIcon =>
+      _isKelas ? Icons.class_rounded : Icons.person_rounded;
+  Color get _accentColor =>
+      _isKelas ? AppColors.primary : Colors.amber.shade400;
+  Color get _accentColorLight =>
+      _isKelas ? AppColors.primaryLighter : Colors.amber.shade50;
+  Color get _accentColorDark =>
+      _isKelas ? AppColors.primary : Colors.amber.shade700;
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +53,9 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
           icon: const Icon(Icons.arrow_back_ios, color: AppColors.textPrimary),
           onPressed: () => Navigator.pop(context),
         ),
-        title: const Text(
-          'Profil Saya',
-          style: TextStyle(
+        title: Text(
+          _pageTitle,
+          style: const TextStyle(
             color: AppColors.textPrimary,
             fontSize: 18,
             fontWeight: FontWeight.w600,
@@ -54,13 +79,10 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
                     height: 100,
                     decoration: BoxDecoration(
                       shape: BoxShape.circle,
-                      border: Border.all(
-                        color: Colors.amber.shade400,
-                        width: 3,
-                      ),
+                      border: Border.all(color: _accentColor, width: 3),
                     ),
                     child: ClipOval(
-                      child: _fotoUrl != null
+                      child: _fotoUrl != null && !_isKelas
                           ? Builder(
                               builder: (context) {
                                 final fullUrl = _fotoUrl!.startsWith('http')
@@ -71,24 +93,30 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
                                   fullUrl,
                                   fit: BoxFit.cover,
                                   errorBuilder: (context, error, stackTrace) =>
-                                      Icon(
-                                        Icons.person_rounded,
-                                        color: Colors.amber.shade700,
-                                        size: 60,
+                                      Container(
+                                        color: _accentColorLight,
+                                        child: Icon(
+                                          _avatarIcon,
+                                          color: _accentColorDark,
+                                          size: 60,
+                                        ),
                                       ),
                                 );
                               },
                             )
-                          : Icon(
-                              Icons.person_rounded,
-                              color: Colors.amber.shade700,
-                              size: 60,
+                          : Container(
+                              color: _accentColorLight,
+                              child: Icon(
+                                _avatarIcon,
+                                color: _accentColorDark,
+                                size: 60,
+                              ),
                             ),
                     ),
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    _guruName,
+                    _displayName,
                     style: const TextStyle(
                       fontSize: 20,
                       fontWeight: FontWeight.bold,
@@ -103,14 +131,18 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
                       vertical: 4,
                     ),
                     decoration: BoxDecoration(
-                      color: Colors.amber.shade50,
+                      color: _accentColorLight,
                       borderRadius: BorderRadius.circular(20),
-                      border: Border.all(color: Colors.amber.shade200),
+                      border: Border.all(
+                        color: _accentColor.withValues(alpha: 0.5),
+                      ),
                     ),
                     child: Text(
-                      'Guru Piket',
+                      _roleLabel,
                       style: TextStyle(
-                        color: Colors.amber.shade800,
+                        color: _isKelas
+                            ? AppColors.primary
+                            : Colors.amber.shade800,
                         fontSize: 12,
                         fontWeight: FontWeight.w600,
                       ),
@@ -124,9 +156,11 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
 
             // Menu Items
             _buildMenuItem(
-              icon: Icons.person_outline_rounded,
-              title: 'Data Guru',
-              subtitle: 'Ubah foto profil dan data diri',
+              icon: _isKelas
+                  ? Icons.class_outlined
+                  : Icons.person_outline_rounded,
+              title: _dataMenuTitle,
+              subtitle: _dataMenuSubtitle,
               onTap: () {
                 Navigator.push(
                   context,
@@ -253,9 +287,9 @@ class _GuruProfilePageState extends State<GuruProfilePage> {
                         ),
                       ),
                       const SizedBox(height: 2),
-                      const Text(
-                        'Keluar dari akun guru',
-                        style: TextStyle(
+                      Text(
+                        _logoutSubtitle,
+                        style: const TextStyle(
                           fontSize: 13,
                           color: AppColors.textMuted,
                         ),
