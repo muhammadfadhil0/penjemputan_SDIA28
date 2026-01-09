@@ -60,6 +60,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   // Debounce timer for search
   Timer? _debounceTimer;
 
+  // Focus node for search field
+  final FocusNode _searchFocusNode = FocusNode();
+
   // Guru data
   String get guruName => _authService.currentUser?.nama ?? "Guru";
 
@@ -86,6 +89,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     _searchController.dispose();
     _otherPersonController.dispose();
     _ojekLainnyaController.dispose();
+    _searchFocusNode.dispose();
     _connectivitySubscription?.cancel();
     _debounceTimer?.cancel();
     _connectionCheckTimer?.cancel();
@@ -216,9 +220,15 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
 
   // Select a student
   void _selectStudent(StudentForPickup student) {
+    // Close keyboard by unfocusing search field
+    _searchFocusNode.unfocus();
+
     setState(() {
       _selectedStudent = student;
     });
+
+    // Show bottom sheet for selected student
+    _showSelectedStudentBottomSheet();
   }
 
   // Clear selected student
@@ -314,6 +324,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
   // Show confirmation bottom sheet before calling
   void _showCallConfirmationBottomSheet() {
     if (_selectedStudent == null) return;
+
+    // Close keyboard before showing confirmation
+    _searchFocusNode.unfocus();
 
     showModalBottomSheet(
       context: context,
@@ -500,8 +513,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
               String title,
               String subtitle,
               bool isActive,
-              bool isLoading,
-            ) {
+              bool isLoading, {
+              VoidCallback? onTap,
+            }) {
               final color = isLoading
                   ? Colors.grey
                   : (isActive
@@ -512,71 +526,82 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                   : (isActive
                         ? const Color(0xFFDCFCE7)
                         : const Color(0xFFFEE2E2));
-              return Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: bgColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(color: color.withOpacity(0.3), width: 1),
-                ),
-                child: Row(
-                  children: [
-                    Container(
-                      width: 44,
-                      height: 44,
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        shape: BoxShape.circle,
-                        border: Border.all(color: color, width: 2),
+              return GestureDetector(
+                onTap: onTap,
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: bgColor,
+                    borderRadius: BorderRadius.circular(16),
+                    border: Border.all(color: color.withOpacity(0.3), width: 1),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 44,
+                        height: 44,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          shape: BoxShape.circle,
+                          border: Border.all(color: color, width: 2),
+                        ),
+                        child: isLoading
+                            ? const Padding(
+                                padding: EdgeInsets.all(10),
+                                child: CircularProgressIndicator(
+                                  strokeWidth: 2,
+                                ),
+                              )
+                            : Icon(icon, color: color, size: 22),
                       ),
-                      child: isLoading
-                          ? const Padding(
-                              padding: EdgeInsets.all(10),
-                              child: CircularProgressIndicator(strokeWidth: 2),
-                            )
-                          : Icon(icon, color: color, size: 22),
-                    ),
-                    const SizedBox(width: 14),
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            title,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w600,
-                              color: AppColors.textPrimary,
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              title,
+                              style: const TextStyle(
+                                fontSize: 15,
+                                fontWeight: FontWeight.w600,
+                                color: AppColors.textPrimary,
+                              ),
                             ),
-                          ),
-                          const SizedBox(height: 2),
-                          Text(
-                            isLoading ? 'Memeriksa' : subtitle,
-                            style: TextStyle(
-                              fontSize: 13,
-                              color: color,
-                              fontWeight: FontWeight.w500,
+                            const SizedBox(height: 2),
+                            Text(
+                              isLoading ? 'Memeriksa' : subtitle,
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: color,
+                                fontWeight: FontWeight.w500,
+                              ),
                             ),
-                          ),
-                        ],
+                          ],
+                        ),
                       ),
-                    ),
-                    Container(
-                      width: 12,
-                      height: 12,
-                      decoration: BoxDecoration(
-                        color: color,
-                        shape: BoxShape.circle,
-                        boxShadow: [
-                          BoxShadow(
-                            color: color.withOpacity(0.4),
-                            blurRadius: 6,
-                            spreadRadius: 1,
-                          ),
-                        ],
+                      Container(
+                        width: 12,
+                        height: 12,
+                        decoration: BoxDecoration(
+                          color: color,
+                          shape: BoxShape.circle,
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withOpacity(0.4),
+                              blurRadius: 6,
+                              spreadRadius: 1,
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                  ],
+                      const SizedBox(width: 8),
+                      Icon(
+                        Icons.chevron_right_rounded,
+                        color: color.withOpacity(0.7),
+                        size: 20,
+                      ),
+                    ],
+                  ),
                 ),
               );
             }
@@ -624,6 +649,10 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                     _isConnected ? 'Terhubung' : 'Tidak ada koneksi',
                     _isConnected,
                     isCheckingStatus,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showNetworkDetailBottomSheet();
+                    },
                   ),
                   const SizedBox(height: 12),
                   buildStatusItem(
@@ -632,6 +661,10 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                     _isServerReachable ? 'Online' : 'Tidak dapat dijangkau',
                     _isServerReachable,
                     isCheckingStatus,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showServerDetailBottomSheet();
+                    },
                   ),
                   const SizedBox(height: 12),
                   buildStatusItem(
@@ -642,6 +675,10 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                         : 'Terputus',
                     _isDashboardActive,
                     isCheckingStatus,
+                    onTap: () {
+                      Navigator.pop(ctx);
+                      _showComputerDetailBottomSheet();
+                    },
                   ),
                   const SizedBox(height: 24),
                   // Emergency Mode Button
@@ -802,6 +839,584 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     });
   }
 
+  // Show network detail bottom sheet
+  void _showNetworkDetailBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final isConnected = _isConnected;
+        final statusColor = isConnected
+            ? const Color(0xFF22C55E)
+            : const Color(0xFFEF4444);
+        final bgColor = isConnected
+            ? const Color(0xFFDCFCE7)
+            : const Color(0xFFFEE2E2);
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: statusColor, width: 3),
+                ),
+                child: Icon(Icons.wifi_rounded, color: statusColor, size: 32),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Jaringan Anda',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Status
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: statusColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      isConnected
+                          ? 'Anda terhubung ke Internet'
+                          : 'Tidak ada koneksi internet',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isConnected) ...[
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFCD34D).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline_rounded,
+                            color: const Color(0xFFD97706),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Yang dapat Anda lakukan:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTroubleshootItem(
+                        '1',
+                        'Ganti Wifi yang memiliki akses internet',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '2',
+                        'Jika tidak ada perubahan, beralih ke paket data Anda',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '3',
+                        'Cek kembali perangkat Anda dan pastikan Firewall, DNS, dan pengaturan jaringan lainnya telah terkonfigurasi dengan benar',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleConnectionStatusTap();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kembali',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Show server detail bottom sheet
+  void _showServerDetailBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final isConnected = _isServerReachable;
+        final statusColor = isConnected
+            ? const Color(0xFF22C55E)
+            : const Color(0xFFEF4444);
+        final bgColor = isConnected
+            ? const Color(0xFFDCFCE7)
+            : const Color(0xFFFEE2E2);
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: statusColor, width: 3),
+                ),
+                child: Icon(Icons.dns_rounded, color: statusColor, size: 32),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Server Penjemputan',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Status
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: statusColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Text(
+                      isConnected
+                          ? 'Anda terhubung ke Server Penjemputan'
+                          : 'Server tidak dapat dijangkau',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.w600,
+                        color: statusColor,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (!isConnected) ...[
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFCD34D).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline_rounded,
+                            color: const Color(0xFFD97706),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Yang dapat Anda lakukan:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTroubleshootItem(
+                        '1',
+                        'Pastikan perangkat Anda memiliki akses internet yang stabil',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '2',
+                        'Tunggu sebentar dan hubungi staf IT Anda',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '3',
+                        'Jika masih belum terhubung, ini bukan salah Anda, biarkan staf IT mengecek server penjemputan sembari Anda menunggu kembali online',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleConnectionStatusTap();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kembali',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Show computer detail bottom sheet
+  void _showComputerDetailBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        final isActive = _isDashboardActive;
+        final statusColor = isActive
+            ? const Color(0xFF22C55E)
+            : const Color(0xFFEF4444);
+        final bgColor = isActive
+            ? const Color(0xFFDCFCE7)
+            : const Color(0xFFFEE2E2);
+
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Icon
+              Container(
+                width: 64,
+                height: 64,
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: statusColor, width: 3),
+                ),
+                child: Icon(
+                  Icons.computer_rounded,
+                  color: statusColor,
+                  size: 32,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Komputer Kurikulum',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Status
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 10,
+                ),
+                decoration: BoxDecoration(
+                  color: bgColor,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: statusColor.withOpacity(0.3)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Container(
+                      width: 10,
+                      height: 10,
+                      decoration: BoxDecoration(
+                        color: statusColor,
+                        shape: BoxShape.circle,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        isActive
+                            ? 'Komputer kurikulum terkoneksi dengan baik'
+                            : 'Komputer kurikulum tidak terkoneksi',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: statusColor,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              if (isActive && _activeTeacherName != null) ...[
+                const SizedBox(height: 8),
+                Text(
+                  'Operator: $_activeTeacherName',
+                  style: const TextStyle(
+                    fontSize: 13,
+                    color: AppColors.textMuted,
+                  ),
+                ),
+              ],
+              if (!isActive) ...[
+                const SizedBox(height: 20),
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFFEF3C7),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(
+                      color: const Color(0xFFFCD34D).withOpacity(0.5),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(
+                            Icons.lightbulb_outline_rounded,
+                            color: const Color(0xFFD97706),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 8),
+                          const Text(
+                            'Yang dapat Anda lakukan:',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFD97706),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      _buildTroubleshootItem(
+                        '1',
+                        'Pastikan komputer kurikulum mempunyai akses internet yang stabil',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '2',
+                        'Pastikan Website penjemputan tetap aktif dan tidak tertutup',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '3',
+                        'Jika internet stabil dan website penjemputan aktif, coba untuk refresh halaman web Penjemputan',
+                      ),
+                      const SizedBox(height: 8),
+                      _buildTroubleshootItem(
+                        '4',
+                        'Jika masih belum terhubung, hubungi Staf IT Anda',
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+              const SizedBox(height: 24),
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () {
+                    Navigator.pop(ctx);
+                    _handleConnectionStatusTap();
+                  },
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 14),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Kembali',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w600),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 16),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper widget to build troubleshoot item
+  Widget _buildTroubleshootItem(String number, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 20,
+          height: 20,
+          decoration: BoxDecoration(
+            color: const Color(0xFFD97706).withOpacity(0.2),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Color(0xFFD97706),
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF92400E),
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
   // Show Emergency Mode confirmation bottomsheet
   void _showEmergencyModeBottomSheet() {
     showModalBottomSheet(
@@ -940,30 +1555,210 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     _modalStateCallback?.call(() {});
 
     final success = status.active;
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Row(
-          children: [
-            Icon(
-              success ? Icons.check_circle : Icons.error,
-              color: Colors.white,
-              size: 20,
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                success
-                    ? 'Emergency Mode diaktifkan oleh ${status.activatedBy ?? 'Guru'}'
-                    : 'Gagal mengaktifkan Emergency Mode',
+    if (success) {
+      // Show success bottomsheet with instructions
+      _showEmergencyActivatedBottomSheet();
+    } else {
+      // Show error snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Row(
+            children: [
+              const Icon(Icons.error, color: Colors.white, size: 20),
+              const SizedBox(width: 10),
+              const Expanded(child: Text('Gagal mengaktifkan Emergency Mode')),
+            ],
+          ),
+          backgroundColor: Colors.orange,
+          behavior: SnackBarBehavior.floating,
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
+          margin: const EdgeInsets.all(16),
+        ),
+      );
+    }
+  }
+
+  // Show bottomsheet after emergency mode is activated
+  void _showEmergencyActivatedBottomSheet() {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      isDismissible: true,
+      enableDrag: true,
+      builder: (ctx) {
+        return Container(
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+          decoration: const BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: Colors.grey[300],
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Success Icon
+              Container(
+                width: 72,
+                height: 72,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: const Color(0xFFEF4444), width: 3),
+                ),
+                child: const Icon(
+                  Icons.warning_amber_rounded,
+                  color: Color(0xFFEF4444),
+                  size: 40,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // Title
+              const Text(
+                'Mode Emergency telah aktif',
+                style: TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFFDC2626),
+                ),
+              ),
+              const SizedBox(height: 12),
+              // Subtitle
+              const Text(
+                'Anda dengan bebas dapat menonaktifkan mode emergency kapanpun yang Anda mau',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: Color(0xFF4B5563),
+                  height: 1.5,
+                ),
+              ),
+              const SizedBox(height: 20),
+              // What to do section
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFEE2E2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(
+                    color: const Color(0xFFEF4444).withOpacity(0.3),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.help_outline_rounded,
+                          color: Color(0xFFDC2626),
+                          size: 20,
+                        ),
+                        const SizedBox(width: 8),
+                        Flexible(
+                          child: Text(
+                            'Apa yang harus saya lakukan setelah ini?',
+                            style: const TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.w600,
+                              color: Color(0xFFDC2626),
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    _buildEmergencyInstructionItem(
+                      '1',
+                      'Segera kabari guru untuk pemanggilan melalui komputer kurikulum atau kelas sementara dinonaktifkan',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildEmergencyInstructionItem(
+                      '2',
+                      'Kabari guru untuk masuk aplikasi Penjemputan dengan menggunakan akun kelas',
+                    ),
+                    const SizedBox(height: 10),
+                    _buildEmergencyInstructionItem(
+                      '3',
+                      'Tetap berjaga di pos Anda, tugas Anda tetap seperti biasa',
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              // Button
+              SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: () => Navigator.pop(ctx),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: const Color(0xFFDC2626),
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                  ),
+                  child: const Text(
+                    'Saya mengerti',
+                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.w700),
+                  ),
+                ),
+              ),
+              SizedBox(height: MediaQuery.of(ctx).padding.bottom + 12),
+            ],
+          ),
+        );
+      },
+    );
+  }
+
+  // Helper widget for emergency instruction items
+  Widget _buildEmergencyInstructionItem(String number, String text) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Container(
+          width: 22,
+          height: 22,
+          decoration: const BoxDecoration(
+            color: Color(0xFFDC2626),
+            shape: BoxShape.circle,
+          ),
+          child: Center(
+            child: Text(
+              number,
+              style: const TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Colors.white,
               ),
             ),
-          ],
+          ),
         ),
-        backgroundColor: success ? Colors.red : Colors.orange,
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(
+            text,
+            style: const TextStyle(
+              fontSize: 13,
+              color: Color(0xFF7F1D1D),
+              height: 1.4,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1123,6 +1918,9 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
         margin: const EdgeInsets.all(16),
       ),
     );
+
+    // Refresh connection status after deactivating emergency mode
+    _checkExtendedConnectionStatus();
   }
 
   Widget _buildEmergencyConsequenceItem(String number, String text) {
@@ -1278,24 +2076,32 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                       width: 44,
                       height: 44,
                       decoration: BoxDecoration(
-                        color: _isAllConnected
-                            ? const Color(0xFFDCFCE7)
-                            : const Color(0xFFFEE2E2),
+                        color: _emergencyStatus.active
+                            ? const Color(0xFFFEE2E2)
+                            : (_isAllConnected
+                                  ? const Color(0xFFDCFCE7)
+                                  : const Color(0xFFFEE2E2)),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
-                          color: _isAllConnected
-                              ? const Color(0xFF22C55E)
-                              : const Color(0xFFEF4444),
+                          color: _emergencyStatus.active
+                              ? const Color(0xFFEF4444)
+                              : (_isAllConnected
+                                    ? const Color(0xFF22C55E)
+                                    : const Color(0xFFEF4444)),
                           width: 1.5,
                         ),
                       ),
                       child: Icon(
-                        _isAllConnected
-                            ? Icons.wifi_rounded
-                            : Icons.wifi_off_rounded,
-                        color: _isAllConnected
-                            ? const Color(0xFF22C55E)
-                            : const Color(0xFFEF4444),
+                        _emergencyStatus.active
+                            ? Icons.warning_amber_rounded
+                            : (_isAllConnected
+                                  ? Icons.wifi_rounded
+                                  : Icons.wifi_off_rounded),
+                        color: _emergencyStatus.active
+                            ? const Color(0xFFEF4444)
+                            : (_isAllConnected
+                                  ? const Color(0xFF22C55E)
+                                  : const Color(0xFFEF4444)),
                         size: 22,
                       ),
                     ),
@@ -1337,6 +2143,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
                     ),
                     child: TextField(
                       controller: _searchController,
+                      focusNode: _searchFocusNode,
                       style: const TextStyle(
                         color: AppColors.textPrimary,
                         fontSize: 14,
@@ -1422,9 +2229,6 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
 
             // Search Results
             Expanded(child: _buildSearchResults()),
-
-            // Selected Student Card & Call Button
-            if (_selectedStudent != null) _buildSelectedStudentCard(),
           ],
         ),
       ),
@@ -1604,175 +2408,394 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
     );
   }
 
-  Widget _buildSelectedStudentCard() {
-    return Container(
-      padding: EdgeInsets.only(
-        left: 20,
-        right: 20,
-        top: 16,
-        bottom: MediaQuery.of(context).padding.bottom + 16,
-      ),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border(top: BorderSide(color: AppColors.border)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.05),
-            blurRadius: 10,
-            offset: const Offset(0, -4),
-          ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          // Selected student info row
-          Row(
-            children: [
-              Container(
-                width: 44,
-                height: 44,
-                decoration: BoxDecoration(
-                  color: AppColors.primaryLighter,
-                  borderRadius: BorderRadius.circular(10),
+  void _showSelectedStudentBottomSheet() {
+    if (_selectedStudent == null) return;
+
+    // Store local reference to prevent null access during dismiss animation
+    final student = _selectedStudent!;
+
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: Colors.transparent,
+      isScrollControlled: true,
+      builder: (ctx) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return GestureDetector(
+              onTap: () => FocusScope.of(context).unfocus(),
+              child: Container(
+                padding: EdgeInsets.only(
+                  left: 24,
+                  right: 24,
+                  top: 20,
+                  bottom: MediaQuery.of(ctx).padding.bottom + 20,
                 ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(10),
-                  child: _selectedStudent!.fotoUrl != null
-                      ? Image.network(
-                          _selectedStudent!.fotoUrl!,
-                          width: 44,
-                          height: 44,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) =>
-                              const Icon(
-                                Icons.person_rounded,
-                                color: AppColors.primary,
-                                size: 24,
-                              ),
-                        )
-                      : const Icon(
-                          Icons.person_rounded,
-                          color: AppColors.primary,
-                          size: 24,
-                        ),
+                decoration: const BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
                 ),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Text(
-                      _selectedStudent!.displayName,
-                      style: const TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                        color: AppColors.textPrimary,
+                    // Drag handle
+                    Container(
+                      width: 40,
+                      height: 4,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[300],
+                        borderRadius: BorderRadius.circular(2),
                       ),
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    Text(
-                      _selectedStudent!.namaKelas,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: AppColors.textMuted,
+                    const SizedBox(height: 20),
+
+                    // Selected student info row
+                    Row(
+                      children: [
+                        Container(
+                          width: 56,
+                          height: 56,
+                          decoration: BoxDecoration(
+                            color: AppColors.primaryLighter,
+                            borderRadius: BorderRadius.circular(14),
+                          ),
+                          child: ClipRRect(
+                            borderRadius: BorderRadius.circular(14),
+                            child: student.fotoUrl != null
+                                ? Image.network(
+                                    student.fotoUrl!,
+                                    width: 56,
+                                    height: 56,
+                                    fit: BoxFit.cover,
+                                    errorBuilder:
+                                        (context, error, stackTrace) =>
+                                            const Icon(
+                                              Icons.person_rounded,
+                                              color: AppColors.primary,
+                                              size: 28,
+                                            ),
+                                  )
+                                : const Icon(
+                                    Icons.person_rounded,
+                                    color: AppColors.primary,
+                                    size: 28,
+                                  ),
+                          ),
+                        ),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Text(
+                                student.nama,
+                                style: const TextStyle(
+                                  fontSize: 18,
+                                  fontWeight: FontWeight.w600,
+                                  color: AppColors.textPrimary,
+                                ),
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 4),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 8,
+                                  vertical: 4,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primaryLighter,
+                                  borderRadius: BorderRadius.circular(6),
+                                ),
+                                child: Text(
+                                  student.namaKelas,
+                                  style: const TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+
+                    const SizedBox(height: 24),
+
+                    // Divider
+                    Container(height: 1, color: AppColors.border),
+
+                    const SizedBox(height: 20),
+
+                    // Picker selection
+                    const Align(
+                      alignment: Alignment.centerLeft,
+                      child: Text(
+                        'Dijemput oleh:',
+                        style: TextStyle(
+                          fontSize: 14,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.textPrimary,
+                        ),
                       ),
+                    ),
+                    const SizedBox(height: 12),
+                    // Inline picker segments with setModalState
+                    Container(
+                      padding: const EdgeInsets.all(3),
+                      decoration: BoxDecoration(
+                        color: AppColors.background,
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(color: AppColors.border),
+                      ),
+                      child: Row(
+                        children: [
+                          _buildModalPickerItem(
+                            'ayah',
+                            'Ayah',
+                            Icons.man,
+                            setModalState,
+                          ),
+                          _buildModalPickerItem(
+                            'ibu',
+                            'Ibu',
+                            Icons.woman,
+                            setModalState,
+                          ),
+                          _buildModalPickerItem(
+                            'ojek',
+                            'Ojek',
+                            Icons.two_wheeler,
+                            setModalState,
+                          ),
+                          _buildModalPickerItem(
+                            'lainnya',
+                            'Lainnya',
+                            Icons.people,
+                            setModalState,
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    // Ojek sub-selector
+                    if (_selectedPicker == 'ojek') ...[
+                      const SizedBox(height: 12),
+                      // Inline ojek sub-selector with setModalState
+                      Container(
+                        padding: const EdgeInsets.all(3),
+                        decoration: BoxDecoration(
+                          color: AppColors.background,
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Row(
+                          children: [
+                            _buildModalOjekItem(
+                              'gojek',
+                              'Gojek',
+                              setModalState,
+                            ),
+                            _buildModalOjekItem('grab', 'Grab', setModalState),
+                            _buildModalOjekItem(
+                              'maxim',
+                              'Maxim',
+                              setModalState,
+                            ),
+                            _buildModalOjekItem(
+                              'lainnya',
+                              'Lainnya',
+                              setModalState,
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+
+                    // Ojek lainnya input
+                    if (_selectedPicker == 'ojek' &&
+                        _selectedOjek == 'lainnya') ...[
+                      const SizedBox(height: 12),
+                      _buildPickerTextField(
+                        controller: _ojekLainnyaController,
+                        hint: 'Nama ojek lainnya',
+                        icon: Icons.two_wheeler,
+                      ),
+                    ],
+
+                    // Other person input
+                    if (_selectedPicker == 'lainnya') ...[
+                      const SizedBox(height: 12),
+                      _buildPickerTextField(
+                        controller: _otherPersonController,
+                        hint: 'Nama penjemput',
+                        icon: Icons.person_outline,
+                      ),
+                    ],
+
+                    const SizedBox(height: 24),
+
+                    // Action buttons
+                    Row(
+                      children: [
+                        Expanded(
+                          child: OutlinedButton(
+                            onPressed: () {
+                              Navigator.pop(ctx);
+                              _clearSelectedStudent();
+                            },
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: AppColors.textSecondary,
+                              side: const BorderSide(color: AppColors.border),
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: const Text(
+                              'Batal',
+                              style: TextStyle(
+                                fontSize: 14,
+                                fontWeight: FontWeight.w600,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          flex: 2,
+                          child: ElevatedButton(
+                            onPressed: _isCallingStudent
+                                ? null
+                                : () {
+                                    // Close keyboard before showing confirmation
+                                    _searchFocusNode.unfocus();
+                                    Navigator.pop(ctx);
+                                    _showCallConfirmationBottomSheet();
+                                  },
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: AppColors.primary,
+                              foregroundColor: Colors.white,
+                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                            ),
+                            child: _isCallingStudent
+                                ? const SizedBox(
+                                    width: 20,
+                                    height: 20,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(
+                                        Colors.white,
+                                      ),
+                                    ),
+                                  )
+                                : const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.call_rounded, size: 18),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Panggil Siswa',
+                                        style: TextStyle(
+                                          fontSize: 14,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                          ),
+                        ),
+                      ],
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                onPressed: _clearSelectedStudent,
-                icon: const Icon(
-                  Icons.close_rounded,
-                  color: AppColors.textMuted,
-                  size: 20,
+            );
+          },
+        );
+      },
+    );
+  }
+
+  // Helper untuk modal picker item dengan custom setState
+  Widget _buildModalPickerItem(
+    String value,
+    String label,
+    IconData icon,
+    StateSetter setModalState,
+  ) {
+    final isSelected = _selectedPicker == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setModalState(() => _selectedPicker = value);
+          setState(() => _selectedPicker = value);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : AppColors.textMuted,
+              ),
+              const SizedBox(height: 2),
+              Text(
+                label,
+                style: TextStyle(
+                  fontSize: 10,
+                  fontWeight: FontWeight.w500,
+                  color: isSelected ? Colors.white : AppColors.textMuted,
                 ),
               ),
             ],
           ),
+        ),
+      ),
+    );
+  }
 
-          const SizedBox(height: 12),
-
-          // Picker selection
-          const Align(
-            alignment: Alignment.centerLeft,
-            child: Text(
-              'Dijemput oleh:',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: AppColors.textMuted,
-              ),
+  // Helper untuk modal ojek item dengan custom setState
+  Widget _buildModalOjekItem(
+    String value,
+    String label,
+    StateSetter setModalState,
+  ) {
+    final isSelected = _selectedOjek == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () {
+          setModalState(() => _selectedOjek = value);
+          setState(() => _selectedOjek = value);
+        },
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? AppColors.primary : Colors.transparent,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          child: Text(
+            label,
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w500,
+              color: isSelected ? Colors.white : AppColors.textMuted,
             ),
           ),
-          const SizedBox(height: 8),
-          _buildPickerSegments(),
-
-          // Ojek sub-selector
-          if (_selectedPicker == 'ojek') ...[
-            const SizedBox(height: 8),
-            _buildOjekSubSelector(),
-          ],
-
-          // Ojek lainnya input
-          if (_selectedPicker == 'ojek' && _selectedOjek == 'lainnya') ...[
-            const SizedBox(height: 8),
-            _buildPickerTextField(
-              controller: _ojekLainnyaController,
-              hint: 'Nama ojek lainnya',
-              icon: Icons.two_wheeler,
-            ),
-          ],
-
-          // Other person input
-          if (_selectedPicker == 'lainnya') ...[
-            const SizedBox(height: 8),
-            _buildPickerTextField(
-              controller: _otherPersonController,
-              hint: 'Nama penjemput',
-              icon: Icons.person_outline,
-            ),
-          ],
-
-          const SizedBox(height: 12),
-
-          // Call button
-          SizedBox(
-            width: double.infinity,
-            child: ElevatedButton(
-              onPressed: _isCallingStudent
-                  ? null
-                  : _showCallConfirmationBottomSheet,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(vertical: 14),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
-                ),
-              ),
-              child: _isCallingStudent
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
-                      ),
-                    )
-                  : const Text(
-                      'Panggil Siswa',
-                      style: TextStyle(
-                        fontSize: 14,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-            ),
-          ),
-        ],
+        ),
       ),
     );
   }
@@ -1896,6 +2919,7 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
       ),
       child: TextField(
         controller: controller,
+        autofocus: false,
         style: const TextStyle(color: AppColors.textPrimary, fontSize: 13),
         decoration: InputDecoration(
           hintText: hint,

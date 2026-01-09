@@ -45,53 +45,53 @@
             background: #f1f1f1;
             border-radius: 10px;
         }
-        
-            .hidden {
-                display: none !important;
-            }
-        
-            .emergency-overlay {
-                position: fixed;
-                inset: 0;
-                z-index: 9999;
-                display: flex;
-                align-items: center;
-                justify-content: center;
-                padding: 16px;
-                background: rgba(0, 0, 0, 0.55);
-                backdrop-filter: blur(6px);
-            }
-        
-            .emergency-card {
-                max-width: 560px;
-                width: 100%;
-                background: #fff;
-                border: 1px solid #fecaca;
-                border-radius: 18px;
-                padding: 24px;
-                text-align: center;
-                box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
-            }
-        
-            .emergency-card h2 {
-                color: #dc2626;
-                font-size: 22px;
-                margin-bottom: 12px;
-                font-weight: 800;
-            }
-        
-            .emergency-card p {
-                color: #374151;
-                margin: 6px 0;
-            }
-        
-            body.emergency-blur main,
-            body.emergency-blur header,
-            body.emergency-blur nav {
-                filter: blur(3px);
-                pointer-events: none;
-                user-select: none;
-            }
+
+        .hidden {
+            display: none !important;
+        }
+
+        .emergency-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.55);
+            backdrop-filter: blur(6px);
+        }
+
+        .emergency-card {
+            max-width: 560px;
+            width: 100%;
+            background: #fff;
+            border: 1px solid #fecaca;
+            border-radius: 18px;
+            padding: 24px;
+            text-align: center;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25);
+        }
+
+        .emergency-card h2 {
+            color: #dc2626;
+            font-size: 22px;
+            margin-bottom: 12px;
+            font-weight: 800;
+        }
+
+        .emergency-card p {
+            color: #374151;
+            margin: 6px 0;
+        }
+
+        body.emergency-blur main,
+        body.emergency-blur header,
+        body.emergency-blur nav {
+            filter: blur(3px);
+            pointer-events: none;
+            user-select: none;
+        }
 
         ::-webkit-scrollbar-thumb {
             background: #c1c1c1;
@@ -607,7 +607,7 @@
             box-shadow: 0 8px 20px rgba(59, 130, 246, 0.15);
         }
 
-        .authority-card input[type="radio"]:checked ~ * {
+        .authority-card input[type="radio"]:checked~* {
             border-color: #3b82f6;
         }
 
@@ -627,7 +627,7 @@
             transform: scale(1.1) rotate(-5deg);
         }
 
-        .authority-card input[type="radio"]:checked + .authority-icon-box {
+        .authority-card input[type="radio"]:checked+.authority-icon-box {
             transform: scale(1.15);
         }
     </style>
@@ -878,7 +878,8 @@
                 </div>
 
                 <!-- Control Button Group -->
-                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm relative" id="callingControlCard">
+                <div class="bg-cardBg border border-borderColor rounded-2xl p-6 shadow-sm relative"
+                    id="callingControlCard">
                     <div id="callingAuthorityOverlay"
                         class="hidden absolute inset-0 bg-white/70 backdrop-blur-sm z-10 rounded-2xl flex items-center justify-center text-center px-6">
                         <p class="text-sm font-semibold text-textSecondary">Pemanggilan dialihkan ke kelas. Kontrol di
@@ -1059,12 +1060,12 @@
     <!-- Call Authority Modal -->
     <div id="authorityModal"
         class="modal-overlay fixed inset-0 z-50 hidden flex items-center justify-center bg-black/50 backdrop-blur-sm px-4">
-        <div class="authority-modal-content bg-cardBg border border-borderColor rounded-2xl shadow-2xl w-full max-w-4xl p-8 relative">
+        <div
+            class="authority-modal-content bg-cardBg border border-borderColor rounded-2xl shadow-2xl w-full max-w-4xl p-8 relative">
             <button type="button" onclick="closeCallAuthorityModal()"
                 class="absolute top-4 right-4 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-all hover:rotate-90">
                 <svg class="w-5 h-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                        d="M6 18L18 6M6 6l12 12" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
             </button>
 
@@ -1091,7 +1092,8 @@
                     </div>
                     <div class="flex-1">
                         <p class="font-bold text-lg text-textPrimary mb-1">Komputer Kurikulum</p>
-                        <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer kurikulum. Halaman kelas tetap menampilkan kartu antrean dengan status "dipanggil di kelas".</p>
+                        <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer kurikulum.
+                            Halaman kelas tetap menampilkan kartu antrean dengan status "dipanggil di kelas".</p>
                     </div>
                 </label>
 
@@ -1102,7 +1104,8 @@
                     </div>
                     <div class="flex-1">
                         <p class="font-bold text-lg text-textPrimary mb-1">Layar Kelas</p>
-                        <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas. Kontrol di komputer kurikulum akan dikunci.</p>
+                        <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas. Kontrol di
+                            komputer kurikulum akan dikunci.</p>
                     </div>
                 </label>
             </div>
@@ -1112,7 +1115,8 @@
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                         d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                <p class="text-sm font-medium text-blue-800" id="authorityModalHint">Saat ini pemanggilan aktif di Komputer Kurikulum</p>
+                <p class="text-sm font-medium text-blue-800" id="authorityModalHint">Saat ini pemanggilan aktif di
+                    Komputer Kurikulum</p>
             </div>
 
             <div class="flex justify-end gap-3">
@@ -1144,7 +1148,8 @@
     <div id="emergencyOverlay" class="emergency-overlay hidden">
         <div class="emergency-card">
             <h2>Emergency Mode diaktifkan</h2>
-            <p>Seluruh permintaan penjemputan orang tua akan dialihkan menuju aplikasi yang telah terlogin dengan akun kelas.</p>
+            <p>Seluruh permintaan penjemputan orang tua akan dialihkan menuju aplikasi yang telah terlogin dengan akun
+                kelas.</p>
             <p id="emergencyActivatedBy" style="color:#b91c1c;font-weight:700;"></p>
             <p id="emergencyActivatedAt" style="color:#b91c1c;"></p>
         </div>
@@ -1206,13 +1211,21 @@
                 stopAutoRefresh();
                 stopHeartbeat();
                 if (typeof currentAudio !== 'undefined' && currentAudio) {
-                    try { currentAudio.pause(); } catch (e) {}
+                    try { currentAudio.pause(); } catch (e) { }
                 }
             } else {
                 document.body.classList.remove('emergency-blur');
                 overlay.classList.add('hidden');
                 if (!refreshInterval) {
                     startAutoRefresh();
+                }
+                // Restart heartbeat when emergency mode is deactivated
+                const userData = localStorage.getItem('user');
+                if (userData) {
+                    const user = JSON.parse(userData);
+                    if (user.id && user.role === 'guru' && !heartbeatInterval) {
+                        startHeartbeat(user);
+                    }
                 }
             }
         }
@@ -1526,13 +1539,13 @@
         function closeCallAuthorityModal() {
             const modal = document.getElementById('authorityModal');
             if (!modal) return;
-            
+
             modal.classList.add('closing');
             setTimeout(() => {
                 modal.classList.remove('active', 'closing');
                 modal.classList.add('hidden');
             }, 300);
-            
+
             const saveBtn = document.getElementById('authorityModalSaveBtn');
             if (saveBtn) {
                 saveBtn.disabled = false;
