@@ -3,7 +3,7 @@
 -- https://www.phpmyadmin.net/
 --
 -- Host: localhost:3306
--- Generation Time: Jan 02, 2026 at 10:03 AM
+-- Generation Time: Jan 11, 2026 at 03:01 AM
 -- Server version: 10.11.15-MariaDB-cll-lve
 -- PHP Version: 8.4.16
 
@@ -53,7 +53,7 @@ CREATE TABLE `guru_session_aktif` (
 --
 
 INSERT INTO `guru_session_aktif` (`id`, `user_id`, `login_time`, `last_heartbeat`) VALUES
-(32, 4, '2026-01-02 02:50:33', '2026-01-02 02:50:33');
+(165, 4, '2026-01-10 19:05:22', '2026-01-10 19:05:22');
 
 -- --------------------------------------------------------
 
@@ -77,11 +77,11 @@ CREATE TABLE `jadwal_kelas` (
 --
 
 INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`, `created_at`, `updated_at`, `is_holiday`) VALUES
-(1, 1, 'senin', '07:00:00', '21:30:00', '2025-12-28 17:21:38', '2025-12-29 13:26:47', 0),
-(2, 1, 'selasa', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(1, 1, 'senin', '07:00:00', '10:00:00', '2025-12-28 17:21:38', '2026-01-02 06:31:54', 0),
+(2, 1, 'selasa', '07:00:00', '12:30:00', '2025-12-28 17:21:38', '2026-01-10 18:51:26', 0),
 (3, 1, 'rabu', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(4, 1, 'kamis', '07:00:00', '10:00:00', '2025-12-28 17:21:38', '2026-01-02 02:48:42', 0),
-(5, 1, 'jumat', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(4, 1, 'kamis', '07:00:00', '17:44:00', '2025-12-28 17:21:38', '2026-01-08 10:36:45', 0),
+(5, 1, 'jumat', '07:00:00', '13:00:00', '2025-12-28 17:21:38', '2026-01-08 10:49:20', 0),
 (6, 2, 'senin', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (7, 2, 'selasa', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (8, 2, 'rabu', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
@@ -99,9 +99,9 @@ INSERT INTO `jadwal_kelas` (`id`, `kelas_id`, `hari`, `jam_masuk`, `jam_pulang`,
 (20, 4, 'jumat', '07:00:00', '11:30:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (21, 5, 'senin', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (22, 5, 'selasa', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(23, 5, 'rabu', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(24, 5, 'kamis', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
-(25, 5, 'jumat', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
+(23, 5, 'rabu', '07:00:00', '13:00:00', '2025-12-28 17:21:38', '2026-01-08 10:44:31', 0),
+(24, 5, 'kamis', '07:00:00', '17:45:00', '2025-12-28 17:21:38', '2026-01-08 10:36:57', 0),
+(25, 5, 'jumat', '07:00:00', '13:00:00', '2025-12-28 17:21:38', '2026-01-08 10:44:15', 0),
 (26, 6, 'senin', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (27, 6, 'selasa', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
 (28, 6, 'rabu', '07:00:00', '12:00:00', '2025-12-28 17:21:38', '2025-12-28 17:21:38', 0),
@@ -258,29 +258,29 @@ CREATE TABLE `kelas` (
 --
 
 INSERT INTO `kelas` (`id`, `nama_kelas`, `tingkat`, `tahun_ajaran`, `created_at`) VALUES
-(1, 'Kelas 1 Abu Bakar', 1, '2025/2026', '2025-12-28 17:21:38'),
-(2, 'Kelas 1 Umar', 1, '2025/2026', '2025-12-28 17:21:38'),
-(3, 'Kelas 1 Utsman', 1, '2025/2026', '2025-12-28 17:21:38'),
-(4, 'Kelas 1 Ali', 1, '2025/2026', '2025-12-28 17:21:38'),
-(5, 'Kelas 2 Abu Bakar', 2, '2025/2026', '2025-12-28 17:21:38'),
-(6, 'Kelas 2 Umar', 2, '2025/2026', '2025-12-28 17:21:38'),
-(7, 'Kelas 2 Utsman', 2, '2025/2026', '2025-12-28 17:21:38'),
-(8, 'Kelas 2 Ali', 2, '2025/2026', '2025-12-28 17:21:38'),
-(9, 'Kelas 3 Abu Bakar', 3, '2025/2026', '2025-12-28 17:21:38'),
-(10, 'Kelas 3 Umar', 3, '2025/2026', '2025-12-28 17:21:38'),
-(11, 'Kelas 3 Utsman', 3, '2025/2026', '2025-12-28 17:21:38'),
-(12, 'Kelas 3 Ali', 3, '2025/2026', '2025-12-28 17:21:38'),
-(13, 'Kelas 4 Abu Bakar', 4, '2025/2026', '2025-12-28 17:21:38'),
-(14, 'Kelas 4 Umar', 4, '2025/2026', '2025-12-28 17:21:38'),
-(15, 'Kelas 4 Utsman', 4, '2025/2026', '2025-12-28 17:21:38'),
-(16, 'Kelas 4 Ali', 4, '2025/2026', '2025-12-28 17:21:38'),
-(17, 'Kelas 5 Abu Bakar', 5, '2025/2026', '2025-12-28 17:21:38'),
-(18, 'Kelas 5 Umar', 5, '2025/2026', '2025-12-28 17:21:38'),
-(19, 'Kelas 5 Utsman', 5, '2025/2026', '2025-12-28 17:21:38'),
-(20, 'Kelas 5 Ali', 5, '2025/2026', '2025-12-28 17:21:38'),
-(21, 'Kelas 6 Abu Bakar', 6, '2025/2026', '2025-12-28 17:21:38'),
-(22, 'Kelas 6 Umar', 6, '2025/2026', '2025-12-28 17:21:38'),
-(23, 'Kelas 6 Utsman', 6, '2025/2026', '2025-12-28 17:21:38');
+(1, '1 Abu Bakar', 1, '2025/2026', '2025-12-28 17:21:38'),
+(2, '1 Umar', 1, '2025/2026', '2025-12-28 17:21:38'),
+(3, '1 Utsman', 1, '2025/2026', '2025-12-28 17:21:38'),
+(4, '1 Ali', 1, '2025/2026', '2025-12-28 17:21:38'),
+(5, '2 Abu Bakar', 2, '2025/2026', '2025-12-28 17:21:38'),
+(6, '2 Umar', 2, '2025/2026', '2025-12-28 17:21:38'),
+(7, '2 Utsman', 2, '2025/2026', '2025-12-28 17:21:38'),
+(8, '2 Ali', 2, '2025/2026', '2025-12-28 17:21:38'),
+(9, '3 Abu Bakar', 3, '2025/2026', '2025-12-28 17:21:38'),
+(10, '3 Umar', 3, '2025/2026', '2025-12-28 17:21:38'),
+(11, '3 Utsman', 3, '2025/2026', '2025-12-28 17:21:38'),
+(12, '3 Ali', 3, '2025/2026', '2025-12-28 17:21:38'),
+(13, '4 Abu Bakar', 4, '2025/2026', '2025-12-28 17:21:38'),
+(14, '4 Umar', 4, '2025/2026', '2025-12-28 17:21:38'),
+(15, '4 Utsman', 4, '2025/2026', '2025-12-28 17:21:38'),
+(16, '4 Ali', 4, '2025/2026', '2025-12-28 17:21:38'),
+(17, '5 Abu Bakar', 5, '2025/2026', '2025-12-28 17:21:38'),
+(18, '5 Umar', 5, '2025/2026', '2025-12-28 17:21:38'),
+(19, '5 Utsman', 5, '2025/2026', '2025-12-28 17:21:38'),
+(20, '5 Ali', 5, '2025/2026', '2025-12-28 17:21:38'),
+(21, '6 Abu Bakar', 6, '2025/2026', '2025-12-28 17:21:38'),
+(22, '6 Umar', 6, '2025/2026', '2025-12-28 17:21:38'),
+(23, '6 Utsman', 6, '2025/2026', '2025-12-28 17:21:38');
 
 -- --------------------------------------------------------
 
@@ -302,28 +302,27 @@ CREATE TABLE `login_kelas` (
 
 INSERT INTO `login_kelas` (`id`, `kelas_id`, `username`, `password`, `created_at`) VALUES
 (1, 1, 'kelas1abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(2, 2, 'kelas1umar', 'kelas123', '2025-12-28 17:41:10'),
-(3, 3, 'kelas1utsman', 'kelas123', '2025-12-28 17:41:10'),
-(4, 4, 'kelas1ali', 'kelas123', '2025-12-28 17:41:10'),
-(5, 5, 'kelas2abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(6, 6, 'kelas2umar', 'kelas123', '2025-12-28 17:41:10'),
-(7, 7, 'kelas2utsman', 'kelas123', '2025-12-28 17:41:10'),
-(8, 8, 'kelas2ali', 'kelas123', '2025-12-28 17:41:10'),
-(9, 9, 'kelas3abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(10, 10, 'kelas3umar', 'kelas123', '2025-12-28 17:41:10'),
-(11, 11, 'kelas3utsman', 'kelas123', '2025-12-28 17:41:10'),
-(12, 12, 'kelas3ali', 'kelas123', '2025-12-28 17:41:10'),
-(13, 13, 'kelas4abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(14, 14, 'kelas4umar', 'kelas123', '2025-12-28 17:41:10'),
-(15, 15, 'kelas4utsman', 'kelas123', '2025-12-28 17:41:10'),
-(16, 16, 'kelas4ali', 'kelas123', '2025-12-28 17:41:10'),
-(17, 17, 'kelas5abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(18, 18, 'kelas5umar', 'kelas123', '2025-12-28 17:41:10'),
-(19, 19, 'kelas5utsman', 'kelas123', '2025-12-28 17:41:10'),
-(20, 20, 'kelas5ali', 'kelas123', '2025-12-28 17:41:10'),
-(21, 21, 'kelas6abubakar', 'kelas123', '2025-12-28 17:41:10'),
-(22, 22, 'kelas6umar', 'kelas123', '2025-12-28 17:41:10'),
-(23, 23, 'kelas6utsman', 'kelas123', '2025-12-28 17:41:10');
+(2, 5, 'kelas2abubakar', 'kelas123', '2025-12-28 17:41:10'),
+(3, 3, 'kelas1utsman', 'kelas123', '2026-01-02 03:13:42'),
+(4, 4, 'kelas1ali', 'kelas123', '2026-01-02 03:13:42'),
+(6, 6, 'kelas2umar', 'kelas123', '2026-01-02 03:13:42'),
+(7, 7, 'kelas2utsman', 'kelas123', '2026-01-02 03:13:42'),
+(8, 8, 'kelas2ali', 'kelas123', '2026-01-02 03:13:42'),
+(9, 9, 'kelas3abubakar', 'kelas123', '2026-01-02 03:13:42'),
+(10, 10, 'kelas3umar', 'kelas123', '2026-01-02 03:13:42'),
+(11, 11, 'kelas3utsman', 'kelas123', '2026-01-02 03:13:42'),
+(12, 12, 'kelas3ali', 'kelas123', '2026-01-02 03:13:42'),
+(13, 13, 'kelas4abubakar', 'kelas123', '2026-01-02 03:13:42'),
+(14, 14, 'kelas4umar', 'kelas123', '2026-01-02 03:13:42'),
+(15, 15, 'kelas4utsman', 'kelas123', '2026-01-02 03:13:42'),
+(16, 16, 'kelas4ali', 'kelas123', '2026-01-02 03:13:42'),
+(17, 17, 'kelas5abubakar', 'kelas123', '2026-01-02 03:13:42'),
+(18, 18, 'kelas5umar', 'kelas123', '2026-01-02 03:13:42'),
+(19, 19, 'kelas5utsman', 'kelas123', '2026-01-02 03:13:42'),
+(20, 20, 'kelas5ali', 'kelas123', '2026-01-02 03:13:42'),
+(21, 21, 'kelas6abubakar', 'kelas123', '2026-01-02 03:13:42'),
+(22, 22, 'kelas6umar', 'kelas123', '2026-01-02 03:13:42'),
+(23, 23, 'kelas6utsman', 'kelas123', '2026-01-02 03:13:42');
 
 -- --------------------------------------------------------
 
@@ -358,7 +357,13 @@ CREATE TABLE `pengaturan_aplikasi` (
 --
 
 INSERT INTO `pengaturan_aplikasi` (`id`, `key_name`, `value`, `description`, `updated_at`) VALUES
-(1, 'cooldown_minutes', '1', 'Durasi cooldown dalam menit sebelum bisa memanggil kembali', '2026-01-02 02:48:20');
+(1, 'cooldown_minutes', '1', 'Durasi cooldown dalam menit sebelum bisa memanggil kembali', '2026-01-10 18:47:26'),
+(2, 'campus_latitude', '-7.55254290497381', 'Latitude lokasi penjemputan', '2026-01-10 18:47:26'),
+(3, 'campus_longitude', '110.76492869379514', 'Longitude lokasi penjemputan', '2026-01-10 18:47:26'),
+(4, 'campus_radius', '100', 'Radius lokasi penjemputan dalam meter', '2026-01-10 18:47:26'),
+(5, 'campus_name', 'Lokasi', 'Nama lokasi penjemputan', '2026-01-10 18:47:26'),
+(6, 'call_authority', 'index', 'Penentu perangkat yang menjalankan pemanggilan otomatis', '2026-01-10 18:47:25'),
+(7, 'emergency_mode', '{\"active\":false,\"activated_by\":\"Muhammad Fadhil Manfa\",\"activated_by_id\":4,\"activated_by_role\":\"guru\",\"kelas_id\":null,\"kelas_name\":null,\"activated_at\":\"2026-01-10 01:42:57\",\"deactivated_at\":\"2026-01-10 01:43:19\",\"updated_at\":\"2026-01-10 01:42:57\"}', 'Status emergency mode (non-aktif)', '2026-01-09 18:43:19');
 
 -- --------------------------------------------------------
 
@@ -387,8 +392,45 @@ CREATE TABLE `permintaan_jemput` (
 --
 
 INSERT INTO `permintaan_jemput` (`id`, `siswa_id`, `user_id`, `penjemput`, `penjemput_detail`, `estimasi_waktu`, `waktu_estimasi`, `status`, `nomor_antrian`, `waktu_request`, `waktu_dipanggil`, `waktu_dijemput`, `cooldown_minutes_used`) VALUES
-(1, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 1, '2026-01-02 02:39:54', '2026-01-02 02:40:21', NULL, 20),
-(2, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 2, '2026-01-02 02:49:14', '2026-01-02 02:49:24', NULL, 1);
+(1, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 1, '2026-01-02 02:39:54', '2026-01-02 02:40:21', NULL, 20),
+(2, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dijemput', 2, '2026-01-02 02:49:14', '2026-01-02 02:49:24', '2026-01-02 06:28:29', 1),
+(3, 3, 3, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 3, '2026-01-02 03:19:04', '2026-01-02 03:19:22', NULL, 1),
+(4, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dibatalkan', 4, '2026-01-02 04:20:36', '2026-01-02 04:20:52', NULL, 1),
+(5, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 5, '2026-01-02 04:24:14', '2026-01-02 04:24:23', '2026-01-02 04:26:54', 1),
+(6, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 6, '2026-01-02 04:26:54', '2026-01-02 04:27:03', '2026-01-02 04:49:30', 1),
+(7, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 7, '2026-01-02 04:49:30', '2026-01-02 04:49:59', '2026-01-02 05:15:53', 1),
+(8, 1, 1, 'ibu', NULL, 'tiba', NULL, 'dijemput', 8, '2026-01-02 05:15:53', '2026-01-02 05:16:05', '2026-01-02 05:17:07', 1),
+(9, 1, 1, 'kakek', NULL, 'tiba', NULL, 'dijemput', 9, '2026-01-02 05:17:07', '2026-01-02 05:17:12', '2026-01-02 06:26:09', 1),
+(10, 1, 1, 'lainnya', 'kakek', 'tiba', NULL, 'dijemput', 10, '2026-01-02 06:26:09', '2026-01-02 06:26:22', '2026-01-02 12:17:47', 1),
+(11, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dijemput', 11, '2026-01-02 06:28:29', '2026-01-02 06:28:37', '2026-01-02 07:56:32', 1),
+(12, 2, 2, 'ayah', NULL, 'tiba', NULL, 'menunggu', 12, '2026-01-02 07:56:32', NULL, NULL, 1),
+(13, 1, 1, 'ayah', NULL, 'tiba', NULL, 'menunggu', 13, '2026-01-02 12:17:47', NULL, NULL, 1),
+(14, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 1, '2026-01-06 10:30:19', '2026-01-06 10:31:02', NULL, 1),
+(15, 1, 1, 'guru', 'Muhammad Fadhil Manfa', 'tiba', NULL, 'dibatalkan', 2, '2026-01-06 11:30:03', NULL, NULL, 1),
+(16, 1, 1, 'ayah', 'Muhammad Fadhil Manfa', 'tiba', NULL, 'dibatalkan', 3, '2026-01-06 11:36:23', NULL, NULL, 1),
+(17, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 4, '2026-01-06 11:40:56', '2026-01-06 11:41:32', NULL, 1),
+(18, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 5, '2026-01-06 12:03:28', '2026-01-06 12:04:11', NULL, 1),
+(19, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 6, '2026-01-06 12:03:52', '2026-01-06 12:06:15', NULL, 1),
+(22, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 7, '2026-01-06 12:09:11', '2026-01-06 12:09:18', NULL, 1),
+(23, 6, 1, 'guru', 'Dipanggil oleh: Muhammad Fadhil Manfa | Dijemput: ayah', 'tiba', NULL, 'dipanggil', 8, '2026-01-06 12:14:43', '2026-01-06 12:14:48', NULL, 1),
+(24, 6, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 9, '2026-01-06 12:25:49', '2026-01-06 12:25:54', NULL, 1),
+(25, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 1, '2026-01-07 06:40:21', '2026-01-07 06:41:02', '2026-01-07 06:50:44', 5),
+(26, 1, 1, 'ibu', NULL, 'tiba', NULL, 'dibatalkan', 2, '2026-01-07 06:50:44', NULL, NULL, 5),
+(27, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 3, '2026-01-07 06:53:34', '2026-01-07 07:07:41', NULL, 5),
+(28, 2, 2, 'ojek', 'grab', 'tiba', NULL, 'dipanggil', 4, '2026-01-07 07:07:25', '2026-01-07 07:07:56', NULL, 5),
+(29, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 1, '2026-01-08 14:12:33', '2026-01-08 14:12:45', '2026-01-08 14:30:49', 5),
+(30, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 2, '2026-01-08 14:30:49', '2026-01-08 14:30:54', '2026-01-08 15:30:24', 5),
+(31, 2, 2, 'ibu', NULL, 'tiba', NULL, 'dijemput', 3, '2026-01-08 14:31:13', '2026-01-08 14:31:18', '2026-01-08 15:55:44', 5),
+(32, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 4, '2026-01-08 15:30:24', '2026-01-08 15:30:31', '2026-01-08 15:44:04', 5),
+(33, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 5, '2026-01-08 15:44:04', '2026-01-08 15:44:09', '2026-01-08 15:54:06', 5),
+(34, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dijemput', 6, '2026-01-08 15:54:06', '2026-01-08 15:54:32', '2026-01-08 16:20:31', 5),
+(35, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dijemput', 7, '2026-01-08 15:55:44', '2026-01-08 15:56:32', '2026-01-08 16:19:39', 1),
+(36, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dijemput', 8, '2026-01-08 16:19:39', '2026-01-08 16:19:55', '2026-01-08 16:22:37', 1),
+(37, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 9, '2026-01-08 16:20:31', '2026-01-08 16:23:17', NULL, 1),
+(38, 2, 2, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 10, '2026-01-08 16:22:37', '2026-01-08 16:23:32', NULL, 1),
+(39, 1, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 11, '2026-01-08 16:25:49', '2026-01-08 16:25:57', NULL, 1),
+(40, 3, 1, 'ayah', NULL, 'tiba', NULL, 'dipanggil', 12, '2026-01-08 16:26:29', '2026-01-08 16:27:11', NULL, 1),
+(41, 4, 1, 'ibu', NULL, 'tiba', NULL, 'dipanggil', 13, '2026-01-08 16:29:42', '2026-01-08 16:29:58', NULL, 1);
 
 -- --------------------------------------------------------
 
@@ -414,18 +456,43 @@ CREATE TABLE `siswa` (
 --
 
 INSERT INTO `siswa` (`id`, `nama`, `nama_panggilan`, `kelas_id`, `foto_url`, `username`, `password`, `no_telepon_ortu`, `last_pickup_request`, `created_at`) VALUES
-(1, 'Muhammad Rizki', 'Rizki', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Muhammad Rizki&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf', 'rizki', 'siswa123', NULL, '2026-01-02 02:39:54', '2025-12-28 17:40:41'),
-(2, 'Siti Aisyah', 'Aisyah', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Aisyah&size=200&backgroundColor=c0aede', 'aisyah', 'siswa123', NULL, '2026-01-02 02:49:14', '2025-12-28 17:40:41'),
-(3, 'Ahmad Fauzi', 'Fauzi', 5, 'https://api.dicebear.com/9.x/thumbs/png?seed=Fauzi&size=200&backgroundColor=d1d4f9', 'fauzi', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
-(4, 'Fatimah Zahra', 'Fatimah', 5, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Fatimah&size=200&backgroundColor=ffd5dc', 'fatimah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
+(1, 'Muhammad Rizki', 'Rizki', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Muhammad Rizki&size=200&backgroundColor=b6e3f4,c0aede,d1d4f9,ffd5dc,ffdfbf', 'rizki', 'siswa123', NULL, '2026-01-08 16:25:49', '2025-12-28 17:40:41'),
+(2, 'Siti Aisyah', 'Aisyah', 1, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Aisyah&size=200&backgroundColor=c0aede', 'aisyah', 'siswa123', NULL, '2026-01-08 16:22:37', '2025-12-28 17:40:41'),
+(3, 'Ahmad Fauzi', 'Fauzi', 5, 'https://api.dicebear.com/9.x/thumbs/png?seed=Fauzi&size=200&backgroundColor=d1d4f9', 'fauzi', 'siswa123', NULL, '2026-01-08 16:26:29', '2025-12-28 17:40:41'),
+(4, 'Fatimah Zahra', 'Fatimah', 5, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Fatimah&size=200&backgroundColor=ffd5dc', 'fatimah', 'siswa123', NULL, '2026-01-08 16:29:42', '2025-12-28 17:40:41'),
 (5, 'Ali Rahman', 'Ali', 9, 'https://api.dicebear.com/9.x/fun-emoji/png?seed=Ali&size=200&backgroundColor=ffdfbf', 'ali', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
-(6, 'Khadijah', 'Khadijah', 9, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Khadijah&size=200&backgroundColor=b6e3f4', 'khadijah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
+(6, 'Khadijah', 'Khadijah', 9, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Khadijah&size=200&backgroundColor=b6e3f4', 'khadijah', 'siswa123', NULL, '2026-01-06 12:25:49', '2025-12-28 17:40:41'),
 (7, 'Usman Hakim', 'Usman', 13, 'https://api.dicebear.com/9.x/thumbs/png?seed=Usman&size=200&backgroundColor=c0aede', 'usman', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (8, 'Maryam', 'Maryam', 13, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Maryam&size=200&backgroundColor=d1d4f9', 'maryam', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (9, 'Bilal Ibrahim', 'Bilal', 17, 'https://api.dicebear.com/9.x/fun-emoji/png?seed=Bilal&size=200&backgroundColor=ffd5dc', 'bilal', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (10, 'Zainab', 'Zainab', 17, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Zainab&size=200&backgroundColor=ffdfbf', 'zainab', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (11, 'Hamzah Malik', 'Hamzah', 21, 'https://api.dicebear.com/9.x/thumbs/png?seed=Hamzah&size=200&backgroundColor=b6e3f4', 'hamzah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41'),
 (12, 'Ruqayyah', 'Ruqayyah', 21, 'https://api.dicebear.com/9.x/adventurer-neutral/png?seed=Ruqayyah&size=200&backgroundColor=c0aede', 'ruqayyah', 'siswa123', NULL, NULL, '2025-12-28 17:40:41');
+
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `siswa_settings`
+--
+
+CREATE TABLE `siswa_settings` (
+  `id` int(11) NOT NULL,
+  `siswa_id` int(11) NOT NULL,
+  `pickup_reminder_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `minutes_before_pickup` int(11) NOT NULL DEFAULT 15,
+  `schedule_change_enabled` tinyint(1) NOT NULL DEFAULT 0,
+  `notification_sound` varchar(50) DEFAULT 'Bell',
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+--
+-- Dumping data for table `siswa_settings`
+--
+
+INSERT INTO `siswa_settings` (`id`, `siswa_id`, `pickup_reminder_enabled`, `minutes_before_pickup`, `schedule_change_enabled`, `notification_sound`, `updated_at`) VALUES
+(1, 1, 1, 5, 1, 'Bell', '2026-01-08 10:42:21'),
+(2, 2, 1, 5, 0, 'Bell', '2026-01-08 10:15:55'),
+(4, 3, 1, 5, 1, 'Bell', '2026-01-08 10:42:10');
 
 -- --------------------------------------------------------
 
@@ -447,8 +514,18 @@ CREATE TABLE `status_penjemputan_harian` (
 --
 
 INSERT INTO `status_penjemputan_harian` (`id`, `siswa_id`, `tanggal`, `sudah_dijemput`, `waktu_dijemput`, `penjemput`) VALUES
-(1, 1, '2026-01-02', 1, NULL, NULL),
-(3, 2, '2026-01-02', 1, '2026-01-02 02:49:24', 'ayah');
+(1, 1, '2026-01-02', 1, '2026-01-02 06:26:22', 'lainnya'),
+(3, 2, '2026-01-02', 1, '2026-01-02 06:28:37', 'ayah'),
+(4, 3, '2026-01-02', 1, '2026-01-02 03:19:22', 'ayah'),
+(5, 1, '2026-01-06', 1, '2026-01-06 12:09:18', 'ayah'),
+(6, 2, '2026-01-06', 1, '2026-01-06 12:04:11', 'ayah'),
+(7, 6, '2026-01-06', 1, '2026-01-06 12:25:54', 'ayah'),
+(8, 1, '2026-01-07', 1, '2026-01-07 07:07:41', 'ayah'),
+(9, 2, '2026-01-07', 1, '2026-01-07 07:10:29', 'Manual Entry'),
+(10, 1, '2026-01-08', 1, '2026-01-08 16:25:57', 'ayah'),
+(11, 2, '2026-01-08', 1, '2026-01-08 16:23:32', 'ayah'),
+(12, 3, '2026-01-08', 1, '2026-01-08 16:27:11', 'ayah'),
+(13, 4, '2026-01-08', 1, '2026-01-08 16:29:58', 'ibu');
 
 -- --------------------------------------------------------
 
@@ -476,8 +553,8 @@ CREATE TABLE `users` (
 INSERT INTO `users` (`id`, `username`, `password`, `role`, `nama`, `no_telepon`, `last_pickup_request`, `created_at`, `updated_at`, `foto`) VALUES
 (1, 'guru1', 'guru123', 'guru', 'Ibu Siti Nurhaliza S.Pd', '081234567800', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28', NULL),
 (2, 'guru2', 'guru123', 'guru', 'Pak Ahmad Dhani S.Pd', '081234567801', NULL, '2025-12-28 17:40:28', '2025-12-28 17:40:28', NULL),
-(3, 'kelas1abubakar', 'a', 'class_viewer', '', NULL, NULL, '2025-12-28 17:42:54', '2025-12-28 17:42:54', NULL),
-(4, 'fadhil.manfa', 'a', 'guru', 'Muhammad Fadhil Manfa', '', NULL, '2025-12-29 14:21:00', '2025-12-29 15:00:56', 'uploads/guru_piket/guru_4_1767020456.png');
+(3, 'kelas1abubakar', 'kelas123', 'class_viewer', '', NULL, NULL, '2025-12-28 17:42:54', '2026-01-08 14:04:53', NULL),
+(4, 'fadhil.manfa', 'guru123', 'guru', 'Muhammad Fadhil Manfa', '', NULL, '2025-12-29 14:21:00', '2026-01-06 12:53:01', 'uploads/guru_piket/guru_4_1767703981.jpg');
 
 -- --------------------------------------------------------
 
@@ -595,6 +672,13 @@ ALTER TABLE `siswa`
   ADD KEY `idx_nama` (`nama`);
 
 --
+-- Indexes for table `siswa_settings`
+--
+ALTER TABLE `siswa_settings`
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `unique_siswa` (`siswa_id`);
+
+--
 -- Indexes for table `status_penjemputan_harian`
 --
 ALTER TABLE `status_penjemputan_harian`
@@ -626,7 +710,7 @@ ALTER TABLE `guru_piket`
 -- AUTO_INCREMENT for table `guru_session_aktif`
 --
 ALTER TABLE `guru_session_aktif`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=33;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=166;
 
 --
 -- AUTO_INCREMENT for table `jadwal_kelas`
@@ -644,7 +728,7 @@ ALTER TABLE `kelas`
 -- AUTO_INCREMENT for table `login_kelas`
 --
 ALTER TABLE `login_kelas`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=24;
 
 --
 -- AUTO_INCREMENT for table `orang_tua_siswa`
@@ -656,13 +740,13 @@ ALTER TABLE `orang_tua_siswa`
 -- AUTO_INCREMENT for table `pengaturan_aplikasi`
 --
 ALTER TABLE `pengaturan_aplikasi`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=2;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=8;
 
 --
 -- AUTO_INCREMENT for table `permintaan_jemput`
 --
 ALTER TABLE `permintaan_jemput`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=3;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=42;
 
 --
 -- AUTO_INCREMENT for table `siswa`
@@ -671,10 +755,16 @@ ALTER TABLE `siswa`
   MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=13;
 
 --
+-- AUTO_INCREMENT for table `siswa_settings`
+--
+ALTER TABLE `siswa_settings`
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=17;
+
+--
 -- AUTO_INCREMENT for table `status_penjemputan_harian`
 --
 ALTER TABLE `status_penjemputan_harian`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=4;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=14;
 
 --
 -- AUTO_INCREMENT for table `users`
@@ -747,6 +837,12 @@ ALTER TABLE `permintaan_jemput`
 --
 ALTER TABLE `siswa`
   ADD CONSTRAINT `siswa_ibfk_1` FOREIGN KEY (`kelas_id`) REFERENCES `kelas` (`id`) ON UPDATE CASCADE;
+
+--
+-- Constraints for table `siswa_settings`
+--
+ALTER TABLE `siswa_settings`
+  ADD CONSTRAINT `siswa_settings_ibfk_1` FOREIGN KEY (`siswa_id`) REFERENCES `siswa` (`id`) ON DELETE CASCADE;
 
 --
 -- Constraints for table `status_penjemputan_harian`
