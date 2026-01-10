@@ -75,9 +75,6 @@ class _KelasPaketPageState extends State<KelasPaketPage>
   int? _expandedReceivedCardIndex;
   int? _expandedPengumumanCardIndex;
 
-  // Track animating card
-  int? _animatingCardIndex;
-
   // Track section visibility
   bool _isPengumumanExpanded = true;
   bool _isTitipanExpanded = true;
@@ -617,32 +614,7 @@ class _KelasPaketPageState extends State<KelasPaketPage>
     final isExpanded = isPending
         ? _expandedPendingCardIndex == index
         : _expandedReceivedCardIndex == index;
-    final isAnimating = isPending && _animatingCardIndex == index;
     final iconColor = AppColors.primary;
-
-    if (isAnimating) {
-      return _AnimatingPaketCard(
-        item: item,
-        onAnimationComplete: () {
-          final receivedItem = _DummyPaketItem(
-            id: item.id,
-            namaBarang: item.namaBarang,
-            namaPengirim: item.namaPengirim,
-            namaPenerima: item.namaPenerima,
-            type: item.type,
-            keterangan: item.keterangan,
-            createdAt: item.createdAt,
-            receivedAt: DateTime.now(),
-          );
-
-          setState(() {
-            _pendingItems.removeAt(index);
-            _receivedItems.insert(0, receivedItem);
-            _animatingCardIndex = null;
-          });
-        },
-      );
-    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
@@ -811,130 +783,40 @@ class _KelasPaketPageState extends State<KelasPaketPage>
                           padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
                           child: Column(
                             children: [
-                              if (isPending)
-                                Row(
-                                  children: [
-                                    // Tombol Terima (hijau)
-                                    Expanded(
-                                      child: ElevatedButton(
-                                        onPressed: () => _markAsReceived(index),
-                                        style: ElevatedButton.styleFrom(
-                                          backgroundColor: const Color(
-                                            0xFF22C55E,
-                                          ),
-                                          foregroundColor: Colors.white,
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                          elevation: 0,
-                                        ),
-                                        child: const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.check_circle_outline,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Terima',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                              // Tombol Lihat Detail saja (kelas hanya bisa melihat, tidak bisa mengubah status)
+                              SizedBox(
+                                width: double.infinity,
+                                child: OutlinedButton(
+                                  onPressed: () => _showDetailBottomSheet(item),
+                                  style: OutlinedButton.styleFrom(
+                                    foregroundColor: AppColors.primary,
+                                    side: BorderSide(
+                                      color: AppColors.primary,
+                                      width: 1.5,
                                     ),
-                                    const SizedBox(width: 12),
-                                    // Tombol Lihat
-                                    Expanded(
-                                      child: OutlinedButton(
-                                        onPressed: () =>
-                                            _showDetailBottomSheet(item),
-                                        style: OutlinedButton.styleFrom(
-                                          foregroundColor: AppColors.primary,
-                                          side: BorderSide(
-                                            color: AppColors.primary,
-                                            width: 1.5,
-                                          ),
-                                          padding: const EdgeInsets.symmetric(
-                                            vertical: 14,
-                                          ),
-                                          shape: RoundedRectangleBorder(
-                                            borderRadius: BorderRadius.circular(
-                                              12,
-                                            ),
-                                          ),
-                                        ),
-                                        child: const Row(
-                                          mainAxisAlignment:
-                                              MainAxisAlignment.center,
-                                          children: [
-                                            Icon(
-                                              Icons.visibility_outlined,
-                                              size: 20,
-                                            ),
-                                            SizedBox(width: 8),
-                                            Text(
-                                              'Lihat',
-                                              style: TextStyle(
-                                                fontSize: 15,
-                                                fontWeight: FontWeight.w600,
-                                              ),
-                                            ),
-                                          ],
-                                        ),
-                                      ),
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
                                     ),
-                                  ],
-                                )
-                              else
-                                SizedBox(
-                                  width: double.infinity,
-                                  child: OutlinedButton(
-                                    onPressed: () =>
-                                        _showDetailBottomSheet(item),
-                                    style: OutlinedButton.styleFrom(
-                                      foregroundColor: AppColors.primary,
-                                      side: BorderSide(
-                                        color: AppColors.primary,
-                                        width: 1.5,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                        vertical: 14,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(12),
-                                      ),
-                                    ),
-                                    child: const Row(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          Icons.visibility_outlined,
-                                          size: 20,
-                                        ),
-                                        SizedBox(width: 8),
-                                        Text(
-                                          'Lihat Detail',
-                                          style: TextStyle(
-                                            fontSize: 15,
-                                            fontWeight: FontWeight.w600,
-                                          ),
-                                        ),
-                                      ],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
                                     ),
                                   ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.visibility_outlined, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Lihat Detail',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
+                              ),
                             ],
                           ),
                         )
@@ -964,13 +846,6 @@ class _KelasPaketPageState extends State<KelasPaketPage>
           _expandedReceivedCardIndex = index;
         }
       }
-    });
-  }
-
-  void _markAsReceived(int index) {
-    setState(() {
-      _animatingCardIndex = index;
-      _expandedPendingCardIndex = null;
     });
   }
 
