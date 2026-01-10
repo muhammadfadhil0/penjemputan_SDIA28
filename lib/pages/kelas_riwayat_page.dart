@@ -121,7 +121,8 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
 
   void _handleEmergency(EmergencyStatus status) {
     final currentCount = _historyItems.length;
-    final shouldRing = status.active && _hasLoadedOnce && currentCount > _lastHistoryCount;
+    final shouldRing =
+        status.active && _hasLoadedOnce && currentCount > _lastHistoryCount;
 
     _emergencyStatus = status;
     _lastHistoryCount = currentCount;
@@ -269,7 +270,9 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
                                     child: Container(
                                       padding: const EdgeInsets.all(6),
                                       decoration: BoxDecoration(
-                                        color: Colors.red.withValues(alpha: 0.1),
+                                        color: Colors.red.withValues(
+                                          alpha: 0.1,
+                                        ),
                                         borderRadius: BorderRadius.circular(6),
                                       ),
                                       child: const Icon(
@@ -291,8 +294,8 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
                 child: _isLoading
                     ? _buildLoading()
                     : _errorMessage != null
-                        ? _buildError()
-                        : _buildHistoryList(),
+                    ? _buildError()
+                    : _buildHistoryList(),
               ),
             ],
           ),
@@ -332,10 +335,7 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
                 if (activatedAt != null)
                   Text(
                     '$activatedBy mengaktifkan pada $activatedAt',
-                    style: TextStyle(
-                      color: Colors.red.shade700,
-                      fontSize: 12,
-                    ),
+                    style: TextStyle(color: Colors.red.shade700, fontSize: 12),
                   ),
               ],
             ),
@@ -356,7 +356,7 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
         'Kamis',
         'Jumat',
         'Sabtu',
-        'Minggu'
+        'Minggu',
       ];
       const months = [
         'Jan',
@@ -370,11 +370,12 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
         'Sep',
         'Okt',
         'Nov',
-        'Des'
+        'Des',
       ];
       final dayName = days[dt.weekday - 1];
       final monthName = months[dt.month - 1];
-      final time = '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
+      final time =
+          '${dt.hour.toString().padLeft(2, '0')}:${dt.minute.toString().padLeft(2, '0')}';
       return '$dayName, ${dt.day} $monthName ${dt.year}, $time';
     } catch (_) {
       return timestamp;
@@ -382,36 +383,11 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
   }
 
   Widget _buildHeader() {
-    return Container(
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: AppColors.card,
-        border: Border(bottom: BorderSide(color: AppColors.border)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(10, 16, 20, 16),
       child: Row(
         children: [
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: AppColors.primaryLighter,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: AppColors.primaryLight, width: 2),
-            ),
-            child: const Icon(
-              Icons.history,
-              color: AppColors.primary,
-              size: 24,
-            ),
-          ),
-          const SizedBox(width: 16),
+          const SizedBox(width: 14),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
@@ -420,45 +396,27 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
                   _selectedDate != null
                       ? 'Riwayat Penjemputan'
                       : 'Riwayat Hari Ini',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.bold,
+                  style: const TextStyle(
                     color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 4),
                 Text(
                   _selectedDate != null
                       ? _formatDate(_selectedDate!)
                       : (_tanggal != null
                             ? 'Tanggal $_tanggal'
-                            : '${_historyItems.length} penjemputan'),
-                  style: TextStyle(
-                    fontSize: 14,
-                    color: AppColors.textSecondary,
+                            : 'Riwayat penjemputan siswa'),
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 13,
                   ),
                 ),
               ],
             ),
           ),
-          // Badge count
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-            decoration: BoxDecoration(
-              color: AppColors.primary.withValues(alpha: 0.1),
-              borderRadius: BorderRadius.circular(16),
-            ),
-            child: Text(
-              '${_historyItems.length}',
-              style: const TextStyle(
-                color: AppColors.primary,
-                fontWeight: FontWeight.bold,
-                fontSize: 14,
-              ),
-            ),
-          ),
-          const SizedBox(width: 12),
-          // Calendar button
+          // Calendar button for filter
           GestureDetector(
             onTap: _showDatePicker,
             child: Container(
@@ -537,22 +495,52 @@ class _KelasRiwayatPageState extends State<KelasRiwayatPage>
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(Icons.inbox_outlined, size: 64, color: AppColors.textMuted),
-            const SizedBox(height: 16),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLighter,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.inbox_rounded,
+                size: 48,
+                color: AppColors.primary,
+              ),
+            ),
+            const SizedBox(height: 20),
             Text(
               _selectedDate != null
                   ? 'Tidak ada riwayat pada tanggal ini'
-                  : 'Belum ada riwayat penjemputan hari ini',
-              style: TextStyle(fontSize: 16, color: AppColors.textSecondary),
+                  : 'Belum ada riwayat penjemputan',
+              style: const TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
               textAlign: TextAlign.center,
             ),
-            if (_selectedDate != null) ...[
-              const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            if (_selectedDate != null)
               Text(
                 _formatDate(_selectedDate!),
-                style: TextStyle(fontSize: 14, color: AppColors.textMuted),
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  height: 1.4,
+                ),
+              )
+            else
+              Text(
+                'Siswa yang sudah dipanggil\nakan muncul di sini',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  height: 1.4,
+                ),
               ),
-            ],
           ],
         ),
       );

@@ -1,4 +1,6 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:image_picker/image_picker.dart';
 import '../main.dart';
 import 'guru_paket_page.dart';
 
@@ -22,6 +24,10 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
 
   String _selectedType = 'food';
   bool _isGuru = false;
+
+  // Image picker
+  File? _selectedImage;
+  final ImagePicker _imagePicker = ImagePicker();
 
   // Daftar kelas dummy untuk demo
   final List<String> _kelasList = [
@@ -74,6 +80,7 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
       type: _selectedType,
       createdAt: DateTime.now(),
       isGuru: _isGuru,
+      imagePath: _selectedImage?.path,
     );
 
     widget.onSave(item);
@@ -115,6 +122,191 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
         margin: const EdgeInsets.all(16),
       ),
     );
+  }
+
+  // ===== IMAGE PICKER METHODS =====
+  Future<void> _pickImage() async {
+    showModalBottomSheet(
+      context: context,
+      backgroundColor: AppColors.card,
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      builder: (context) => SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(20),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Container(
+                width: 40,
+                height: 4,
+                decoration: BoxDecoration(
+                  color: AppColors.border,
+                  borderRadius: BorderRadius.circular(2),
+                ),
+              ),
+              const SizedBox(height: 20),
+              const Text(
+                'Pilih Sumber Foto',
+                style: TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w600,
+                  color: AppColors.textPrimary,
+                ),
+              ),
+              const SizedBox(height: 20),
+              Row(
+                children: [
+                  Expanded(
+                    child: _buildImageSourceOption(
+                      icon: Icons.camera_alt_rounded,
+                      label: 'Kamera',
+                      onTap: () {
+                        Navigator.pop(context);
+                        _getImageFromCamera();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: _buildImageSourceOption(
+                      icon: Icons.photo_library_rounded,
+                      label: 'Galeri',
+                      onTap: () {
+                        Navigator.pop(context);
+                        _getImageFromGallery();
+                      },
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 10),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildImageSourceOption({
+    required IconData icon,
+    required String label,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(vertical: 20),
+        decoration: BoxDecoration(
+          color: AppColors.background,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: AppColors.border),
+        ),
+        child: Column(
+          children: [
+            Icon(icon, size: 32, color: AppColors.primary),
+            const SizedBox(height: 8),
+            Text(
+              label,
+              style: const TextStyle(
+                fontSize: 14,
+                fontWeight: FontWeight.w500,
+                color: AppColors.textPrimary,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Future<void> _getImageFromCamera() async {
+    bool shouldRetake = true;
+
+    while (shouldRetake && mounted) {
+      try {
+        // Use image_picker to capture photo
+        final XFile? image = await _imagePicker.pickImage(
+          source: ImageSource.camera,
+          imageQuality: 85,
+          maxWidth: 1200,
+          maxHeight: 1200,
+        );
+
+        if (image != null) {
+          final file = File(image.path);
+
+          // Verify file exists and has content
+          if (await file.exists() && await file.length() > 0) {
+            // Show review bottom sheet
+            if (mounted) {
+              final bool? confirmed = await _showPhotoReviewBottomSheet(file);
+              if (confirmed == true && mounted) {
+                setState(() {
+                  _selectedImage = file;
+                });
+                shouldRetake = false; // Exit loop - photo saved
+              } else if (confirmed == false) {
+                // User clicked "Ulang" - continue loop to open camera again
+                shouldRetake = true;
+              } else {
+                // User dismissed bottom sheet (null) - exit loop
+                shouldRetake = false;
+              }
+            }
+          } else {
+            _showError('Gagal mengambil foto');
+            shouldRetake = false;
+          }
+        } else {
+          // User cancelled camera - exit loop
+          shouldRetake = false;
+        }
+      } catch (e) {
+        _showError('Gagal mengakses kamera');
+        shouldRetake = false;
+      }
+    }
+  }
+
+  Future<bool?> _showPhotoReviewBottomSheet(File imageFile) async {
+    return showModalBottomSheet<bool>(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) => _PhotoReviewBottomSheet(imageFile: imageFile),
+    );
+  }
+
+  Future<void> _getImageFromGallery() async {
+    try {
+      final XFile? image = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 80,
+        maxWidth: 1024,
+        maxHeight: 1024,
+      );
+      if (image != null) {
+        // Verify file exists and has content
+        final file = File(image.path);
+        if (await file.exists() && await file.length() > 0) {
+          setState(() {
+            _selectedImage = file;
+          });
+        } else {
+          _showError('File gambar tidak valid');
+        }
+      }
+    } catch (e) {
+      _showError('Gagal mengakses galeri');
+    }
+  }
+
+  void _removeImage() {
+    setState(() {
+      _selectedImage = null;
+    });
   }
 
   int get _typeIndex {
@@ -229,6 +421,13 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
                 hint: 'Masukkan nama barang',
                 icon: Icons.inventory_2_outlined,
               ),
+
+              const SizedBox(height: 20),
+
+              // Foto barang
+              _buildLabel('Foto Barang (Opsional)'),
+              const SizedBox(height: 10),
+              _buildImagePicker(),
 
               const SizedBox(height: 24),
 
@@ -467,6 +666,131 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
     );
   }
 
+  Widget _buildImagePicker() {
+    return GestureDetector(
+      onTap: _pickImage,
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: AppColors.card,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(
+            color: _selectedImage != null
+                ? AppColors.primary.withOpacity(0.3)
+                : AppColors.border,
+          ),
+        ),
+        child: _selectedImage != null
+            ? _buildSelectedImage()
+            : _buildImagePlaceholder(),
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Column(
+      children: [
+        Container(
+          width: 60,
+          height: 60,
+          decoration: BoxDecoration(
+            color: AppColors.background,
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: const Icon(
+            Icons.add_photo_alternate_rounded,
+            size: 28,
+            color: AppColors.textMuted,
+          ),
+        ),
+        const SizedBox(height: 12),
+        const Text(
+          'Ketuk untuk menambahkan foto',
+          style: TextStyle(fontSize: 14, color: AppColors.textSecondary),
+        ),
+        const SizedBox(height: 4),
+        Text(
+          'Kamera atau Galeri',
+          style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildSelectedImage() {
+    return Column(
+      children: [
+        Stack(
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(12),
+              child: Image.file(
+                _selectedImage!,
+                width: double.infinity,
+                height: 180,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return Container(
+                    width: double.infinity,
+                    height: 180,
+                    color: AppColors.background,
+                    child: const Center(
+                      child: Icon(
+                        Icons.broken_image_rounded,
+                        size: 48,
+                        color: AppColors.textMuted,
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+            Positioned(
+              top: 8,
+              right: 8,
+              child: GestureDetector(
+                onTap: _removeImage,
+                child: Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withOpacity(0.6),
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.close_rounded,
+                    size: 18,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 12),
+        Row(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.check_circle_rounded,
+              size: 16,
+              color: AppColors.primary,
+            ),
+            const SizedBox(width: 6),
+            Text(
+              'Foto berhasil ditambahkan',
+              style: TextStyle(
+                fontSize: 13,
+                color: AppColors.primary,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
   Widget _buildTypeSelector() {
     return Container(
       padding: const EdgeInsets.all(4),
@@ -578,6 +902,192 @@ class _GuruTitipanFormPageState extends State<GuruTitipanFormPage> {
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+// ============================================
+// PHOTO REVIEW BOTTOM SHEET
+// Review captured photo with save/retake options
+// ============================================
+class _PhotoReviewBottomSheet extends StatelessWidget {
+  final File imageFile;
+
+  const _PhotoReviewBottomSheet({required this.imageFile});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: MediaQuery.of(context).size.height * 0.75,
+      decoration: const BoxDecoration(
+        color: Colors.black,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
+      ),
+      child: Column(
+        children: [
+          // Handle bar
+          Container(
+            margin: const EdgeInsets.only(top: 12),
+            width: 40,
+            height: 4,
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.3),
+              borderRadius: BorderRadius.circular(2),
+            ),
+          ),
+
+          // Header
+          Padding(
+            padding: const EdgeInsets.all(16),
+            child: Row(
+              children: [
+                GestureDetector(
+                  onTap: () => Navigator.pop(context, false),
+                  child: Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.close_rounded,
+                      color: Colors.white,
+                      size: 24,
+                    ),
+                  ),
+                ),
+                const Expanded(
+                  child: Text(
+                    'Hasil Foto',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                      color: Colors.white,
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 40),
+              ],
+            ),
+          ),
+
+          // Image preview
+          Expanded(
+            child: Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              decoration: BoxDecoration(
+                color: Colors.grey[900],
+                borderRadius: BorderRadius.circular(16),
+              ),
+              clipBehavior: Clip.antiAlias,
+              child: Image.file(
+                imageFile,
+                fit: BoxFit.cover,
+                width: double.infinity,
+                height: double.infinity,
+                errorBuilder: (context, error, stackTrace) {
+                  return Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(
+                          Icons.error_outline_rounded,
+                          size: 48,
+                          color: Colors.red[400],
+                        ),
+                        const SizedBox(height: 16),
+                        const Text(
+                          'Gagal memuat foto',
+                          style: TextStyle(color: Colors.white),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              ),
+            ),
+          ),
+
+          // Control buttons
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                // Retake button
+                GestureDetector(
+                  onTap: () => Navigator.pop(context, false),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.1),
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: Colors.white.withOpacity(0.3)),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.refresh_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Ulang',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+
+                // Confirm button
+                GestureDetector(
+                  onTap: () => Navigator.pop(context, true),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 24,
+                      vertical: 14,
+                    ),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF22C55E),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Row(
+                      children: [
+                        Icon(
+                          Icons.check_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                        SizedBox(width: 8),
+                        Text(
+                          'Simpan',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+
+          SizedBox(height: MediaQuery.of(context).padding.bottom),
+        ],
       ),
     );
   }

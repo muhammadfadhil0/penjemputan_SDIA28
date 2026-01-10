@@ -254,11 +254,11 @@ class _KelasRingkasanPageState extends State<KelasRingkasanPage> {
                   height: 48,
                   decoration: BoxDecoration(
                     color: AppColors.primaryLighter,
-                    borderRadius: BorderRadius.circular(12),
+                    borderRadius: BorderRadius.circular(50),
                     border: Border.all(color: AppColors.primaryLight, width: 2),
                   ),
                   child: const Icon(
-                    Icons.school_outlined,
+                    Icons.class_rounded,
                     color: AppColors.primary,
                     size: 24,
                   ),

@@ -7,6 +7,8 @@
     <title>Pengaturan Pemanggilan - SDIA 28</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- tabler icon -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@latest/dist/tabler-icons.min.css" />
     <!-- Leaflet CSS for interactive map -->
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
@@ -792,30 +794,41 @@
                     </div>
                     <div>
                         <h2 class="text-lg font-semibold text-textPrimary">Pemanggilan akan diaktifkan pada</h2>
-                        <p class="text-sm text-textMuted">Pilih perangkat yang berwenang memutar suara TTS</p>
+                        <p class="text-sm text-textMuted">Pilih perangkat yang berwenang memutar suara pemanggilan</p>
                     </div>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <label class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
+                    <label
+                        class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
                         for="authorityIndex">
-                        <input type="radio" name="callAuthority" id="authorityIndex" value="index"
-                            class="mt-1" onclick="setCallAuthority('index')">
-                        <div>
-                            <p class="font-semibold text-textPrimary">Komputer Kurikulum</p>
-                            <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer kurikulum.
-                                Halaman kelas tetap menampilkan kartu antrean dengan status "dipanggil di kelas".</p>
+                        <input type="radio" name="callAuthority" id="authorityIndex" value="index" class="mt-1"
+                            onclick="setCallAuthority('index')">
+                        <div class="flex item-start gap-3">
+                            <span class="rounded-lg p-2 flex-shrink-0" style="background-color: #4049ef;">
+                                <span class="ti ti-device-desktop text-white text-xl"></span>
+                            </span>
+                            <div>
+                                <p class="font-semibold text-textPrimary">Komputer Kurikulum</p>
+                                <p class="text-sm text-textMuted">Pemanggilan suara hanya berjalan dari komputer
+                                    kurikulum.</p>
+                            </div>
                         </div>
                     </label>
 
-                    <label class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
+                    <label
+                        class="flex items-start gap-3 p-4 rounded-xl border border-borderColor cursor-pointer hover:border-primary transition-all"
                         for="authorityKelas">
-                        <input type="radio" name="callAuthority" id="authorityKelas" value="kelas"
-                            class="mt-1" onclick="setCallAuthority('kelas')">
-                        <div>
-                            <p class="font-semibold text-textPrimary">Layar Kelas</p>
-                            <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas. Kontrol di
-                                komputer kurikulum akan dikunci.</p>
+                        <input type="radio" name="callAuthority" id="authorityKelas" value="kelas" class="mt-1"
+                            onclick="setCallAuthority('kelas')">
+                        <div class="flex item-start gap-3">
+                            <span class="rounded-lg p-2 flex-shrink-0" style="background-color: #f59e0b;">
+                                <span class="ti ti-presentation text-white text-xl"></span>
+                            </span>
+                            <div>
+                                <p class="font-semibold text-textPrimary">Layar Kelas</p>
+                                <p class="text-sm text-textMuted">Pemanggilan suara dijalankan dari halaman kelas.</p>
+                            </div>
                         </div>
                     </label>
                 </div>

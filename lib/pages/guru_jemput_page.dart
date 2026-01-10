@@ -2249,20 +2249,37 @@ class _GuruPickupDashboardPageState extends State<GuruPickupDashboardPage>
             child: Column(
               mainAxisSize: MainAxisSize.min,
               children: [
-                Icon(
-                  Icons.search_rounded,
-                  size: 64,
-                  color: AppColors.textMuted.withOpacity(0.5),
+                Container(
+                  width: 100,
+                  height: 100,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLighter,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.person_search_rounded,
+                    size: 48,
+                    color: AppColors.primary,
+                  ),
                 ),
-                const SizedBox(height: 16),
+                const SizedBox(height: 20),
                 const Text(
-                  'Cari siswa untuk memulai',
-                  style: TextStyle(fontSize: 16, color: AppColors.textMuted),
+                  'Belum ada siswa di pilih',
+                  style: TextStyle(
+                    fontSize: 18,
+                    fontWeight: FontWeight.w600,
+                    color: AppColors.textPrimary,
+                  ),
                 ),
                 const SizedBox(height: 8),
-                const Text(
-                  'Ketik nama atau pilih kelas',
-                  style: TextStyle(fontSize: 13, color: AppColors.textMuted),
+                Text(
+                  'Ketik nama atau pilih kelas\nuntuk mencari siswa',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontSize: 14,
+                    color: AppColors.textMuted,
+                    height: 1.4,
+                  ),
                 ),
               ],
             ),

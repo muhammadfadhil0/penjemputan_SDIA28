@@ -144,23 +144,9 @@ class _GuruAntreanPageState extends State<GuruAntreanPage> {
             const SizedBox(height: 16),
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
-                  // Icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLighter,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.queue_rounded,
-                      color: AppColors.primary,
-                      size: 26,
-                    ),
-                  ),
                   const SizedBox(width: 14),
                   Expanded(
                     child: Column(
@@ -279,24 +265,37 @@ class _GuruAntreanPageState extends State<GuruAntreanPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.inbox_rounded,
-              size: 64,
-              color: AppColors.textMuted.withOpacity(0.5),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLighter,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.inbox_rounded,
+                size: 48,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'Tidak ada antrean',
               style: TextStyle(
-                color: AppColors.textMuted,
-                fontSize: 16,
-                fontWeight: FontWeight.w500,
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
               ),
             ),
             const SizedBox(height: 8),
-            const Text(
-              'Belum ada siswa yang dipanggil untuk dijemput',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 13),
+            Text(
+              'Belum ada siswa yang dipanggil\nuntuk dijemput',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 14,
+                color: AppColors.textMuted,
+                height: 1.4,
+              ),
             ),
           ],
         ),

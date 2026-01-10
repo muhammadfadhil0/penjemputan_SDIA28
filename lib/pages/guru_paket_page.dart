@@ -15,23 +15,46 @@ class GuruPaketPage extends StatefulWidget {
 }
 
 class _GuruPaketPageState extends State<GuruPaketPage>
-    with SingleTickerProviderStateMixin {
+    with TickerProviderStateMixin {
+  // Tab controller
+  late TabController _tabController;
+
   // FAB expansion state
   bool _isFabExpanded = false;
   late AnimationController _fabAnimationController;
   late Animation<double> _fabRotationAnimation;
   late Animation<double> _fabScaleAnimation;
 
-  // Sample data for packages (UI only, no backend)
-  final List<PaketItem> _paketItems = [];
+  // Data for packages
+  final List<PaketItem> _pendingItems = [];
+  final List<PaketItem> _receivedItems = [];
   final List<PengumumanItem> _pengumumanItems = [];
 
-  // Track expanded card index (-1000 offset for pengumuman)
-  int? _expandedCardIndex;
+  // Track expanded card index for each tab
+  int? _expandedPendingCardIndex;
+  int? _expandedReceivedCardIndex;
+  int? _expandedPengumumanCardIndex;
+
+  // Track animating card
+  int? _animatingCardIndex;
+
+  // Track section visibility
+  bool _isPengumumanExpanded = true;
+  bool _isTitipanExpanded = true;
 
   @override
   void initState() {
     super.initState();
+    _tabController = TabController(length: 2, vsync: this);
+    _tabController.addListener(() {
+      // Reset expanded card when switching tabs
+      setState(() {
+        _expandedPendingCardIndex = null;
+        _expandedReceivedCardIndex = null;
+        _expandedPengumumanCardIndex = null;
+      });
+    });
+
     _fabAnimationController = AnimationController(
       duration: const Duration(milliseconds: 300),
       vsync: this,
@@ -54,6 +77,7 @@ class _GuruPaketPageState extends State<GuruPaketPage>
 
   @override
   void dispose() {
+    _tabController.dispose();
     _fabAnimationController.dispose();
     super.dispose();
   }
@@ -86,7 +110,7 @@ class _GuruPaketPageState extends State<GuruPaketPage>
         builder: (context) => GuruTitipanFormPage(
           onSave: (item) {
             setState(() {
-              _paketItems.insert(0, item);
+              _pendingItems.insert(0, item);
             });
           },
         ),
@@ -110,20 +134,47 @@ class _GuruPaketPageState extends State<GuruPaketPage>
     );
   }
 
-  void _toggleCardExpansion(int index) {
+  void _toggleCardExpansion(int index, bool isPending) {
     setState(() {
-      if (_expandedCardIndex == index) {
-        _expandedCardIndex = null;
+      _expandedPengumumanCardIndex = null;
+      if (isPending) {
+        if (_expandedPendingCardIndex == index) {
+          _expandedPendingCardIndex = null;
+        } else {
+          _expandedPendingCardIndex = index;
+        }
       } else {
-        _expandedCardIndex = index;
+        if (_expandedReceivedCardIndex == index) {
+          _expandedReceivedCardIndex = null;
+        } else {
+          _expandedReceivedCardIndex = index;
+        }
+      }
+    });
+  }
+
+  void _togglePengumumanExpansion(int index) {
+    setState(() {
+      if (_expandedPengumumanCardIndex == index) {
+        _expandedPengumumanCardIndex = null;
+      } else {
+        _expandedPengumumanCardIndex = index;
+        _expandedPendingCardIndex = null;
       }
     });
   }
 
   void _markAsPickedUp(int index) {
     setState(() {
-      _paketItems.removeAt(index);
-      _expandedCardIndex = null;
+      _animatingCardIndex = index;
+      _expandedPendingCardIndex = null;
+    });
+  }
+
+  void _dismissPengumuman(int index) {
+    setState(() {
+      _pengumumanItems.removeAt(index);
+      _expandedPengumumanCardIndex = null;
     });
 
     ScaffoldMessenger.of(context).showSnackBar(
@@ -132,7 +183,7 @@ class _GuruPaketPageState extends State<GuruPaketPage>
           children: [
             Icon(Icons.check_circle, color: Colors.white, size: 20),
             SizedBox(width: 10),
-            Text('Barang telah diambil'),
+            Text('Pengumuman telah dihapus'),
           ],
         ),
         backgroundColor: const Color(0xFF22C55E),
@@ -188,6 +239,21 @@ class _GuruPaketPageState extends State<GuruPaketPage>
     }
   }
 
+  String _formatTime(DateTime dateTime) {
+    final now = DateTime.now();
+    final diff = now.difference(dateTime);
+
+    if (diff.inMinutes < 1) {
+      return 'Baru saja';
+    } else if (diff.inMinutes < 60) {
+      return '${diff.inMinutes} menit yang lalu';
+    } else if (diff.inHours < 24) {
+      return '${diff.inHours} jam yang lalu';
+    } else {
+      return '${diff.inDays} hari yang lalu';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return GestureDetector(
@@ -201,22 +267,9 @@ class _GuruPaketPageState extends State<GuruPaketPage>
               const SizedBox(height: 16),
               // Header
               Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
+                padding: const EdgeInsets.symmetric(horizontal: 10),
                 child: Row(
                   children: [
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: AppColors.primaryLighter,
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: const Icon(
-                        Icons.inventory_2_rounded,
-                        color: AppColors.primary,
-                        size: 24,
-                      ),
-                    ),
                     const SizedBox(width: 14),
                     const Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -242,13 +295,24 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                 ),
               ),
 
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
 
-              // Content
+              // Tab Bar
+              _buildTabBar(),
+
+              const SizedBox(height: 8),
+
+              // Tab Content
               Expanded(
-                child: (_paketItems.isEmpty && _pengumumanItems.isEmpty)
-                    ? _buildEmptyState()
-                    : _buildCombinedList(),
+                child: TabBarView(
+                  controller: _tabController,
+                  children: [
+                    // Tab 1: Belum Diambil
+                    _buildPendingTab(),
+                    // Tab 2: Sudah Diambil
+                    _buildReceivedTab(),
+                  ],
+                ),
               ),
             ],
           ),
@@ -258,7 +322,206 @@ class _GuruPaketPageState extends State<GuruPaketPage>
     );
   }
 
-  Widget _buildEmptyState() {
+  Widget _buildTabBar() {
+    return Container(
+      margin: const EdgeInsets.symmetric(horizontal: 20),
+      decoration: BoxDecoration(
+        color: AppColors.background,
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: TabBar(
+        controller: _tabController,
+        indicator: BoxDecoration(
+          color: AppColors.primary,
+          borderRadius: BorderRadius.circular(10),
+        ),
+        indicatorSize: TabBarIndicatorSize.tab,
+        indicatorPadding: const EdgeInsets.all(4),
+        labelColor: Colors.white,
+        unselectedLabelColor: AppColors.textSecondary,
+        labelStyle: const TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
+        unselectedLabelStyle: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w500,
+        ),
+        dividerColor: Colors.transparent,
+        tabs: [
+          Tab(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Belum Diambil${_pendingItems.isNotEmpty || _pengumumanItems.isNotEmpty ? ' (${_pendingItems.length + _pengumumanItems.length})' : ''}',
+              ),
+            ),
+          ),
+          Tab(
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              child: Text(
+                'Sudah Diambil${_receivedItems.isNotEmpty ? ' (${_receivedItems.length})' : ''}',
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildPendingTab() {
+    final hasPaket = _pendingItems.isNotEmpty;
+    final hasPengumuman = _pengumumanItems.isNotEmpty;
+
+    if (!hasPaket && !hasPengumuman) {
+      return _buildEmptyState(
+        icon: Icons.inbox_rounded,
+        title: 'Belum ada paket',
+        subtitle: 'Tekan tombol + untuk menambah titipan\natau pengumuman baru',
+      );
+    }
+
+    return ListView(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      children: [
+        // ===== PENGUMUMAN SECTION =====
+        if (hasPengumuman) ...[
+          _buildSectionHeader(
+            title: 'Pengumuman',
+            count: _pengumumanItems.length,
+            isExpanded: _isPengumumanExpanded,
+            onTap: () {
+              setState(() {
+                _isPengumumanExpanded = !_isPengumumanExpanded;
+              });
+            },
+            color: AppColors.primary,
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: _isPengumumanExpanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Column(
+              children: [
+                for (int i = 0; i < _pengumumanItems.length; i++)
+                  _buildPengumumanCard(_pengumumanItems[i], i),
+              ],
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+          const SizedBox(height: 8),
+        ],
+        // ===== TITIPAN SECTION =====
+        if (hasPaket) ...[
+          _buildSectionHeader(
+            title: 'Paket Titipan',
+            count: _pendingItems.length,
+            isExpanded: _isTitipanExpanded,
+            onTap: () {
+              setState(() {
+                _isTitipanExpanded = !_isTitipanExpanded;
+              });
+            },
+            color: AppColors.primary,
+          ),
+          AnimatedCrossFade(
+            duration: const Duration(milliseconds: 300),
+            crossFadeState: _isTitipanExpanded
+                ? CrossFadeState.showFirst
+                : CrossFadeState.showSecond,
+            firstChild: Column(
+              children: [
+                for (int i = 0; i < _pendingItems.length; i++)
+                  _buildPaketCard(_pendingItems[i], i, isPending: true),
+              ],
+            ),
+            secondChild: const SizedBox.shrink(),
+          ),
+        ],
+        // Extra space for FAB
+        const SizedBox(height: 80),
+      ],
+    );
+  }
+
+  Widget _buildSectionHeader({
+    required String title,
+    required int count,
+    required bool isExpanded,
+    required VoidCallback onTap,
+    required Color color,
+  }) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(8),
+        child: Padding(
+          padding: const EdgeInsets.symmetric(vertical: 8),
+          child: Row(
+            children: [
+              Text(
+                title.toUpperCase(),
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w700,
+                  color: color,
+                  letterSpacing: 1.2,
+                ),
+              ),
+              const SizedBox(width: 6),
+              Text(
+                '($count)',
+                style: TextStyle(
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600,
+                  color: color.withOpacity(0.7),
+                ),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Container(height: 1, color: color.withOpacity(0.3)),
+              ),
+              const SizedBox(width: 12),
+              AnimatedRotation(
+                turns: isExpanded ? 0 : -0.25,
+                duration: const Duration(milliseconds: 300),
+                child: Icon(
+                  Icons.keyboard_arrow_down_rounded,
+                  color: color,
+                  size: 20,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildReceivedTab() {
+    if (_receivedItems.isEmpty) {
+      return _buildEmptyState(
+        icon: Icons.check_circle_outline_rounded,
+        title: 'Belum ada riwayat',
+        subtitle: 'Paket yang sudah diterima akan muncul di sini',
+      );
+    }
+
+    return ListView.builder(
+      padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+      itemCount: _receivedItems.length,
+      itemBuilder: (context, index) {
+        return _buildPaketCard(_receivedItems[index], index, isPending: false);
+      },
+    );
+  }
+
+  Widget _buildEmptyState({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+  }) {
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
@@ -270,16 +533,12 @@ class _GuruPaketPageState extends State<GuruPaketPage>
               color: AppColors.primaryLighter,
               shape: BoxShape.circle,
             ),
-            child: const Icon(
-              Icons.inbox_rounded,
-              size: 48,
-              color: AppColors.primary,
-            ),
+            child: Icon(icon, size: 48, color: AppColors.primary),
           ),
           const SizedBox(height: 20),
-          const Text(
-            'Belum ada paket',
-            style: TextStyle(
+          Text(
+            title,
+            style: const TextStyle(
               fontSize: 18,
               fontWeight: FontWeight.w600,
               color: AppColors.textPrimary,
@@ -287,7 +546,7 @@ class _GuruPaketPageState extends State<GuruPaketPage>
           ),
           const SizedBox(height: 8),
           Text(
-            'Tekan tombol + untuk menambah titipan\natau pengumuman baru',
+            subtitle,
             textAlign: TextAlign.center,
             style: TextStyle(
               fontSize: 14,
@@ -301,68 +560,17 @@ class _GuruPaketPageState extends State<GuruPaketPage>
     );
   }
 
-  Widget _buildCombinedList() {
-    // Combine items with type info for sorting
-    final List<dynamic> allItems = [];
-
-    for (int i = 0; i < _pengumumanItems.length; i++) {
-      allItems.add({
-        'type': 'pengumuman',
-        'index': i,
-        'item': _pengumumanItems[i],
-      });
-    }
-
-    for (int i = 0; i < _paketItems.length; i++) {
-      allItems.add({'type': 'titipan', 'index': i, 'item': _paketItems[i]});
-    }
-
-    // Sort by creation time (newest first)
-    allItems.sort((a, b) {
-      final aTime = a['type'] == 'pengumuman'
-          ? (a['item'] as PengumumanItem).createdAt
-          : (a['item'] as PaketItem).createdAt;
-      final bTime = b['type'] == 'pengumuman'
-          ? (b['item'] as PengumumanItem).createdAt
-          : (b['item'] as PaketItem).createdAt;
-      return bTime.compareTo(aTime);
-    });
-
-    return ListView.builder(
-      padding: const EdgeInsets.symmetric(horizontal: 20),
-      itemCount: allItems.length,
-      itemBuilder: (context, index) {
-        final itemData = allItems[index];
-        if (itemData['type'] == 'pengumuman') {
-          return _buildPengumumanCard(
-            itemData['item'] as PengumumanItem,
-            itemData['index'] as int,
-          );
-        } else {
-          return _buildTitipanCard(
-            itemData['item'] as PaketItem,
-            itemData['index'] as int,
-          );
-        }
-      },
-    );
-  }
-
-  Widget _buildPengumumanCard(PengumumanItem item, int originalIndex) {
-    // Use negative index offset for pengumuman to differentiate from titipan
-    final cardIndex = -1000 - originalIndex;
-    final isExpanded = _expandedCardIndex == cardIndex;
-    final iconColor = item.type == 'warning'
-        ? const Color(0xFFF59E0B)
-        : AppColors.primary;
-    final icon = item.type == 'warning'
-        ? Icons.warning_rounded
-        : Icons.info_rounded;
+  // ===== PENGUMUMAN CARD =====
+  Widget _buildPengumumanCard(PengumumanItem item, int index) {
+    final isExpanded = _expandedPengumumanCardIndex == index;
+    final isWarning = item.type == 'warning';
+    final iconColor = isWarning ? const Color(0xFFF59E0B) : AppColors.primary;
+    final icon = isWarning ? Icons.warning_rounded : Icons.info_rounded;
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: () => _toggleCardExpansion(cardIndex),
+        onTap: () => _togglePengumumanExpansion(index),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
@@ -405,28 +613,24 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: iconColor.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'PENGUMUMAN',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: iconColor,
-                                    letterSpacing: 0.5,
-                                  ),
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 6,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: iconColor.withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(4),
+                            ),
+                            child: Text(
+                              isWarning ? 'PERINGATAN' : 'PENGUMUMAN',
+                              style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: iconColor,
+                                letterSpacing: 0.5,
                               ),
-                            ],
+                            ),
                           ),
                           const SizedBox(height: 4),
                           Text(
@@ -436,8 +640,10 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                               fontWeight: FontWeight.w600,
                               color: AppColors.textPrimary,
                             ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                           ),
-                          const SizedBox(height: 2),
+                          const SizedBox(height: 4),
                           Text(
                             _formatTime(item.createdAt),
                             style: const TextStyle(
@@ -462,71 +668,76 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                 ),
               ),
               // Expanded content
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                child: isExpanded
-                    ? Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            // Keterangan
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: AppColors.background,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Text(
-                                item.keterangan,
-                                style: const TextStyle(
-                                  fontSize: 14,
-                                  color: AppColors.textSecondary,
-                                  height: 1.4,
+              ClipRect(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: isExpanded
+                      ? Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              // Keterangan
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.all(14),
+                                decoration: BoxDecoration(
+                                  color: iconColor.withOpacity(0.08),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                    color: iconColor.withOpacity(0.2),
+                                  ),
+                                ),
+                                child: Text(
+                                  item.keterangan,
+                                  style: const TextStyle(
+                                    fontSize: 14,
+                                    color: AppColors.textSecondary,
+                                    height: 1.5,
+                                  ),
                                 ),
                               ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Delete button
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () =>
-                                    _removePengumuman(originalIndex),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFFEF4444),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
-                                ),
-                                child: const Row(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    Icon(Icons.delete_outline, size: 20),
-                                    SizedBox(width: 8),
-                                    Text(
-                                      'Hapus Pengumuman',
-                                      style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
-                                      ),
+                              const SizedBox(height: 14),
+                              // Delete button
+                              SizedBox(
+                                width: double.infinity,
+                                child: ElevatedButton(
+                                  onPressed: () => _dismissPengumuman(index),
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: const Color(0xFFEF4444),
+                                    foregroundColor: Colors.white,
+                                    padding: const EdgeInsets.symmetric(
+                                      vertical: 14,
                                     ),
-                                  ],
+                                    shape: RoundedRectangleBorder(
+                                      borderRadius: BorderRadius.circular(12),
+                                    ),
+                                    elevation: 0,
+                                  ),
+                                  child: const Row(
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Icon(Icons.delete_outline, size: 20),
+                                      SizedBox(width: 8),
+                                      Text(
+                                        'Hapus Pengumuman',
+                                        style: TextStyle(
+                                          fontSize: 15,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
             ],
           ),
@@ -535,37 +746,62 @@ class _GuruPaketPageState extends State<GuruPaketPage>
     );
   }
 
-  void _removePengumuman(int index) {
-    setState(() {
-      _pengumumanItems.removeAt(index);
-      _expandedCardIndex = null;
-    });
+  // ===== PAKET CARD =====
+  Widget _buildPaketCard(PaketItem item, int index, {required bool isPending}) {
+    final isExpanded = isPending
+        ? _expandedPendingCardIndex == index
+        : _expandedReceivedCardIndex == index;
+    final isAnimating = isPending && _animatingCardIndex == index;
+    final iconColor = isPending
+        ? _getColorForType(item.type)
+        : const Color(0xFF22C55E);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: const Row(
-          children: [
-            Icon(Icons.check_circle, color: Colors.white, size: 20),
-            SizedBox(width: 10),
-            Text('Pengumuman telah dihapus'),
-          ],
-        ),
-        backgroundColor: const Color(0xFF22C55E),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-        margin: const EdgeInsets.all(16),
-      ),
-    );
-  }
+    if (isAnimating) {
+      return _AnimatingPaketCard(
+        item: item,
+        getIconForType: _getIconForType,
+        onAnimationComplete: () {
+          final receivedItem = PaketItem(
+            namaPenerima: item.namaPenerima,
+            kelas: item.kelas,
+            namaBarang: item.namaBarang,
+            type: item.type,
+            createdAt: item.createdAt,
+            isGuru: item.isGuru,
+            imagePath: item.imagePath,
+          );
 
-  Widget _buildTitipanCard(PaketItem item, int index) {
-    final isExpanded = _expandedCardIndex == index;
-    final iconColor = _getColorForType(item.type);
+          setState(() {
+            _pendingItems.removeAt(index);
+            _receivedItems.insert(0, receivedItem);
+            _animatingCardIndex = null;
+          });
+
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Row(
+                children: [
+                  Icon(Icons.check_circle, color: Colors.white, size: 20),
+                  SizedBox(width: 10),
+                  Text('Barang telah diambil'),
+                ],
+              ),
+              backgroundColor: const Color(0xFF22C55E),
+              behavior: SnackBarBehavior.floating,
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(10),
+              ),
+              margin: const EdgeInsets.all(16),
+            ),
+          );
+        },
+      );
+    }
 
     return Padding(
       padding: const EdgeInsets.only(bottom: 12),
       child: GestureDetector(
-        onTap: () => _toggleCardExpansion(index),
+        onTap: () => _toggleCardExpansion(index, isPending),
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 300),
           curve: Curves.easeOutCubic,
@@ -593,18 +829,39 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                 child: Row(
                   children: [
                     // Icon
-                    Container(
-                      width: 48,
-                      height: 48,
-                      decoration: BoxDecoration(
-                        color: iconColor.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                      child: Icon(
-                        _getIconForType(item.type),
-                        color: iconColor,
-                        size: 24,
-                      ),
+                    Stack(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: BoxDecoration(
+                            color: iconColor.withOpacity(0.15),
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Icon(
+                            _getIconForType(item.type),
+                            color: iconColor,
+                            size: 24,
+                          ),
+                        ),
+                        if (!isPending)
+                          Positioned(
+                            right: -2,
+                            bottom: -2,
+                            child: Container(
+                              padding: const EdgeInsets.all(2),
+                              decoration: const BoxDecoration(
+                                color: Colors.white,
+                                shape: BoxShape.circle,
+                              ),
+                              child: const Icon(
+                                Icons.check_circle,
+                                color: Color(0xFF22C55E),
+                                size: 16,
+                              ),
+                            ),
+                          ),
+                      ],
                     ),
                     const SizedBox(width: 14),
                     // Info
@@ -612,32 +869,31 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 6,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: iconColor.withOpacity(0.15),
-                                  borderRadius: BorderRadius.circular(4),
-                                ),
-                                child: Text(
-                                  'TITIPAN',
-                                  style: TextStyle(
-                                    fontSize: 9,
-                                    fontWeight: FontWeight.w700,
-                                    color: iconColor,
-                                    letterSpacing: 0.5,
-                                  ),
+                          if (!isPending)
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 6,
+                                vertical: 2,
+                              ),
+                              margin: const EdgeInsets.only(bottom: 4),
+                              decoration: BoxDecoration(
+                                color: const Color(
+                                  0xFF22C55E,
+                                ).withOpacity(0.15),
+                                borderRadius: BorderRadius.circular(4),
+                              ),
+                              child: const Text(
+                                'DITERIMA',
+                                style: TextStyle(
+                                  fontSize: 9,
+                                  fontWeight: FontWeight.w700,
+                                  color: Color(0xFF22C55E),
+                                  letterSpacing: 0.5,
                                 ),
                               ),
-                            ],
-                          ),
-                          const SizedBox(height: 4),
+                            ),
                           Text(
-                            item.namaBarang,
+                            item.namaPenerima,
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.w600,
@@ -647,38 +903,43 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                           const SizedBox(height: 4),
                           Row(
                             children: [
-                              Text(
-                                item.namaPenerima,
-                                style: const TextStyle(
-                                  fontSize: 13,
-                                  color: AppColors.textSecondary,
-                                ),
+                              Icon(
+                                _getIconForType(item.type),
+                                size: 14,
+                                color: AppColors.textMuted,
                               ),
-                              if (item.kelas != null &&
-                                  item.kelas!.isNotEmpty) ...[
-                                const Text(
-                                  ' • ',
-                                  style: TextStyle(
-                                    fontSize: 13,
-                                    color: AppColors.textMuted,
-                                  ),
-                                ),
-                                Text(
-                                  item.kelas!,
+                              const SizedBox(width: 4),
+                              Expanded(
+                                child: Text(
+                                  item.namaBarang,
                                   style: const TextStyle(
                                     fontSize: 13,
                                     color: AppColors.textSecondary,
                                   ),
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                              ],
+                              ),
                             ],
                           ),
+                          if (item.kelas != null && item.kelas!.isNotEmpty)
+                            Padding(
+                              padding: const EdgeInsets.only(top: 2),
+                              child: Text(
+                                item.kelas!,
+                                style: const TextStyle(
+                                  fontSize: 11,
+                                  color: AppColors.textMuted,
+                                ),
+                              ),
+                            ),
                           const SizedBox(height: 2),
                           Text(
                             _formatTime(item.createdAt),
-                            style: const TextStyle(
+                            style: TextStyle(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              color: isPending
+                                  ? AppColors.textMuted
+                                  : const Color(0xFF22C55E),
                             ),
                           ),
                         ],
@@ -697,105 +958,98 @@ class _GuruPaketPageState extends State<GuruPaketPage>
                   ],
                 ),
               ),
-              // Expanded content
-              AnimatedSize(
-                duration: const Duration(milliseconds: 300),
-                curve: Curves.easeOutCubic,
-                child: isExpanded
-                    ? Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
-                        child: Column(
-                          children: [
-                            // Type badge
-                            Container(
-                              width: double.infinity,
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 8,
-                              ),
-                              decoration: BoxDecoration(
-                                color: iconColor.withOpacity(0.1),
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: Row(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  Icon(
-                                    _getIconForType(item.type),
-                                    size: 16,
-                                    color: iconColor,
-                                  ),
-                                  const SizedBox(width: 8),
-                                  Text(
-                                    'Jenis: ${_getLabelForType(item.type)}',
-                                    style: TextStyle(
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w500,
-                                      color: iconColor,
-                                    ),
-                                  ),
-                                ],
-                              ),
-                            ),
-                            const SizedBox(height: 12),
-                            // Pickup button
-                            SizedBox(
-                              width: double.infinity,
-                              child: ElevatedButton(
-                                onPressed: () => _markAsPickedUp(index),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: const Color(0xFF22C55E),
-                                  foregroundColor: Colors.white,
-                                  padding: const EdgeInsets.symmetric(
-                                    vertical: 14,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                  elevation: 0,
+              // Expanded content with action buttons
+              ClipRect(
+                child: AnimatedSize(
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeInOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: isExpanded
+                      ? Container(
+                          width: double.infinity,
+                          padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+                          child: Column(
+                            children: [
+                              // Type badge
+                              Container(
+                                width: double.infinity,
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 12,
+                                  vertical: 8,
                                 ),
-                                child: const Row(
+                                decoration: BoxDecoration(
+                                  color: iconColor.withOpacity(0.1),
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Row(
                                   mainAxisAlignment: MainAxisAlignment.center,
                                   children: [
-                                    Icon(Icons.check_circle_outline, size: 20),
-                                    SizedBox(width: 8),
+                                    Icon(
+                                      _getIconForType(item.type),
+                                      size: 16,
+                                      color: iconColor,
+                                    ),
+                                    const SizedBox(width: 8),
                                     Text(
-                                      'Sudah Diambil',
+                                      'Jenis: ${_getLabelForType(item.type)}',
                                       style: TextStyle(
-                                        fontSize: 15,
-                                        fontWeight: FontWeight.w600,
+                                        fontSize: 13,
+                                        fontWeight: FontWeight.w500,
+                                        color: iconColor,
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                          ],
-                        ),
-                      )
-                    : const SizedBox.shrink(),
+                              const SizedBox(height: 12),
+                              if (isPending)
+                                // Pickup button
+                                SizedBox(
+                                  width: double.infinity,
+                                  child: ElevatedButton(
+                                    onPressed: () => _markAsPickedUp(index),
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: const Color(0xFF22C55E),
+                                      foregroundColor: Colors.white,
+                                      padding: const EdgeInsets.symmetric(
+                                        vertical: 14,
+                                      ),
+                                      shape: RoundedRectangleBorder(
+                                        borderRadius: BorderRadius.circular(12),
+                                      ),
+                                      elevation: 0,
+                                    ),
+                                    child: const Row(
+                                      mainAxisAlignment:
+                                          MainAxisAlignment.center,
+                                      children: [
+                                        Icon(
+                                          Icons.check_circle_outline,
+                                          size: 20,
+                                        ),
+                                        SizedBox(width: 8),
+                                        Text(
+                                          'Sudah Diambil',
+                                          style: TextStyle(
+                                            fontSize: 15,
+                                            fontWeight: FontWeight.w600,
+                                          ),
+                                        ),
+                                      ],
+                                    ),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        )
+                      : const SizedBox.shrink(),
+                ),
               ),
             ],
           ),
         ),
       ),
     );
-  }
-
-  String _formatTime(DateTime dateTime) {
-    final now = DateTime.now();
-    final diff = now.difference(dateTime);
-
-    if (diff.inMinutes < 1) {
-      return 'Baru saja';
-    } else if (diff.inMinutes < 60) {
-      return '${diff.inMinutes} menit yang lalu';
-    } else if (diff.inHours < 24) {
-      return '${diff.inHours} jam yang lalu';
-    } else {
-      return '${diff.inDays} hari yang lalu';
-    }
   }
 
   Widget _buildExpandableFab() {
@@ -946,6 +1200,130 @@ class _GuruPaketPageState extends State<GuruPaketPage>
   }
 }
 
+// Animating card widget for transition effect
+class _AnimatingPaketCard extends StatefulWidget {
+  final PaketItem item;
+  final IconData Function(String) getIconForType;
+  final VoidCallback onAnimationComplete;
+
+  const _AnimatingPaketCard({
+    required this.item,
+    required this.getIconForType,
+    required this.onAnimationComplete,
+  });
+
+  @override
+  State<_AnimatingPaketCard> createState() => _AnimatingPaketCardState();
+}
+
+class _AnimatingPaketCardState extends State<_AnimatingPaketCard>
+    with SingleTickerProviderStateMixin {
+  late AnimationController _controller;
+  late Animation<double> _scaleAnimation;
+  late Animation<double> _opacityAnimation;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller = AnimationController(
+      duration: const Duration(milliseconds: 400),
+      vsync: this,
+    );
+
+    _scaleAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.8,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _opacityAnimation = Tween<double>(
+      begin: 1.0,
+      end: 0.0,
+    ).animate(CurvedAnimation(parent: _controller, curve: Curves.easeInOut));
+
+    _controller.forward().then((_) {
+      widget.onAnimationComplete();
+    });
+  }
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AnimatedBuilder(
+      animation: _controller,
+      builder: (context, child) {
+        return Transform.scale(
+          scale: _scaleAnimation.value,
+          child: Opacity(
+            opacity: _opacityAnimation.value,
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: const Color(0xFF22C55E).withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(16),
+                  border: Border.all(
+                    color: const Color(0xFF22C55E).withOpacity(0.3),
+                    width: 2,
+                  ),
+                ),
+                child: Padding(
+                  padding: const EdgeInsets.all(16),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 48,
+                        height: 48,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF22C55E).withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(
+                          Icons.check_circle,
+                          color: Color(0xFF22C55E),
+                          size: 24,
+                        ),
+                      ),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              widget.item.namaPenerima,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w600,
+                                color: Color(0xFF22C55E),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            const Text(
+                              'Berhasil diambil!',
+                              style: TextStyle(
+                                fontSize: 13,
+                                color: Color(0xFF22C55E),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+}
+
 // Data model for Paket items
 class PaketItem {
   final String namaPenerima;
@@ -954,6 +1332,7 @@ class PaketItem {
   final String type; // food, pakaian, surat, drink
   final DateTime createdAt;
   final bool isGuru;
+  final String? imagePath; // Path to attached photo
 
   PaketItem({
     required this.namaPenerima,
@@ -962,5 +1341,6 @@ class PaketItem {
     required this.type,
     required this.createdAt,
     this.isGuru = false,
+    this.imagePath,
   });
 }

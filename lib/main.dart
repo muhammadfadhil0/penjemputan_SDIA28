@@ -11,6 +11,7 @@ import 'pages/guru_antrean_page.dart';
 import 'pages/guru_paket_page.dart';
 import 'pages/kelas_ringkasan_page.dart';
 import 'pages/kelas_riwayat_page.dart';
+import 'pages/kelas_paket_page.dart';
 import 'pages/profile_page.dart';
 import 'pages/login_page.dart';
 import 'pages/onboarding_page.dart';
@@ -849,77 +850,17 @@ class KelasMainNavigation extends StatefulWidget {
 
 class _KelasMainNavigationState extends State<KelasMainNavigation>
     with SingleTickerProviderStateMixin {
-  int _currentIndex = 0; // Start at Ringkasan
+  int _currentIndex = 1; // Start at Ringkasan (center)
   late AnimationController _indicatorController;
   late Animation<double> _indicatorAnimation;
-  double _indicatorPosition = 0.0;
+  double _indicatorPosition = 1.0;
 
-  final AuthService _authService = AuthService();
-
-  final List<Widget> _pages = const [KelasRingkasanPage(), KelasRiwayatPage()];
-
-  /// Logout dan navigasi ke login page
-  Future<void> _handleLogout() async {
-    // Tampilkan dialog konfirmasi
-    final shouldLogout = await showDialog<bool>(
-      context: context,
-      builder: (context) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: Row(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(8),
-              decoration: BoxDecoration(
-                color: Colors.red.shade50,
-                borderRadius: BorderRadius.circular(8),
-              ),
-              child: Icon(
-                Icons.logout_rounded,
-                color: Colors.red.shade600,
-                size: 24,
-              ),
-            ),
-            const SizedBox(width: 12),
-            const Text('Keluar dari Akun?'),
-          ],
-        ),
-        content: const Text(
-          'Apakah Anda yakin ingin keluar dari akun ini?',
-          style: TextStyle(fontSize: 15),
-        ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(context, false),
-            child: const Text('Batal'),
-          ),
-          ElevatedButton(
-            onPressed: () => Navigator.pop(context, true),
-            style: ElevatedButton.styleFrom(
-              backgroundColor: Colors.red.shade600,
-              foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(8),
-              ),
-            ),
-            child: const Text('Keluar'),
-          ),
-        ],
-      ),
-    );
-
-    if (shouldLogout == true && mounted) {
-      // Logout dan bersihkan semua data lokal
-      await _authService.logout();
-
-      // Navigasi ke login page dan hapus semua route sebelumnya
-      if (mounted) {
-        Navigator.of(context).pushAndRemoveUntil(
-          MaterialPageRoute(builder: (context) => const LoginPage()),
-          (route) => false,
-        );
-      }
-    }
-  }
+  // 3 tabs: Paket, Ringkasan, Riwayat
+  final List<Widget> _pages = const [
+    KelasPaketPage(),
+    KelasRingkasanPage(),
+    KelasRiwayatPage(),
+  ];
 
   @override
   void initState() {
@@ -965,7 +906,7 @@ class _KelasMainNavigationState extends State<KelasMainNavigation>
     if (velocity.abs() > 200) {
       if (velocity > 0 && _currentIndex > 0) {
         _animateToIndex(_currentIndex - 1);
-      } else if (velocity < 0 && _currentIndex < 1) {
+      } else if (velocity < 0 && _currentIndex < 2) {
         _animateToIndex(_currentIndex + 1);
       }
     }
@@ -976,9 +917,9 @@ class _KelasMainNavigationState extends State<KelasMainNavigation>
     DragUpdateDetails details,
     double containerWidth,
   ) {
-    final itemWidth = containerWidth / 2;
+    final itemWidth = containerWidth / 3;
     final dragPosition = details.localPosition.dx;
-    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 1);
+    final newIndex = (dragPosition / itemWidth).floor().clamp(0, 2);
 
     if (newIndex != _currentIndex) {
       _animateToIndex(newIndex);
@@ -1014,20 +955,22 @@ class _KelasMainNavigationState extends State<KelasMainNavigation>
             children: [
               _buildNavItem(
                 index: 0,
-                icon: Icons.grid_view_outlined,
-                activeIcon: Icons.grid_view,
-                label: 'Ringkasan',
-                isFirst: _currentIndex == 0,
+                icon: Icons.inventory_2_outlined,
+                activeIcon: Icons.inventory_2,
+                label: 'Paket',
               ),
               _buildNavItem(
                 index: 1,
+                icon: Icons.grid_view_outlined,
+                activeIcon: Icons.grid_view,
+                label: 'Ringkasan',
+              ),
+              _buildNavItem(
+                index: 2,
                 icon: Icons.history_outlined,
                 activeIcon: Icons.history,
                 label: 'Riwayat',
-                isFirst: _currentIndex == 1,
               ),
-              // Logout button styled same as nav items
-              _buildLogoutButton(),
             ],
           ),
         ),
@@ -1040,7 +983,6 @@ class _KelasMainNavigationState extends State<KelasMainNavigation>
     required IconData icon,
     required IconData activeIcon,
     required String label,
-    bool isFirst = false,
   }) {
     final isSelected = _currentIndex == index;
 
@@ -1082,32 +1024,6 @@ class _KelasMainNavigationState extends State<KelasMainNavigation>
                 fontSize: 12,
                 fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                 color: isSelected ? Colors.white : AppColors.textMuted,
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
-
-  /// Tombol logout di kanan navbar
-  Widget _buildLogoutButton() {
-    return GestureDetector(
-      onTap: _handleLogout,
-      behavior: HitTestBehavior.opaque,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(Icons.logout_rounded, color: Colors.red.shade500, size: 24),
-            const SizedBox(height: 4),
-            Text(
-              'Keluar',
-              style: TextStyle(
-                fontSize: 12,
-                fontWeight: FontWeight.w500,
-                color: Colors.red.shade500,
               ),
             ),
           ],

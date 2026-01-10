@@ -124,23 +124,10 @@ class _GuruRiwayatPageState extends State<GuruRiwayatPage> {
             const SizedBox(height: 16),
             // Header
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+              padding: const EdgeInsets.symmetric(horizontal: 10),
               child: Row(
                 children: [
                   // Icon
-                  Container(
-                    width: 48,
-                    height: 48,
-                    decoration: BoxDecoration(
-                      color: AppColors.primaryLighter,
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: const Icon(
-                      Icons.history_rounded,
-                      color: AppColors.primary,
-                      size: 26,
-                    ),
-                  ),
                   const SizedBox(width: 14),
                   const Expanded(
                     child: Column(
@@ -313,26 +300,49 @@ class _GuruRiwayatPageState extends State<GuruRiwayatPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
-            Icon(
-              Icons.history_rounded,
-              size: 64,
-              color: AppColors.textMuted.withOpacity(0.5),
+            Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                color: AppColors.primaryLighter,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.history_rounded,
+                size: 48,
+                color: AppColors.primary,
+              ),
             ),
-            const SizedBox(height: 16),
+            const SizedBox(height: 20),
             const Text(
               'Belum ada riwayat panggilan',
-              style: TextStyle(color: AppColors.textMuted, fontSize: 16),
+              style: TextStyle(
+                fontSize: 18,
+                fontWeight: FontWeight.w600,
+                color: AppColors.textPrimary,
+              ),
             ),
-            if (_selectedDate != null) ...[
-              const SizedBox(height: 8),
+            const SizedBox(height: 8),
+            if (_selectedDate != null)
               Text(
                 'pada tanggal ${_formatDate(_selectedDate!)}',
-                style: const TextStyle(
-                  color: AppColors.textMuted,
+                textAlign: TextAlign.center,
+                style: TextStyle(
                   fontSize: 14,
+                  color: AppColors.textMuted,
+                  height: 1.4,
+                ),
+              )
+            else
+              Text(
+                'Siswa yang sudah dipanggil\nakan muncul di sini',
+                textAlign: TextAlign.center,
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.textMuted,
+                  height: 1.4,
                 ),
               ),
-            ],
           ],
         ),
       );

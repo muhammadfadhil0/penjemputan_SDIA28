@@ -359,23 +359,23 @@ function updateCountdownUI() {
         stoppedState.classList.remove('hidden');
         stoppedState.classList.add('flex');
         if (statusDiv) statusDiv.className = 'mt-4 p-3 bg-gray-50 border border-gray-200 rounded-xl text-center';
-        if (statusText) statusText.textContent = '⏸️ Pemanggilan otomatis tidak aktif';
+        if (statusText) statusText.textContent = 'Pemanggilan otomatis tidak aktif';
     } else if (isPaused) {
         pausedButtons.classList.remove('hidden');
         pausedButtons.classList.add('flex');
         if (statusDiv) statusDiv.className = 'mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-center';
-        if (statusText) statusText.textContent = '⏸️ Pemanggilan dijeda';
+        if (statusText) statusText.textContent = 'Pemanggilan dijeda';
     } else if (queue.length === 0) {
         stoppedState.classList.remove('hidden');
         stoppedState.classList.add('flex');
         if (statusDiv) statusDiv.className = 'mt-4 p-3 bg-blue-50 border border-blue-200 rounded-xl text-center';
-        if (statusText) statusText.textContent = '⏳ Menunggu siswa masuk antrean...';
+        if (statusText) statusText.textContent = 'Menunggu siswa masuk antrean...';
     } else {
         countdownDisplay.classList.remove('hidden');
         const countdownNumber = document.getElementById('countdownNumber');
         if (countdownNumber) countdownNumber.textContent = countdownValue;
         if (statusDiv) statusDiv.className = 'mt-4 p-3 bg-green-50 border border-green-200 rounded-xl text-center';
-        if (statusText) statusText.textContent = '🔊 Pemanggilan otomatis aktif';
+        if (statusText) statusText.textContent = 'Pemanggilan otomatis aktif';
     }
 }
 
