@@ -56,7 +56,7 @@ class MyApp extends StatelessWidget {
           seedColor: const Color(0xFF60A5FA),
           brightness: Brightness.light,
         ),
-        fontFamily: 'Inter',
+        fontFamily: 'SFProDisplay',
         useMaterial3: true,
       ),
       home: const SplashPage(),

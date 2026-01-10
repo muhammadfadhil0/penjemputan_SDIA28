@@ -85,6 +85,22 @@ flutter:
   # the material Icons class.
   uses-material-design: true
 
+  # font family default apps
+  fonts:
+    - family: SFProDisplay
+      fonts:
+        - asset: lib/assets/fonts/SFPRODISPLAYREGULAR.OTF
+        - asset: lib/assets/fonts/SFPRODISPLAYBOLD.OTF
+          weight: 700
+        - asset: lib/assets/fonts/SFPRODISPLAYMEDIUM.OTF
+          weight: 500
+        - asset: lib/assets/fonts/SFPRODISPLAYBLACKITALIC.OTF
+          weight: 900
+          style: italic
+        - asset: lib/assets/fonts/SFPRODISPLAYLIGHTITALIC.OTF
+          weight: 300
+          style: italic
+
   # To add assets to your application, add an assets section, like this:
   assets:
     - lib/assets/logo.png
